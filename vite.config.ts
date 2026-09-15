@@ -12,7 +12,7 @@ export default defineConfig(() => {
       },
     },
     build: {
-      chunkSizeWarningLimit: 1600,
+      chunkSizeWarningLimit: 2500,
       rollupOptions: {
         output: {
           manualChunks(id) {
@@ -20,19 +20,7 @@ export default defineConfig(() => {
               if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('html-to-image') || id.includes('canvg') || id.includes('dompurify')) {
                 return 'vendor-pdf';
               }
-              if (id.includes('lucide-react')) {
-                return 'vendor-icons';
-              }
-              if (id.includes('@supabase')) {
-                return 'vendor-supabase';
-              }
-              if (id.includes('motion') || id.includes('framer-motion')) {
-                return 'vendor-motion';
-              }
-              if (id.includes('react') || id.includes('react-dom')) {
-                return 'vendor-react';
-              }
-              return 'vendor-utils';
+              return 'vendor';
             }
           },
         },
