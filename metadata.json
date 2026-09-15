@@ -1,0 +1,6 @@
+{
+  "name": "SR Group",
+  "description": "SR Group - Complete Indian GST billing software featuring GST invoicing, Techno-Commercial quotation & estimate hub with multi-page horizontal Terms & Conditions, worker attendance with bank account holder and KYC upload, POS billing, e-Way bills with NIC JSON, expense tracking, cash drawer tally, inventory management, party ledger khata, and UPI payments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
