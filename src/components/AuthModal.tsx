@@ -3,9 +3,16 @@ import {
   Mail, Lock, User, Building2, Phone, ArrowRight, 
   ShieldCheck, CheckCircle2, AlertCircle, Eye, EyeOff, 
   Sparkles, KeyRound, LogIn, UserPlus, X, Check, Loader2,
-  Smartphone, Plus, Trash2
+  RefreshCw, Shield, HelpCircle
 } from 'lucide-react';
 import { AuthUser } from '../types';
+import { 
+  signUpWithEmail, 
+  signInWithEmail, 
+  signInWithGoogle, 
+  sendPasswordResetEmail, 
+  updatePassword 
+} from '../utils/supabaseAuth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,31 +20,8 @@ interface AuthModalProps {
   onLoginSuccess: (user: AuthUser) => void;
   onClose?: () => void;
   allowClose?: boolean;
+  initialMode?: 'login' | 'signup' | 'forgot' | 'reset-password';
 }
-
-const STORAGE_USERS_KEY = 'nikkamabooks_registered_users_v1';
-const STORAGE_CURRENT_USER_KEY = 'nikkamabooks_logged_in_user_v1';
-const STORAGE_PHONE_GOOGLE_ACCOUNTS_KEY = 'vyapar_phone_google_accounts_v1';
-
-export interface GoogleDeviceAccount {
-  id: string;
-  name: string;
-  email: string;
-  businessName?: string;
-  phone?: string;
-  avatarColor?: string;
-}
-
-const DEFAULT_PHONE_ACCOUNTS: GoogleDeviceAccount[] = [
-  {
-    id: 'g-acc-skk',
-    name: 'S K Khan',
-    email: 'skkhantraders7867@gmail.com',
-    businessName: 'SK Khan Traders',
-    phone: '+91 98200 78670',
-    avatarColor: 'from-blue-600 to-indigo-600',
-  },
-];
 
 // Official Google G Brand Vector Icon
 const GoogleIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4 shrink-0" }) => (
@@ -61,407 +45,267 @@ const GoogleIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4 shr
   </svg>
 );
 
-export function getStoredUser(): AuthUser | null {
-  try {
-    const data = localStorage.getItem(STORAGE_CURRENT_USER_KEY);
-    if (data) return JSON.parse(data);
-  } catch (e) {
-    console.error('Error reading logged in user:', e);
-  }
-  return null;
-}
-
-export function saveStoredUser(user: AuthUser | null): void {
-  if (user) {
-    localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(user));
-  } else {
-    localStorage.removeItem(STORAGE_CURRENT_USER_KEY);
-  }
-}
-
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   currentUser,
   onLoginSuccess,
   onClose,
   allowClose = true,
+  initialMode = 'login',
 }) => {
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'reset-password'>(initialMode);
+  
+  // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Status states
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [rememberMe, setRememberMe] = useState(true);
-  
-  // Google Auth states
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showGooglePicker, setShowGooglePicker] = useState(false);
-  
-  // Google Device Accounts state (all accounts logged into phone/Google)
-  const [googleAccounts, setGoogleAccounts] = useState<GoogleDeviceAccount[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_PHONE_GOOGLE_ACCOUNTS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasPrimary = parsed.some(
-            (a: any) => a.email && a.email.toLowerCase() === 'skkhantraders7867@gmail.com'
-          );
-          if (!hasPrimary) {
-            return [...DEFAULT_PHONE_ACCOUNTS, ...parsed];
-          }
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return DEFAULT_PHONE_ACCOUNTS;
-  });
 
-  const [showAddAccountForm, setShowAddAccountForm] = useState(false);
-  const [newAccEmail, setNewAccEmail] = useState('');
-  const [newAccName, setNewAccName] = useState('');
-  const [newAccBusiness, setNewAccBusiness] = useState('');
-
-  const savePhoneAccounts = (accounts: GoogleDeviceAccount[]) => {
-    setGoogleAccounts(accounts);
-    try {
-      localStorage.setItem(STORAGE_PHONE_GOOGLE_ACCOUNTS_KEY, JSON.stringify(accounts));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleAddNewAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAccEmail || !newAccEmail.includes('@')) return;
-    const cleanEmail = newAccEmail.trim().toLowerCase();
-    const cleanName = newAccName.trim() || cleanEmail.split('@')[0].replace(/[._]/g, ' ');
-    const cleanBiz = newAccBusiness.trim() || `${cleanName}'s Business`;
-
-    let updated = [...googleAccounts];
-    const exists = updated.find(a => a.email.toLowerCase() === cleanEmail);
-    if (!exists) {
-      const gradients = [
-        'from-emerald-600 to-teal-600',
-        'from-purple-600 to-indigo-600',
-        'from-amber-600 to-orange-600',
-        'from-rose-600 to-pink-600',
-        'from-cyan-600 to-blue-600',
-      ];
-      const newAcc: GoogleDeviceAccount = {
-        id: `g-acc-${Date.now()}`,
-        name: cleanName,
-        email: cleanEmail,
-        businessName: cleanBiz,
-        avatarColor: gradients[updated.length % gradients.length],
-      };
-      updated.push(newAcc);
-      savePhoneAccounts(updated);
-    }
-
-    setShowAddAccountForm(false);
-    setNewAccEmail('');
-    setNewAccName('');
-    setNewAccBusiness('');
-
-    executeGoogleLogin(cleanEmail, cleanName, cleanBiz);
-  };
-
-  // Primary detected Google account from session/applet
-  const primaryGoogleAccount = googleAccounts[0] || DEFAULT_PHONE_ACCOUNTS[0];
-
-  // Pre-seed sample demo user if none exists
+  // Reset form when modal opens or mode changes
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_USERS_KEY);
-      if (!stored) {
-        const defaultUsers = [
-          {
-            id: 'user-demo-1',
-            email: 'demo@srenterprises.in',
-            password: 'demo',
-            name: 'SR Enterprises Demo',
-            businessName: 'SR Enterprises & Traders',
-            phone: '+91 98765 43210',
-            role: 'admin',
-            createdAt: new Date().toISOString(),
-          }
-        ];
-        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(defaultUsers));
+    if (isOpen) {
+      setErrorMessage('');
+      setSuccessMessage('');
+      if (initialMode) setMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
+
+  // Check URL hash for recovery token (e.g. user clicked email reset password link)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (hash.includes('type=recovery') || search.includes('reset_password=true')) {
+        setMode('reset-password');
       }
-    } catch (e) {
-      console.error(e);
     }
   }, []);
 
   if (!isOpen) return null;
 
-  // Handle Google Sign-In Execution
-  const executeGoogleLogin = (googleEmail: string, googleName: string, gBusinessName?: string, gPhone?: string) => {
-    setIsGoogleLoading(true);
-    setErrorMessage('');
-    setSuccessMessage('');
-
-    setTimeout(() => {
-      try {
-        const storedUsersRaw = localStorage.getItem(STORAGE_USERS_KEY);
-        const usersList = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
-
-        let existingUser = usersList.find(
-          (u: any) => u.email.toLowerCase() === googleEmail.trim().toLowerCase()
-        );
-
-        if (!existingUser) {
-          existingUser = {
-            id: `google-${Date.now()}`,
-            email: googleEmail.trim().toLowerCase(),
-            password: '',
-            name: googleName.trim(),
-            businessName: gBusinessName || `${googleName}'s Business`,
-            phone: gPhone || '',
-            role: 'admin',
-            provider: 'google',
-            createdAt: new Date().toISOString(),
-          };
-          usersList.push(existingUser);
-          localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(usersList));
-        }
-
-        const authUser: AuthUser = {
-          id: existingUser.id,
-          name: existingUser.name || googleName,
-          email: existingUser.email,
-          role: existingUser.role || 'admin',
-          businessName: existingUser.businessName || gBusinessName || 'SK Khan Traders',
-          phone: existingUser.phone || gPhone || '',
-          provider: 'google',
-          createdAt: existingUser.createdAt || new Date().toISOString(),
-        };
-
-        if (rememberMe) {
-          saveStoredUser(authUser);
-        }
-
-        // Also ensure this account is remembered in device phone accounts
-        try {
-          const currentRaw = localStorage.getItem(STORAGE_PHONE_GOOGLE_ACCOUNTS_KEY);
-          let currentList: GoogleDeviceAccount[] = currentRaw ? JSON.parse(currentRaw) : [];
-          if (!currentList.some((a: any) => a.email && a.email.toLowerCase() === googleEmail.trim().toLowerCase())) {
-            currentList.push({
-              id: `g-acc-${Date.now()}`,
-              name: googleName.trim(),
-              email: googleEmail.trim().toLowerCase(),
-              businessName: gBusinessName,
-              phone: gPhone,
-              avatarColor: 'from-blue-600 to-indigo-600',
-            });
-            localStorage.setItem(STORAGE_PHONE_GOOGLE_ACCOUNTS_KEY, JSON.stringify(currentList));
-            setGoogleAccounts(currentList);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-
-        setIsGoogleLoading(false);
-        setShowGooglePicker(false);
-        setSuccessMessage(`Signed in with Google as ${authUser.email}`);
-
-        setTimeout(() => {
-          onLoginSuccess(authUser);
-        }, 350);
-      } catch (err) {
-        console.error(err);
-        setIsGoogleLoading(false);
-        setErrorMessage('Google Sign-In encountered an error. Please try again.');
-      }
-    }, 600);
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!email || !password) {
-      setErrorMessage('Please enter both Email and Password');
+    if (!email.trim() || !password) {
+      setErrorMessage('Please enter your email and password.');
       return;
     }
 
+    setIsLoading(true);
     try {
-      const storedUsersRaw = localStorage.getItem(STORAGE_USERS_KEY);
-      const usersList = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+      const { user, error } = await signInWithEmail(email, password);
 
-      const found = usersList.find(
-        (u: any) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
-      );
-
-      if (found) {
-        const authUser: AuthUser = {
-          id: found.id,
-          name: found.name || 'User',
-          email: found.email,
-          role: found.role || 'admin',
-          businessName: found.businessName || '',
-          phone: found.phone || '',
-          provider: found.provider || 'email',
-          createdAt: found.createdAt || new Date().toISOString(),
-        };
-
-        if (rememberMe) {
-          saveStoredUser(authUser);
+      if (error) {
+        let msg = error.message;
+        if (msg.toLowerCase().includes('invalid login credentials')) {
+          msg = 'Invalid email or password. Please check and try again.';
+        } else if (msg.toLowerCase().includes('email not confirmed')) {
+          msg = 'Your email is not confirmed yet. Please check your inbox for the confirmation link.';
         }
-        setSuccessMessage('Logged in successfully!');
-        setTimeout(() => {
-          onLoginSuccess(authUser);
-        }, 400);
-      } else {
-        const emailExists = usersList.some(
-          (u: any) => u.email.toLowerCase() === email.trim().toLowerCase()
-        );
-        if (emailExists) {
-          setErrorMessage('Incorrect password. Please try again.');
-        } else {
-          setErrorMessage('Account not found with this email. Please sign up or continue with Google.');
-        }
+        setErrorMessage(msg);
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      setErrorMessage('Login failed. Please try again.');
-    }
-  };
 
-  const handleQuickDemoLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    try {
-      const storedUsersRaw = localStorage.getItem(STORAGE_USERS_KEY);
-      const usersList = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
-      const found = usersList.find(
-        (u: any) => u.email.toLowerCase() === demoEmail.toLowerCase()
-      );
-      if (found) {
-        const authUser: AuthUser = {
-          id: found.id,
-          name: found.name,
-          email: found.email,
-          role: found.role || 'admin',
-          businessName: found.businessName,
-          phone: found.phone,
-          provider: 'demo',
-          createdAt: found.createdAt,
-        };
-        saveStoredUser(authUser);
-        setSuccessMessage(`Logged in as ${found.name}`);
+      if (user) {
+        setSuccessMessage('Successfully signed in!');
         setTimeout(() => {
-          onLoginSuccess(authUser);
+          onLoginSuccess(user);
+          if (onClose) onClose();
         }, 300);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred during sign in.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!email || !password || !fullName) {
-      setErrorMessage('Please fill in Name, Email and Password');
+    if (!email.trim() || !password) {
+      setErrorMessage('Please enter email and password.');
       return;
     }
 
     if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters');
+      setErrorMessage('Password must be at least 6 characters long.');
       return;
     }
 
-    try {
-      const storedUsersRaw = localStorage.getItem(STORAGE_USERS_KEY);
-      const usersList = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter.');
+      return;
+    }
 
-      const alreadyExists = usersList.some(
-        (u: any) => u.email.toLowerCase() === email.trim().toLowerCase()
+    setIsLoading(true);
+    try {
+      const { user, session, error, requiresEmailConfirmation } = await signUpWithEmail(
+        email, 
+        password, 
+        { fullName, businessName, phone }
       );
 
-      if (alreadyExists) {
-        setErrorMessage('An account with this email already exists. Please log in.');
+      if (error) {
+        let msg = error.message;
+        if (msg.toLowerCase().includes('already registered')) {
+          msg = 'This email is already registered. Please sign in instead.';
+        }
+        setErrorMessage(msg);
         return;
       }
 
-      const newUser = {
-        id: `user-${Date.now()}`,
-        email: email.trim().toLowerCase(),
-        password: password,
-        name: fullName.trim(),
-        businessName: businessName.trim() || 'My Business',
-        phone: phone.trim(),
-        role: 'admin',
-        provider: 'email',
-        createdAt: new Date().toISOString(),
-      };
-
-      usersList.push(newUser);
-      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(usersList));
-
-      const authUser: AuthUser = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: 'admin',
-        businessName: newUser.businessName,
-        phone: newUser.phone,
-        provider: 'email',
-        createdAt: newUser.createdAt,
-      };
-
-      saveStoredUser(authUser);
-      setSuccessMessage('Account created successfully!');
-      setTimeout(() => {
-        onLoginSuccess(authUser);
-      }, 400);
-    } catch (err) {
-      console.error(err);
-      setErrorMessage('Registration failed. Please try again.');
+      if (requiresEmailConfirmation) {
+        setSuccessMessage('Account created! A confirmation email has been sent. Please check your inbox to activate your account, or sign in if confirmation is turned off.');
+        setMode('login');
+      } else if (user) {
+        setSuccessMessage('Account created successfully! Welcome.');
+        setTimeout(() => {
+          onLoginSuccess(user);
+          if (onClose) onClose();
+        }, 400);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred during sign up.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setErrorMessage('Please enter your registered email address');
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    if (!email.trim()) {
+      setErrorMessage('Please enter your registered email address.');
       return;
     }
-    setSuccessMessage('Password reset link sent to ' + email + ' (Simulation)');
+
+    setIsLoading(true);
+    try {
+      const { error } = await sendPasswordResetEmail(email);
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setSuccessMessage(`Password reset link has been sent to ${email}. Please check your inbox and spam folder.`);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to send password reset email.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    if (!password) {
+      setErrorMessage('Please enter a new password.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await updatePassword(password);
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setSuccessMessage('Password updated successfully! You can now sign in.');
+        setPassword('');
+        setConfirmPassword('');
+        setTimeout(() => {
+          setMode('login');
+        }, 1500);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to update password.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        setErrorMessage(error.message || 'Google Sign-In failed. Please try again or use Email.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Google Sign-In failed.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto no-print">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Top Header Banner */}
-        <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 p-6 text-white relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div 
+        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Gradient Header */}
+        <div className="relative bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-950 text-white px-6 pt-6 pb-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner">
+                {mode === 'signup' ? (
+                  <UserPlus className="w-5 h-5 text-blue-200" />
+                ) : mode === 'forgot' || mode === 'reset-password' ? (
+                  <KeyRound className="w-5 h-5 text-blue-200" />
+                ) : (
+                  <LogIn className="w-5 h-5 text-blue-200" />
+                )}
               </div>
               <div>
-                <h2 className="text-xl font-black tracking-tight">SR Group Portal</h2>
-                <p className="text-xs text-blue-200 font-medium">Google Sign-In & GST Cloud Access</p>
+                <h3 className="font-extrabold text-lg text-white tracking-tight">
+                  {mode === 'signup' && 'Create Supabase Account'}
+                  {mode === 'login' && 'Welcome to SR Group'}
+                  {mode === 'forgot' && 'Reset Password'}
+                  {mode === 'reset-password' && 'Set New Password'}
+                </h3>
+                <p className="text-xs text-blue-200/90 font-medium">
+                  {mode === 'signup' && 'Register your business to sync billing data'}
+                  {mode === 'login' && 'Sign in to access bills, khata & reports'}
+                  {mode === 'forgot' && 'Enter your email to receive recovery instructions'}
+                  {mode === 'reset-password' && 'Enter your new secure password'}
+                </p>
               </div>
             </div>
 
             {allowClose && onClose && (
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 title="Close"
               >
                 <X className="w-4 h-4" />
@@ -469,488 +313,451 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
           </div>
 
-          {/* Tab Switchers */}
-          <div className="flex bg-black/20 p-1 rounded-xl mt-5 backdrop-blur-xs">
-            <button
-              onClick={() => { setMode('login'); setShowGooglePicker(false); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                mode === 'login' 
-                  ? 'bg-white text-blue-900 shadow-sm' 
-                  : 'text-blue-100 hover:text-white'
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
-            </button>
-
-            <button
-              onClick={() => { setMode('signup'); setShowGooglePicker(false); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                mode === 'signup' 
-                  ? 'bg-white text-blue-900 shadow-sm' 
-                  : 'text-blue-100 hover:text-white'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Create Account</span>
-            </button>
-          </div>
+          {/* Navigation Tabs (Login / Sign Up) */}
+          {(mode === 'login' || mode === 'signup') && (
+            <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl mt-5 backdrop-blur-sm border border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  mode === 'login'
+                    ? 'bg-white text-blue-900 shadow-md'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signup');
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  mode === 'signup'
+                    ? 'bg-white text-blue-900 shadow-md'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Create Account</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Form Body */}
-        <div className="p-6 space-y-4">
-          
+        {/* Modal Body */}
+        <div className="p-6">
+          {/* Error Message Box */}
           {errorMessage && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800 font-medium">
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
+              <div className="flex-1 font-medium leading-relaxed">{errorMessage}</div>
             </div>
           )}
 
+          {/* Success Message Box */}
           {successMessage && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 font-semibold">
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>{successMessage}</span>
+              <div className="flex-1 font-medium leading-relaxed">{successMessage}</div>
             </div>
           )}
 
-          {/* GOOGLE SIGN IN SECTION (AVAILABLE IN BOTH SIGN IN & SIGN UP) */}
-          {mode !== 'forgot' && (
-            <div className="space-y-3">
-              {showGooglePicker ? (
-                /* Authentic Google Account Chooser (Showing all phone/Google accounts) */
-                <div className="p-4 bg-slate-50/90 border-2 border-blue-200 rounded-3xl space-y-3.5 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="text-center pb-2 border-b border-slate-200/80">
-                    <div className="w-10 h-10 bg-white rounded-full shadow-xs border border-slate-200 flex items-center justify-center mx-auto mb-1.5">
-                      <GoogleIcon className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-sm font-black text-slate-900">Choose an account</h3>
-                    <p className="text-[11px] text-slate-500">
-                      to continue to <strong className="text-slate-800 font-bold">Vyapar ERP & Billing</strong>
-                    </p>
-                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100/70 text-blue-800 text-[10px] font-bold mt-1.5">
-                      <Smartphone className="w-3 h-3 text-blue-700" />
-                      <span>Phone & Google Accounts ({googleAccounts.length} saved)</span>
-                    </div>
-                  </div>
-
-                  {/* Accounts List */}
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {googleAccounts.map((acc) => (
-                      <div
-                        key={acc.id}
-                        onClick={() => {
-                          if (!isGoogleLoading) {
-                            executeGoogleLogin(acc.email, acc.name, acc.businessName, acc.phone);
-                          }
-                        }}
-                        className="w-full p-2.5 bg-white hover:bg-blue-50/90 active:bg-blue-100/80 border border-slate-200 hover:border-blue-400 rounded-2xl flex items-center justify-between transition-all cursor-pointer group shadow-2xs"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${acc.avatarColor || 'from-blue-600 to-indigo-600'} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs`}>
-                            {acc.name ? acc.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'G'}
-                          </div>
-                          <div className="min-w-0 text-left">
-                            <p className="text-xs font-bold text-slate-900 group-hover:text-blue-700 truncate">
-                              {acc.name}
-                            </p>
-                            <p className="text-[11px] text-slate-500 font-mono truncate">
-                              {acc.email}
-                            </p>
-                            {acc.businessName && (
-                              <p className="text-[10px] text-blue-600 font-semibold truncate">
-                                🏢 {acc.businessName}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 shrink-0 ml-2">
-                          <span className="text-[10px] font-bold text-blue-700 bg-blue-100 group-hover:bg-blue-600 group-hover:text-white px-2.5 py-1 rounded-full transition-colors">
-                            Continue
-                          </span>
-                          {googleAccounts.length > 1 && (
-                            <button
-                              type="button"
-                              title="Remove this account from options"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const updated = googleAccounts.filter(a => a.id !== acc.id);
-                                savePhoneAccounts(updated.length > 0 ? updated : DEFAULT_PHONE_ACCOUNTS);
-                              }}
-                              className="p-1 text-slate-300 hover:text-rose-600 rounded-md transition-colors cursor-pointer"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Add Another Account Toggle or Form */}
-                  {!showAddAccountForm ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddAccountForm(true)}
-                      className="w-full py-2 px-3 bg-white hover:bg-slate-100 border border-dashed border-slate-300 hover:border-blue-400 rounded-xl text-slate-700 hover:text-blue-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-blue-600" />
-                      <span>+ Use another account / Add phone email</span>
-                    </button>
-                  ) : (
-                    <form onSubmit={handleAddNewAccount} className="p-3 bg-white border border-blue-200 rounded-2xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                          <GoogleIcon className="w-3 h-3" />
-                          <span>Add another Google Account</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddAccountForm(false)}
-                          className="text-slate-400 hover:text-slate-600 p-1"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <input
-                        type="email"
-                        required
-                        placeholder="yourname@gmail.com *"
-                        value={newAccEmail}
-                        onChange={(e) => setNewAccEmail(e.target.value)}
-                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <input
-                          type="text"
-                          placeholder="Your Name (optional)"
-                          value={newAccName}
-                          onChange={(e) => setNewAccName(e.target.value)}
-                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Business Name (optional)"
-                          value={newAccBusiness}
-                          onChange={(e) => setNewAccBusiness(e.target.value)}
-                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div className="flex gap-1.5 pt-1">
-                        <button
-                          type="submit"
-                          className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer"
-                        >
-                          Sign In & Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddAccountForm(false)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  )}
-
-                  {/* Footer actions */}
-                  <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setShowGooglePicker(false)}
-                      className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5 rotate-180" />
-                      <span>Back to standard login</span>
-                    </button>
-                    <span className="text-[10px] text-slate-400">Google Auth</span>
-                  </div>
-                </div>
-              ) : (
-                /* Main Google Sign-In Button */
-                <>
-                  <button
-                    type="button"
-                    disabled={isGoogleLoading}
-                    onClick={() => setShowGooglePicker(true)}
-                    className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 active:bg-slate-100 border-2 border-slate-200 hover:border-slate-300 rounded-2xl text-slate-800 font-bold text-sm shadow-xs transition-all flex items-center justify-center gap-3 group relative cursor-pointer"
-                  >
-                    {isGoogleLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                        <span className="text-slate-600">Connecting to Google...</span>
-                      </>
-                    ) : (
-                      <>
-                        <GoogleIcon className="w-5 h-5" />
-                        <span className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                          Continue with Google
-                        </span>
-                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full ml-auto flex items-center gap-1">
-                          <Smartphone className="w-2.5 h-2.5 text-blue-600" />
-                          <span>{googleAccounts.length} {googleAccounts.length > 1 ? 'Accounts' : 'Account'}</span>
-                        </span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Fast Account Selector / Switch Google ID */}
-                  <div className="flex items-center justify-between px-1 text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1.5 truncate">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                      <span className="truncate">Active on phone: <strong>{primaryGoogleAccount.email}</strong></span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowGooglePicker(true)}
-                      className="text-blue-600 hover:text-blue-800 font-semibold underline ml-2 shrink-0 cursor-pointer"
-                    >
-                      Choose Account
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Aesthetic divider */}
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink mx-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 bg-white px-1">
-                  or sign in with email
-                </span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-            </div>
-          )}
-
+          {/* 1. SIGN IN (LOGIN) FORM */}
           {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSignIn} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-slate-700">
                     Password
                   </label>
                   <button
                     type="button"
-                    onClick={() => setMode('forgot')}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 cursor-pointer"
+                    onClick={() => {
+                      setMode('forgot');
+                      setErrorMessage('');
+                      setSuccessMessage('');
+                    }}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                   >
-                    Forgot?
+                    Forgot Password?
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
-                  />
-                  <span>Keep me signed in</span>
-                </label>
-              </div>
-
+              {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/25 transition-all transform active:scale-98 disabled:opacity-60 cursor-pointer"
               >
-                <span>Sign In with Password</span>
-                <ArrowRight className="w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Signing in with Supabase...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4" />
+                    <span>Sign In</span>
+                  </>
+                )}
+              </button>
+
+              {/* Social Login Divider */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase">
+                  <span className="bg-white px-2 text-slate-400 font-bold">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google OAuth Button */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading}
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-xs transition-all cursor-pointer active:scale-98 disabled:opacity-60"
+              >
+                {isGoogleLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
+                ) : (
+                  <GoogleIcon className="w-4 h-4" />
+                )}
+                <span>Sign In with Google</span>
               </button>
             </form>
           )}
 
+          {/* 2. SIGN UP (CREATE ACCOUNT) FORM */}
           {mode === 'signup' && (
-            <form onSubmit={handleSignUp} className="space-y-3">
+            <form onSubmit={handleSignUp} className="space-y-3.5 max-h-[60vh] overflow-y-auto pr-1">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Full Name *
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Full Name / Contact Person
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Your Name / Proprietor"
-                    className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="e.g. S.K. Khan"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Business / Firm Name
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Business / Company Name (Optional)
                 </label>
                 <div className="relative">
-                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="e.g. SR Enterprises / Traders"
-                    className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="e.g. SR Group / S.K. Khan Traders"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email Address *
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Email Address (Used for Login)
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Mobile / WhatsApp
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Mobile Number (Optional)
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="+91 98200 00000"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Password (min 6 char)
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/25 transition-all transform active:scale-98 disabled:opacity-60 cursor-pointer mt-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creating Account with Supabase...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    <span>Create Account</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* 3. FORGOT PASSWORD FORM */}
+          {mode === 'forgot' && (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Enter your registered account email address. Supabase Auth will send you a secure link to reset your password.
+              </p>
+
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Create Password *
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Email Address
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@company.com"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/25 transition-all transform active:scale-98 disabled:opacity-60 cursor-pointer"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Sending Reset Link...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-4 h-4" />
+                    <span>Send Password Reset Link</span>
+                  </>
+                )}
+              </button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setErrorMessage('');
+                    setSuccessMessage('');
+                  }}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                >
+                  ← Back to Sign In
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* 4. SET NEW PASSWORD FORM (RECOVERY MODE) */}
+          {mode === 'reset-password' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Please enter your new password to securely update your Supabase account.
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  New Password (min 6 characters)
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
-              >
-                <span>Register & Open Account</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-
-          {mode === 'forgot' && (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="text-center py-2">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2">
-                  <KeyRound className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-slate-800 text-sm">Reset Your Password</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Enter your email and we will send you a reset link</p>
-              </div>
-
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Registered Email
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Confirm New Password
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    type="email"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@business.com"
-                    className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all cursor-pointer"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/25 transition-all transform active:scale-98 disabled:opacity-60 cursor-pointer"
               >
-                Send Password Reset Email
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode('login')}
-                className="w-full text-center text-xs font-bold text-slate-600 hover:text-slate-800 pt-2 cursor-pointer"
-              >
-                ← Back to Sign In
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Save New Password</span>
+                  </>
+                )}
               </button>
             </form>
           )}
 
+          {/* Bottom Security Footer */}
+          <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Secured by Supabase Auth</span>
+            </span>
+            <span className="text-slate-400 font-mono text-[10px]">
+              256-bit Encrypted
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-

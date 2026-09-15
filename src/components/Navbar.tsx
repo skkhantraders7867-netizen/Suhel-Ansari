@@ -232,10 +232,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <button
                   onClick={onOpenAuthModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 shadow-xs transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
                 >
-                  <GoogleGIcon className="w-3.5 h-3.5" />
-                  <span>Google Sign-In</span>
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
                 </button>
               )}
 
@@ -245,10 +245,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl mb-1.5">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold text-slate-800">{currentUser.name}</p>
-                      {currentUser.provider === 'google' && (
+                      {currentUser.provider === 'google' ? (
                         <span className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-white border border-blue-200 px-1.5 py-0.5 rounded-full shadow-2xs">
                           <GoogleGIcon className="w-2.5 h-2.5" />
                           <span>Google</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded-full">
+                          <span>Supabase Auth</span>
                         </span>
                       )}
                     </div>
@@ -265,8 +269,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                   >
-                    <GoogleGIcon className="w-3.5 h-3.5" />
-                    <span>Switch / Google Login</span>
+                    <User className="w-4 h-4 text-slate-500" />
+                    <span>Switch / Manage Account</span>
                   </button>
 
                   <button
@@ -274,7 +278,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       setShowUserDropdown(false);
                       onOpenSettings();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                   >
                     <Settings className="w-4 h-4 text-slate-500" />
                     <span>Business Settings</span>
@@ -291,15 +295,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span>Supabase Cloud DB</span>
                   </button>
 
+                  <div className="border-t border-slate-100 my-1"></div>
+
                   <button
                     onClick={() => {
                       setShowUserDropdown(false);
                       onLogout();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors mt-1"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Logout Account</span>
+                    <span>Sign Out</span>
                   </button>
                 </div>
               )}

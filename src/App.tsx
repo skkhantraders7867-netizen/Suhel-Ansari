@@ -21,10 +21,17 @@ import {
 } from './data/initialAttendanceData';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
-import { AuthModal, getStoredUser, saveStoredUser } from './components/AuthModal';
+import { AuthModal } from './components/AuthModal';
+import { AppLoadingScreen } from './components/AppLoadingScreen';
 import { ConfirmModal } from './components/ConfirmModal';
 import { loadUserAccountData, saveUserAccountData, createFreshUserData, UserAccountData } from './utils/userDataStorage';
 import { pushUserAccountDataToSupabase, pushUserAccountDataToSupabaseNow, fetchUserAccountDataFromSupabase } from './utils/supabaseSync';
+import { 
+  subscribeToAuthState, 
+  getSupabaseSession, 
+  signOutUser, 
+  mapSupabaseUserToAuthUser 
+} from './utils/supabaseAuth';
 import { SupabaseSyncModal } from './components/SupabaseSyncModal';
 import { DashboardView } from './components/DashboardView';
 import { InvoiceListView } from './components/InvoiceListView';
@@ -48,16 +55,9 @@ import { BusinessSettingsModal } from './components/BusinessSettingsModal';
 import { RecordPaymentModal } from './components/RecordPaymentModal';
 
 export default function App() {
-  // --- AUTHENTICATION STATE ---
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    return getStoredUser() || {
-      id: 'usr-skk-default',
-      name: 'S K Khan',
-      email: 'skkhantraders7867@gmail.com',
-      businessName: 'SR Group',
-      provider: 'google',
-    };
-  });
+  // --- SUPABASE AUTHENTICATION STATE ---
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const isSwitchingAccountRef = useRef(false);
 
@@ -91,6 +91,61 @@ export default function App() {
       ? initialUserData.attendanceCompanies
       : [];
   });
+
+  // Handler to load user data into state
+  const applyUserData = (user: AuthUser) => {
+    const loaded = loadUserAccountData(user);
+    setBusinessProfile({ ...loaded.businessProfile });
+    setParties([...loaded.parties]);
+    setItems([...loaded.items]);
+    setInvoices([...loaded.invoices]);
+    setExpenses([...loaded.expenses]);
+    setBankAccounts([...loaded.bankAccounts]);
+    setCashTransactions([...loaded.cashTransactions]);
+    setEwayBills([...loaded.ewayBills]);
+    setStaffMembers(Array.isArray(loaded.staffMembers) ? [...loaded.staffMembers] : []);
+    setAttendanceRecords(Array.isArray(loaded.attendanceRecords) ? [...loaded.attendanceRecords] : []);
+    setAttendanceCompanies(Array.isArray(loaded.attendanceCompanies) ? [...loaded.attendanceCompanies] : []);
+  };
+
+  // 1. Initialize Supabase Auth session and real-time state listener
+  useEffect(() => {
+    let isMounted = true;
+
+    // Check existing session
+    getSupabaseSession().then(session => {
+      if (!isMounted) return;
+      if (session?.user) {
+        const authUser = mapSupabaseUserToAuthUser(session.user);
+        setCurrentUser(authUser);
+        applyUserData(authUser);
+      }
+      setIsAuthLoading(false);
+    });
+
+    // Subscribe to real-time auth changes (Sign In, Sign Out, Token Refresh, Password Recovery)
+    const subscription = subscribeToAuthState((event, session, authUser) => {
+      if (!isMounted) return;
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        if (authUser) {
+          setCurrentUser(authUser);
+          setIsAuthModalOpen(false);
+          applyUserData(authUser);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setIsAuthModalOpen(true);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        setIsAuthModalOpen(true);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   // Auto-save changes to local storage & Supabase Cloud Backend
   useEffect(() => {
@@ -164,27 +219,24 @@ export default function App() {
   // Handler to switch account and cleanly swap data
   const switchUserAccount = (newUser: AuthUser) => {
     isSwitchingAccountRef.current = true;
-    saveStoredUser(newUser);
     setCurrentUser(newUser);
-
-    const freshOrSavedData = loadUserAccountData(newUser);
-    setBusinessProfile({ ...freshOrSavedData.businessProfile });
-    setParties([...freshOrSavedData.parties]);
-    setItems([...freshOrSavedData.items]);
-    setInvoices([...freshOrSavedData.invoices]);
-    setExpenses([...freshOrSavedData.expenses]);
-    setBankAccounts([...freshOrSavedData.bankAccounts]);
-    setCashTransactions([...freshOrSavedData.cashTransactions]);
-    setEwayBills([...freshOrSavedData.ewayBills]);
-    setStaffMembers(Array.isArray(freshOrSavedData.staffMembers) ? [...freshOrSavedData.staffMembers] : []);
-    setAttendanceRecords(Array.isArray(freshOrSavedData.attendanceRecords) ? [...freshOrSavedData.attendanceRecords] : []);
-    setAttendanceCompanies(Array.isArray(freshOrSavedData.attendanceCompanies) ? [...freshOrSavedData.attendanceCompanies] : []);
+    applyUserData(newUser);
 
     setTimeout(() => {
       isSwitchingAccountRef.current = false;
     }, 150);
 
     setCurrentView('DASHBOARD');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+    } catch (e) {
+      console.error('Sign out error:', e);
+    }
+    setCurrentUser(null);
+    setIsAuthModalOpen(true);
   };
 
   // --- NAVIGATION & VIEWS ---
@@ -924,6 +976,10 @@ export default function App() {
     });
   };
 
+  if (isAuthLoading) {
+    return <AppLoadingScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
       
@@ -939,11 +995,7 @@ export default function App() {
         onOpenCloudSync={() => setIsCloudSyncOpen(true)}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onLogout={() => {
-          saveStoredUser(null);
-          setCurrentUser(null);
-          setIsAuthModalOpen(true);
-        }}
+        onLogout={handleSignOut}
       />
 
       {/* Main Content Area */}
