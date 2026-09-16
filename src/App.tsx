@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Invoice, Party, Item, BusinessProfile, ViewMode, DocumentType, PaymentMode,
   Expense, BankAccount, CashTransaction, EWayBillRecord, AuthUser,
-  StaffMember, AttendanceRecord, AttendanceCompany
+  StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher
 } from './types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -53,6 +53,7 @@ import { InvoicePreviewModal } from './components/InvoicePreviewModal';
 import { HsnFinderModal } from './components/HsnFinderModal';
 import { BusinessSettingsModal } from './components/BusinessSettingsModal';
 import { RecordPaymentModal } from './components/RecordPaymentModal';
+import { PaymentReceivedVoucherModal } from './components/PaymentReceivedVoucherModal';
 
 export default function App() {
   // --- SUPABASE AUTHENTICATION STATE ---
@@ -91,6 +92,11 @@ export default function App() {
       ? initialUserData.attendanceCompanies
       : [];
   });
+  const [paymentVouchers, setPaymentVouchers] = useState<PaymentVoucher[]>(() => {
+    return Array.isArray(initialUserData.paymentVouchers)
+      ? initialUserData.paymentVouchers
+      : [];
+  });
 
   // Handler to load user data into state
   const applyUserData = (user: AuthUser) => {
@@ -106,6 +112,7 @@ export default function App() {
     setStaffMembers(Array.isArray(loaded.staffMembers) ? [...loaded.staffMembers] : []);
     setAttendanceRecords(Array.isArray(loaded.attendanceRecords) ? [...loaded.attendanceRecords] : []);
     setAttendanceCompanies(Array.isArray(loaded.attendanceCompanies) ? [...loaded.attendanceCompanies] : []);
+    setPaymentVouchers(Array.isArray(loaded.paymentVouchers) ? [...loaded.paymentVouchers] : []);
   };
 
   // 1. Initialize Supabase Auth session and real-time state listener
@@ -163,11 +170,12 @@ export default function App() {
         staffMembers,
         attendanceRecords,
         attendanceCompanies,
+        paymentVouchers,
       };
       // Save locally & debounced push to Supabase table
       pushUserAccountDataToSupabase(currentUser, fullData);
     }
-  }, [currentUser, businessProfile, invoices, parties, items, expenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies]);
+  }, [currentUser, businessProfile, invoices, parties, items, expenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers]);
 
   // Asynchronously sync from Supabase when user logs in or switches
   useEffect(() => {
@@ -208,6 +216,9 @@ export default function App() {
       }
       if (Array.isArray(cloudData.attendanceCompanies) && cloudData.attendanceCompanies.length > 0) {
         setAttendanceCompanies(cloudData.attendanceCompanies);
+      }
+      if (Array.isArray(cloudData.paymentVouchers) && cloudData.paymentVouchers.length > 0) {
+        setPaymentVouchers(cloudData.paymentVouchers);
       }
     });
 
@@ -255,6 +266,12 @@ export default function App() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentTargetInvoice, setPaymentTargetInvoice] = useState<Invoice | null>(null);
   const [paymentTargetParty, setPaymentTargetParty] = useState<Party | null>(null);
+
+  // Payment Received Voucher Modal
+  const [isPaymentVoucherModalOpen, setIsPaymentVoucherModalOpen] = useState(false);
+  const [voucherTargetParty, setVoucherTargetParty] = useState<Party | null>(null);
+  const [voucherTargetInvoice, setVoucherTargetInvoice] = useState<Invoice | null>(null);
+  const [editingPaymentVoucher, setEditingPaymentVoucher] = useState<PaymentVoucher | null>(null);
 
   // In-App Confirm Dialog (Replaces blocked window.confirm)
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -463,6 +480,113 @@ export default function App() {
         return {
           ...p,
           currentBalance: Math.max(0, p.currentBalance - data.amount),
+        };
+      }
+      return p;
+    }));
+  };
+
+  // --- PAYMENT RECEIVED VOUCHER ACTIONS ---
+  const handleOpenPaymentVoucherModal = (party?: Party | null, invoice?: Invoice | null, voucher?: PaymentVoucher | null) => {
+    setVoucherTargetParty(party || null);
+    setVoucherTargetInvoice(invoice || null);
+    setEditingPaymentVoucher(voucher || null);
+    setIsPaymentVoucherModalOpen(true);
+  };
+
+  const handleSavePaymentVoucher = (voucher: PaymentVoucher, linkedInvoiceId?: string, bankAccountId?: string) => {
+    setPaymentVouchers(prev => {
+      const exists = prev.some(v => v.id === voucher.id);
+      if (exists) {
+        return prev.map(v => v.id === voucher.id ? voucher : v);
+      }
+      return [voucher, ...prev];
+    });
+
+    // 1. Update linked Invoice if any
+    if (linkedInvoiceId) {
+      setInvoices(prev => prev.map(inv => {
+        if (inv.id === linkedInvoiceId) {
+          const newPaid = Math.min(inv.grandTotal, (inv.paidAmount || 0) + voucher.amount);
+          const newDue = Math.max(0, inv.grandTotal - newPaid);
+          return {
+            ...inv,
+            paidAmount: newPaid,
+            balanceDue: newDue,
+            paymentStatus: newDue === 0 ? 'PAID' : 'PARTIAL',
+            paymentMode: voucher.paymentMode,
+            paymentReference: voucher.referenceNumber,
+          };
+        }
+        return inv;
+      }));
+    }
+
+    // 2. Update Party balance (Credit reduces receivable)
+    setParties(prev => prev.map(p => {
+      if (p.id === voucher.partyId) {
+        return {
+          ...p,
+          currentBalance: (p.currentBalance || 0) - voucher.amount,
+        };
+      }
+      return p;
+    }));
+
+    // 3. If Cash, record inflow in cashTransactions
+    if (voucher.paymentMode === 'CASH') {
+      const newCashTx: CashTransaction = {
+        id: `cash-pv-${Date.now()}`,
+        date: voucher.date,
+        type: 'INFLOW',
+        category: 'CUSTOMER_PAYMENT',
+        amount: voucher.amount,
+        description: `Payment Voucher #${voucher.voucherNumber} from ${voucher.partyName}`,
+        referenceNumber: voucher.voucherNumber,
+        partyName: voucher.partyName,
+        createdAt: new Date().toISOString(),
+      };
+      setCashTransactions(prev => [newCashTx, ...prev]);
+    } else if (bankAccountId) {
+      // If Bank, update bank account balance
+      setBankAccounts(prev => prev.map(acc => {
+        if (acc.id === bankAccountId) {
+          return { ...acc, balance: acc.balance + voucher.amount };
+        }
+        return acc;
+      }));
+    }
+  };
+
+  const handleDeletePaymentVoucher = (voucherId: string) => {
+    const v = paymentVouchers.find(p => p.id === voucherId);
+    if (!v) return;
+
+    setPaymentVouchers(prev => prev.filter(p => p.id !== voucherId));
+
+    // Reverse invoice paid balance if linked
+    if (v.invoiceId) {
+      setInvoices(prev => prev.map(inv => {
+        if (inv.id === v.invoiceId) {
+          const newPaid = Math.max(0, (inv.paidAmount || 0) - v.amount);
+          const newDue = Math.max(0, inv.grandTotal - newPaid);
+          return {
+            ...inv,
+            paidAmount: newPaid,
+            balanceDue: newDue,
+            paymentStatus: newDue === inv.grandTotal ? 'UNPAID' : (newDue === 0 ? 'PAID' : 'PARTIAL'),
+          };
+        }
+        return inv;
+      }));
+    }
+
+    // Reverse party balance
+    setParties(prev => prev.map(p => {
+      if (p.id === v.partyId) {
+        return {
+          ...p,
+          currentBalance: (p.currentBalance || 0) + v.amount,
         };
       }
       return p;
@@ -1317,7 +1441,9 @@ export default function App() {
                       newPurchaseBill,
                       ...prev.map(i => i.id === est.id ? { ...i, quotationStatus: 'CONVERTED' as const, notes: `Converted to Purchase Bill ${newPurchaseBill.invoiceNumber}` } : i)
                     ]);
-                    setPreviewInvoice(newPurchaseBill);
+                    setEditingInvoice(newPurchaseBill);
+                    setInitialDocTypeForCreate('PURCHASE_BILL');
+                    setCurrentView('CREATE_INVOICE');
                   }}
                   onUpdateStatus={handleUpdateQuotationStatus}
                 />
@@ -1368,11 +1494,12 @@ export default function App() {
                   parties={parties}
                   invoices={invoices}
                   businessProfile={businessProfile}
+                  paymentVouchers={paymentVouchers}
                   onAddNewParty={handleAddNewParty}
                   onUpdateParty={handleUpdateParty}
                   onDeleteParty={handleDeleteParty}
                   onCreateInvoiceForParty={(partyId) => handleOpenCreateInvoice('TAX_INVOICE', partyId)}
-                  onRecordPayment={handleOpenPaymentForParty}
+                  onRecordPayment={(party) => handleOpenPaymentVoucherModal(party)}
                 />
               )}
 
@@ -1474,6 +1601,7 @@ export default function App() {
           staffMembers,
           attendanceRecords,
           attendanceCompanies,
+          paymentVouchers,
         }}
         onDataRestored={(restored) => {
           setBusinessProfile(restored.businessProfile);
@@ -1487,18 +1615,37 @@ export default function App() {
           if (restored.staffMembers) setStaffMembers(restored.staffMembers);
           if (restored.attendanceRecords) setAttendanceRecords(restored.attendanceRecords);
           if (restored.attendanceCompanies) setAttendanceCompanies(restored.attendanceCompanies);
+          if (restored.paymentVouchers) setPaymentVouchers(restored.paymentVouchers);
           setIsCloudSyncOpen(false);
         }}
         onClearAllData={handleResetData}
       />
 
-      {/* 4. Record Payment Modal */}
+      {/* 4. Record Payment Modal (Standard Quick Payment) */}
       <RecordPaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         targetInvoice={paymentTargetInvoice}
         targetParty={paymentTargetParty}
         onSavePayment={handleSavePayment}
+      />
+
+      {/* 4b. Payment Received Voucher Modal (Direct Ledger Accounting & Voucher Print) */}
+      <PaymentReceivedVoucherModal
+        isOpen={isPaymentVoucherModalOpen}
+        onClose={() => {
+          setIsPaymentVoucherModalOpen(false);
+          setEditingPaymentVoucher(null);
+        }}
+        targetParty={voucherTargetParty}
+        targetInvoice={voucherTargetInvoice}
+        parties={parties}
+        invoices={invoices}
+        bankAccounts={bankAccounts}
+        businessProfile={businessProfile}
+        editingVoucher={editingPaymentVoucher}
+        onSaveVoucher={handleSavePaymentVoucher}
+        onDeleteVoucher={handleDeletePaymentVoucher}
       />
 
       {/* 5. Email Login & Registration Modal */}

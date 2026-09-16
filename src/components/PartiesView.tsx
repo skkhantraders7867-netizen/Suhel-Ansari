@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { 
   Search, Plus, Phone, Mail, MapPin, Share2, 
   ArrowUpRight, ArrowDownRight, FileText, UserPlus, Trash2, Edit2, ShieldCheck, ChevronRight,
-  Printer, Percent, Download
+  Printer, Percent, Download, Receipt, Save, Check
 } from 'lucide-react';
-import { Party, Invoice, BusinessProfile } from '../types';
-import { formatIndianCurrency, generateUpiUrl, detectStateFromGSTIN } from '../utils/gstCalculations';
+import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
+import { formatIndianCurrency, generateUpiUrl, detectStateFromGSTIN, numberToIndianWords } from '../utils/gstCalculations';
 import { GST_STATES } from '../data/mockData';
 import { PartyLedgerPrintModal } from './PartyLedgerPrintModal';
 
@@ -13,6 +13,7 @@ interface PartiesViewProps {
   parties: Party[];
   invoices: Invoice[];
   businessProfile: BusinessProfile;
+  paymentVouchers?: PaymentVoucher[];
   onAddNewParty: (party: Omit<Party, 'id' | 'createdAt' | 'currentBalance'>) => Party;
   onUpdateParty: (party: Party) => void;
   onDeleteParty: (id: string) => void;
@@ -24,6 +25,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   parties = [],
   invoices = [],
   businessProfile,
+  paymentVouchers = [],
   onAddNewParty,
   onUpdateParty,
   onDeleteParty,
@@ -36,6 +38,13 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
 
+  // Opening Balance Inline Editing
+  const [isEditingOpeningBalance, setIsEditingOpeningBalance] = useState(false);
+  const [quickOpeningBalance, setQuickOpeningBalance] = useState<number>(0);
+  const [quickOpeningType, setQuickOpeningType] = useState<'DR' | 'CR'>('DR');
+  const [quickOpeningDate, setQuickOpeningDate] = useState<string>('2025-04-01');
+  const [isQuickSaved, setIsQuickSaved] = useState(false);
+
   // New Party Form
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
@@ -43,11 +52,23 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   const [formEmail, setFormEmail] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formCity, setFormCity] = useState('');
-  const [formPincode, setFormPincode] = useState('');
   const [formStateCode, setFormStateCode] = useState(businessProfile.stateCode || '07');
   const [formOpeningBalance, setFormOpeningBalance] = useState<number>(0);
+  const [formOpeningType, setFormOpeningType] = useState<'DR' | 'CR'>('DR');
+  const [formOpeningDate, setFormOpeningDate] = useState<string>('2025-04-01');
   const [formCreditLimit, setFormCreditLimit] = useState<number>(50000);
   const [formPaymentDays, setFormPaymentDays] = useState<number>(15);
+
+  // When selected party changes, update inline state
+  React.useEffect(() => {
+    if (selectedParty) {
+      setQuickOpeningBalance(Math.abs(selectedParty.openingBalance || 0));
+      setQuickOpeningType(selectedParty.openingBalanceType || ((selectedParty.openingBalance || 0) < 0 ? 'CR' : 'DR'));
+      setQuickOpeningDate(selectedParty.openingBalanceDate || '2025-04-01');
+      setIsEditingOpeningBalance(false);
+      setIsQuickSaved(false);
+    }
+  }, [selectedParty]);
 
   // Filter parties
   const filteredParties = parties.filter(p => {
@@ -60,7 +81,8 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   });
 
   // Calculate party ledger transactions
-  const partyInvoices = invoices.filter(inv => inv.partyId === selectedParty?.id);
+  const partyInvoices = invoices.filter(inv => inv.partyId === selectedParty?.id && inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE');
+  const partyVouchers = paymentVouchers.filter(pv => pv.partyId === selectedParty?.id);
 
   // WhatsApp Payment Reminder
   const handleSendReminder = (party: Party) => {
@@ -96,6 +118,7 @@ Thank you for your prompt response!`;
     if (!formName.trim()) return;
 
     const stateObj = GST_STATES.find(s => s.code === formStateCode) || GST_STATES[0];
+    const signedOpening = formOpeningType === 'CR' ? -Math.abs(formOpeningBalance) : Math.abs(formOpeningBalance);
 
     const newParty = onAddNewParty({
       type: activeType,
@@ -107,8 +130,9 @@ Thank you for your prompt response!`;
       city: formCity.trim() || '',
       state: stateObj ? stateObj.name : '',
       stateCode: stateObj ? stateObj.code : '',
-      pincode: formPincode.trim() || '',
-      openingBalance: formOpeningBalance,
+      openingBalance: signedOpening,
+      openingBalanceType: formOpeningType,
+      openingBalanceDate: formOpeningDate,
       creditLimit: formCreditLimit,
       paymentTermsDays: formPaymentDays,
     });
@@ -119,64 +143,82 @@ Thank you for your prompt response!`;
     setFormPhone('');
     setFormGstin('');
     setFormEmail('');
+    setFormAddress('');
+    setFormCity('');
+    setFormOpeningBalance(0);
+  };
+
+  const handleSaveQuickOpeningBalance = () => {
+    if (!selectedParty) return;
+    const signedBalance = quickOpeningType === 'CR' ? -Math.abs(quickOpeningBalance) : Math.abs(quickOpeningBalance);
+    const updated = {
+      ...selectedParty,
+      openingBalance: signedBalance,
+      openingBalanceType: quickOpeningType,
+      openingBalanceDate: quickOpeningDate,
+    };
+    onUpdateParty(updated);
+    setSelectedParty(updated);
+    setIsEditingOpeningBalance(false);
+    setIsQuickSaved(true);
+    setTimeout(() => setIsQuickSaved(false), 3000);
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6">
       
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Parties Khata & Ledger</h1>
-          <p className="text-xs text-slate-500">Track Customer & Supplier balances, statements, and WhatsApp payment reminders</p>
+      {/* Top Header & Search */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Party &amp; Ledger Directory</h1>
+          <p className="text-xs text-slate-500">Manage customers, vendors, opening balances, ledgers, and payment receipts</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Customer / Supplier Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          {/* Toggle Type */}
+          <div className="flex p-1 bg-slate-100 rounded-xl">
             <button
               onClick={() => {
                 setActiveType('CUSTOMER');
-                const firstCust = (parties || []).find(p => p.type === 'CUSTOMER');
+                const firstCust = parties.find(p => p.type === 'CUSTOMER');
                 if (firstCust) setSelectedParty(firstCust);
               }}
-              className={`px-3.5 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeType === 'CUSTOMER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Customers (Receivables)
+              Customers ({parties.filter(p => p.type === 'CUSTOMER').length})
             </button>
             <button
               onClick={() => {
                 setActiveType('SUPPLIER');
-                const firstSup = (parties || []).find(p => p.type === 'SUPPLIER');
-                if (firstSup) setSelectedParty(firstSup);
+                const firstSupp = parties.find(p => p.type === 'SUPPLIER');
+                if (firstSupp) setSelectedParty(firstSupp);
               }}
-              className={`px-3.5 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeType === 'SUPPLIER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Suppliers (Payables)
+              Suppliers ({parties.filter(p => p.type === 'SUPPLIER').length})
             </button>
           </div>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
           >
-            <UserPlus className="w-4 h-4" /> + Add {activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'}
+            <UserPlus className="w-4 h-4" /> Add {activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'}
           </button>
         </div>
       </div>
 
-      {/* Main Split: Parties List (Left) + Detailed Ledger (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Main Grid: Left List (5 cols), Right Details (7 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left: Parties List (5 Cols) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden max-h-[750px]">
-          
-          {/* Search bar */}
-          <div className="p-3.5 border-b border-slate-200 bg-slate-50">
+        {/* Left: Party List (5 Cols) */}
+        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          {/* Search Box */}
+          <div className="p-3.5 border-b border-slate-100 bg-slate-50/50">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
@@ -184,16 +226,16 @@ Thank you for your prompt response!`;
                 placeholder={`Search ${activeType.toLowerCase()}s by name, phone, GSTIN...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-600"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
 
-          {/* List items */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          {/* List Items */}
+          <div className="divide-y divide-slate-100 max-h-[620px] overflow-y-auto">
             {filteredParties.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
-                No {activeType.toLowerCase()}s found matching your search.
+                No {activeType.toLowerCase()}s found.
               </div>
             ) : (
               filteredParties.map((p) => {
@@ -248,7 +290,9 @@ Thank you for your prompt response!`;
                     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
                       <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {selectedParty.phone}</span>
                       {selectedParty.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {selectedParty.email}</span>}
-                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {selectedParty.city}, {selectedParty.state}</span>
+                      {(selectedParty.city || selectedParty.state) && (
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {[selectedParty.city, selectedParty.state].filter(Boolean).join(', ')}</span>
+                      )}
                     </div>
                     {selectedParty.gstin && (
                       <div className="font-mono text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-2">
@@ -271,6 +315,89 @@ Thank you for your prompt response!`;
                   </div>
                 </div>
 
+                {/* Opening Balance Quick Settings Card */}
+                <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-950 flex items-center gap-1">
+                      <span>⚖️ Opening Balance Configuration</span>
+                      {isQuickSaved && (
+                        <span className="text-emerald-700 font-bold text-[10.5px] bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Saved!
+                        </span>
+                      )}
+                    </span>
+                    {!isEditingOpeningBalance ? (
+                      <button
+                        onClick={() => setIsEditingOpeningBalance(true)}
+                        className="text-amber-800 hover:text-amber-950 font-bold text-[11px] underline"
+                      >
+                        ✏️ Edit Opening Balance
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditingOpeningBalance(false)}
+                        className="text-slate-500 hover:text-slate-700 text-[11px]"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+
+                  {!isEditingOpeningBalance ? (
+                    <div className="flex flex-wrap items-center gap-4 text-slate-700 text-[11.5px]">
+                      <div>
+                        <span className="text-slate-500">Opening Amount: </span>
+                        <strong className="font-mono text-slate-950">
+                          {formatIndianCurrency(Math.abs(selectedParty.openingBalance || 0))}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Type: </span>
+                        <span className="font-bold px-1.5 py-0.5 rounded bg-white border border-amber-300 text-amber-950">
+                          {selectedParty.openingBalanceType || ((selectedParty.openingBalance || 0) < 0 ? 'CR (Advance)' : 'DR (Receivable)')}
+                        </span>
+                      </div>
+                      {selectedParty.openingBalanceDate && (
+                        <div>
+                          <span className="text-slate-500">As on: </span>
+                          <strong className="text-slate-800">{selectedParty.openingBalanceDate}</strong>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <input 
+                        type="number"
+                        min="0"
+                        placeholder="Amount"
+                        value={quickOpeningBalance || ''}
+                        onChange={(e) => setQuickOpeningBalance(parseFloat(e.target.value) || 0)}
+                        className="px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-mono font-bold w-28"
+                      />
+                      <select
+                        value={quickOpeningType}
+                        onChange={(e) => setQuickOpeningType(e.target.value as 'DR' | 'CR')}
+                        className="px-2 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-bold"
+                      >
+                        <option value="DR">DR (Receivable / लेना है)</option>
+                        <option value="CR">CR (Advance / देना है)</option>
+                      </select>
+                      <input 
+                        type="date"
+                        value={quickOpeningDate}
+                        onChange={(e) => setQuickOpeningDate(e.target.value)}
+                        className="px-2 py-1.5 bg-white border border-amber-300 rounded-lg text-xs"
+                      />
+                      <button
+                        onClick={handleSaveQuickOpeningBalance}
+                        className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs"
+                      >
+                        <Save className="w-3.5 h-3.5" /> Save Balance
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Party Actions Bar */}
                 <div className="flex flex-wrap items-center gap-2.5">
                   <button
@@ -289,9 +416,9 @@ Thank you for your prompt response!`;
 
                   <button
                     onClick={() => onRecordPayment(selectedParty)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
                   >
-                    ₹ Record Payment
+                    <Receipt className="w-3.5 h-3.5" /> ₹ Record Payment (वाउचर)
                   </button>
 
                   {selectedParty.currentBalance > 0 && (
@@ -299,7 +426,7 @@ Thank you for your prompt response!`;
                       onClick={() => handleSendReminder(selectedParty)}
                       className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs rounded-xl border border-emerald-200 transition-colors"
                     >
-                      <Share2 className="w-3.5 h-3.5" /> Send WhatsApp Reminder
+                      <Share2 className="w-3.5 h-3.5" /> WhatsApp Reminder
                     </button>
                   )}
                 </div>
@@ -310,7 +437,7 @@ Thank you for your prompt response!`;
                 <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                      <span>Transaction Ledger History ({partyInvoices.length} Bills)</span>
+                      <span>Transaction Ledger History ({partyInvoices.length} Bills, {partyVouchers.length} Vouchers)</span>
                     </h3>
                     <span className="text-[10px] text-slate-500">Includes Sales, TDS Deductions (1%), and Payment receipts</span>
                   </div>
@@ -319,58 +446,92 @@ Thank you for your prompt response!`;
                     onClick={() => setIsLedgerModalOpen(true)}
                     className="flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-[11px] rounded-lg border border-blue-200 transition-colors"
                   >
-                    <Printer className="w-3.5 h-3.5" /> Full Statement Print
+                    <Printer className="w-3.5 h-3.5" /> Full Statement Print (1-Page)
                   </button>
                 </div>
 
                 <div className="divide-y divide-slate-100">
-                  {partyInvoices.length === 0 ? (
+                  {partyInvoices.length === 0 && partyVouchers.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-xs">
-                      No invoices or bills issued for this party yet.
+                      No invoices or payment vouchers recorded for this party yet.
                     </div>
                   ) : (
-                    partyInvoices.map((inv) => (
-                      <div key={inv.id} className="p-3.5 hover:bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-                        <div className="space-y-0.5">
-                          <div className="font-mono font-bold text-slate-900 flex items-center gap-2">
-                            <span>{inv.invoiceNumber}</span>
-                            <span className="text-[10px] font-sans font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded border border-slate-200">
-                              {inv.documentType === 'TAX_INVOICE' ? 'Tax Invoice' : inv.documentType}
-                            </span>
-                            {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
-                              <span className="text-[10px] font-sans font-bold bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300 flex items-center gap-0.5">
-                                <Percent className="w-2.5 h-2.5" /> TDS {inv.tdsRate || 1}% ({formatIndianCurrency(inv.tdsAmount || 0)})
+                    <>
+                      {/* Invoices */}
+                      {partyInvoices.map((inv) => (
+                        <div key={inv.id} className="p-3.5 hover:bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                          <div className="space-y-0.5">
+                            <div className="font-mono font-bold text-slate-900 flex items-center gap-2">
+                              <span>{inv.invoiceNumber}</span>
+                              <span className="text-[10px] font-sans font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded border border-slate-200">
+                                {inv.documentType === 'TAX_INVOICE' ? 'Tax Invoice' : inv.documentType}
                               </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-slate-500">
-                            Date: {inv.date} {inv.dueDate ? `• Due: ${inv.dueDate}` : ''}
-                          </div>
-                          {inv.items && inv.items.length > 0 && (
-                            <div className="text-[11.5px] font-semibold text-slate-800 pt-0.5">
-                              {inv.items.map(it => it.name || it.description).filter(Boolean).join(', ')}
+                              {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
+                                <span className="text-[10px] font-sans font-bold bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300 flex items-center gap-0.5">
+                                  <Percent className="w-2.5 h-2.5" /> TDS {inv.tdsRate || 1}% ({formatIndianCurrency(inv.tdsAmount || 0)})
+                                </span>
+                              )}
                             </div>
-                          )}
-                        </div>
+                            <div className="text-[11px] text-slate-500">
+                              Date: {inv.date} {inv.dueDate ? `• Due: ${inv.dueDate}` : ''}
+                            </div>
+                            {inv.items && inv.items.length > 0 && (
+                              <div className="text-[11.5px] font-semibold text-slate-800 pt-0.5">
+                                {inv.items.map(it => it.name || it.description).filter(Boolean).join(', ')}
+                              </div>
+                            )}
+                          </div>
 
-                        <div className="text-left sm:text-right space-y-0.5">
-                          <div className="font-mono font-bold text-slate-900 flex sm:justify-end items-center gap-2">
-                            <span>Bill: {formatIndianCurrency(inv.grandTotal)}</span>
-                            {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
-                              <span className="text-[11px] font-normal text-slate-500">
-                                (Net: {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
-                              </span>
-                            )}
-                          </div>
-                          <div className={`text-[10px] font-semibold ${inv.paymentStatus === 'PAID' ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            {inv.paymentStatus === 'PAID' ? '✓ FULLY PAID' : `${inv.paymentStatus} (${formatIndianCurrency(inv.balanceDue)} due)`}
-                            {inv.paidAmount > 0 && inv.paymentStatus !== 'PAID' && (
-                              <span className="text-slate-500 ml-1">[{formatIndianCurrency(inv.paidAmount)} received]</span>
-                            )}
+                          <div className="text-left sm:text-right space-y-0.5">
+                            <div className="font-mono font-bold text-slate-900 flex sm:justify-end items-center gap-2">
+                              <span>Bill: {formatIndianCurrency(inv.grandTotal)}</span>
+                              {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
+                                <span className="text-[11px] font-normal text-slate-500">
+                                  (Net: {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
+                                </span>
+                              )}
+                            </div>
+                            <div className={`text-[10px] font-semibold ${inv.paymentStatus === 'PAID' ? 'text-emerald-700' : 'text-rose-600'}`}>
+                              {inv.paymentStatus === 'PAID' ? '✓ FULLY PAID' : `${inv.paymentStatus} (${formatIndianCurrency(inv.balanceDue)} due)`}
+                              {inv.paidAmount > 0 && inv.paymentStatus !== 'PAID' && (
+                                <span className="text-slate-500 ml-1">[{formatIndianCurrency(inv.paidAmount)} received]</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+
+                      {/* Payment Vouchers */}
+                      {partyVouchers.map((pv) => (
+                        <div key={pv.id} className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs border-l-4 border-emerald-600">
+                          <div className="space-y-0.5">
+                            <div className="font-mono font-bold text-emerald-950 flex items-center gap-2">
+                              <span>{pv.voucherNumber}</span>
+                              <span className="text-[10px] font-sans font-bold bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded border border-emerald-300">
+                                Payment Received ({pv.paymentMode})
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-600">
+                              Date: {pv.date} • Ref / UTR: <span className="font-mono font-bold">{pv.referenceNumber || 'N/A'}</span>
+                            </div>
+                            {pv.remarks && (
+                              <div className="text-[11px] text-slate-700 italic">
+                                "{pv.remarks}"
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="text-left sm:text-right space-y-0.5">
+                            <div className="font-mono font-black text-emerald-800 text-sm">
+                              - {formatIndianCurrency(pv.amount)} (Cr)
+                            </div>
+                            <div className="text-[10px] text-emerald-700 font-semibold">
+                              Direct Ledger Credit
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
                   )}
                 </div>
               </div>
@@ -479,24 +640,26 @@ Thank you for your prompt response!`;
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Pincode</label>
-                  <input 
-                    type="text"
-                    placeholder="Pincode"
-                    value={formPincode}
-                    onChange={(e) => setFormPincode(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono"
-                  />
-                </div>
-                <div>
                   <label className="block font-semibold text-slate-700 mb-1">Opening Balance (₹)</label>
                   <input 
                     type="number"
-                    placeholder="0"
+                    min="0"
+                    placeholder="0.00"
                     value={formOpeningBalance || ''}
                     onChange={(e) => setFormOpeningBalance(parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono"
                   />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Balance Type</label>
+                  <select
+                    value={formOpeningType}
+                    onChange={(e) => setFormOpeningType(e.target.value as 'DR' | 'CR')}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"
+                  >
+                    <option value="DR">DR (Receivable)</option>
+                    <option value="CR">CR (Payable / Adv)</option>
+                  </select>
                 </div>
               </div>
 
@@ -539,6 +702,8 @@ Thank you for your prompt response!`;
           party={selectedParty}
           invoices={invoices}
           businessProfile={businessProfile}
+          paymentVouchers={paymentVouchers}
+          onUpdateParty={onUpdateParty}
         />
       )}
 

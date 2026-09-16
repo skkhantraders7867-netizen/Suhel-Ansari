@@ -1,7 +1,7 @@
 import { 
   Invoice, Party, Item, BusinessProfile, Expense, 
   BankAccount, CashTransaction, EWayBillRecord, AuthUser,
-  StaffMember, AttendanceRecord, AttendanceCompany
+  StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher
 } from '../types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -28,6 +28,7 @@ export interface UserAccountData {
   bankAccounts: BankAccount[];
   cashTransactions: CashTransaction[];
   ewayBills: EWayBillRecord[];
+  paymentVouchers?: PaymentVoucher[];
   staffMembers?: StaffMember[];
   attendanceRecords?: AttendanceRecord[];
   attendanceCompanies?: AttendanceCompany[];
@@ -71,6 +72,7 @@ export function createFreshUserData(user: AuthUser): UserAccountData {
     bankAccounts: [],
     cashTransactions: [],
     ewayBills: [],
+    paymentVouchers: [],
     staffMembers: [],
     attendanceRecords: [],
     attendanceCompanies: [],
@@ -152,6 +154,7 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
         bankAccounts: Array.isArray(parsed.bankAccounts) ? parsed.bankAccounts : [],
         cashTransactions: Array.isArray(parsed.cashTransactions) ? parsed.cashTransactions : [],
         ewayBills: Array.isArray(parsed.ewayBills) ? parsed.ewayBills : [],
+        paymentVouchers: Array.isArray(parsed.paymentVouchers) ? parsed.paymentVouchers : [],
         staffMembers,
         attendanceRecords,
         attendanceCompanies: Array.isArray(parsed.attendanceCompanies) ? parsed.attendanceCompanies : [],

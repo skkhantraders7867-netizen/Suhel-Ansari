@@ -1304,11 +1304,6 @@ Thank you for doing business with us!`;
                         State Code. <span className="font-mono font-bold text-slate-950">{resolvedPartyStateInfo.stateCode}</span>
                       </div>
                     )}
-                    {effectiveInvoice.partyPincode && effectiveInvoice.partyPincode.trim() !== '' && (
-                      <div className="text-slate-800 text-[9.5px] truncate">
-                        Pincode. {effectiveInvoice.partyPincode.trim()}
-                      </div>
-                    )}
                     {effectiveInvoice.partyGstin && effectiveInvoice.partyGstin.trim() !== '' ? (
                       <div className="text-slate-950 font-bold text-[9.5px] pt-0.5">
                         GSTIN : <span className="font-mono font-bold">{effectiveInvoice.partyGstin.trim()}</span>
@@ -2104,7 +2099,7 @@ Thank you for doing business with us!`;
                   {getDocumentTypeName(invoice.documentType)}
                 </div>
                 <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-950 uppercase">{businessProfile.name}</h1>
-                <p className="text-xs text-slate-600">{businessProfile.address}, {businessProfile.city}, {businessProfile.state} - {businessProfile.pincode}</p>
+                <p className="text-xs text-slate-600">{[businessProfile.address, businessProfile.city, businessProfile.state].filter(Boolean).join(', ')}</p>
                 <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold mt-1.5 text-slate-700">
                   <span>GSTIN: <strong className="font-mono text-slate-950">{businessProfile.gstin}</strong></span>
                   <span>PAN: <strong className="font-mono text-slate-950">{businessProfile.pan}</strong></span>
@@ -2127,7 +2122,6 @@ Thank you for doing business with us!`;
                       State: <strong className="text-slate-900">{resolvedPartyStateInfo.stateName}</strong> {resolvedPartyStateInfo.stateCode ? `(State Code: ${resolvedPartyStateInfo.stateCode})` : ''}
                     </div>
                   )}
-                  {invoice.partyPincode && <div className="text-slate-600">Pincode: {invoice.partyPincode}</div>}
                   {invoice.partyGstin ? (
                     <div className="font-semibold text-slate-800">
                       GSTIN / UIN: <span className="font-mono text-blue-900 font-bold">{invoice.partyGstin}</span>
@@ -2453,7 +2447,7 @@ Thank you for doing business with us!`;
               <div className="relative z-10 flex items-start justify-between pb-8 border-b-2 border-blue-600">
                 <div>
                   <h1 className="text-2xl font-black text-blue-900 tracking-tight">{businessProfile.name}</h1>
-                  <p className="text-slate-500 mt-1">{businessProfile.address}, {businessProfile.city}, {businessProfile.state} - {businessProfile.pincode}</p>
+                  <p className="text-slate-500 mt-1">{[businessProfile.address, businessProfile.city, businessProfile.state].filter(Boolean).join(', ')}</p>
                   <div className="flex items-center gap-3 text-xs mt-2 text-slate-600">
                     <span>GSTIN: <strong className="font-mono text-slate-900">{businessProfile.gstin}</strong></span>
                     <span>•</span>
@@ -2679,7 +2673,7 @@ Thank you for doing business with us!`;
                   DELIVERY CHALLAN / GOODS DISPATCH NOTE
                 </div>
                 <h1 className="text-2xl font-black text-slate-900 uppercase">{businessProfile.name}</h1>
-                <p className="text-xs text-slate-600">{businessProfile.address}, {businessProfile.city}, {businessProfile.state} - {businessProfile.pincode}</p>
+                <p className="text-xs text-slate-600">{[businessProfile.address, businessProfile.city, businessProfile.state].filter(Boolean).join(', ')}</p>
                 <div className="text-xs font-semibold mt-1">GSTIN: {businessProfile.gstin} | Phone: {businessProfile.phone}</div>
               </div>
 

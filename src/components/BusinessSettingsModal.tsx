@@ -199,8 +199,8 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
                   <label className="block font-semibold text-slate-700 mb-1">State & GST Code</label>
                   <select
                     value={profile.stateCode}
@@ -225,17 +225,6 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
                     value={profile.city}
                     onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Pincode</label>
-                  <input 
-                    type="text"
-                    value={profile.pincode || ''}
-                    onChange={(e) => setProfile({ ...profile, pincode: e.target.value })}
-                    placeholder="Pincode"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono"
                   />
                 </div>
               </div>

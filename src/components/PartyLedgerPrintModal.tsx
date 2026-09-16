@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  X, Printer, Download, Share2, Upload, Image as ImageIcon, Trash2
+  X, Printer, Download, Share2, Upload, Image as ImageIcon, Trash2, Check, Save
 } from 'lucide-react';
-import { Party, Invoice, BusinessProfile } from '../types';
+import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
 import { GST_STATES } from '../data/mockData';
 import { formatIndianCurrency, numberToIndianWords } from '../utils/gstCalculations';
 import { printElementSafely, downloadElementAsPdf } from '../utils/pdfExport';
@@ -10,9 +10,9 @@ import { printElementSafely, downloadElementAsPdf } from '../utils/pdfExport';
 interface LedgerEntry {
   id: string;
   date: string;
-  type: string;        // e.g. JOURNAL
+  type: string;        // e.g. JOURNAL, RCPT, OB
   invoiceNo: string;   // e.g. 13(26-27) or INV-001
-  itemDescription: string; // Item Discription / Typed description from Invoice
+  itemDescription: string; // Item Discription / Typed description
   amount: number;      // Bill Amount (Debit)
   payment: number;     // Payment or TDS (Credit)
   tdsAmount?: number;
@@ -28,6 +28,8 @@ interface PartyLedgerPrintModalProps {
   party: Party;
   invoices: Invoice[];
   businessProfile: BusinessProfile;
+  paymentVouchers?: PaymentVoucher[];
+  onUpdateParty?: (party: Party) => void;
 }
 
 function formatDateToDMY(dateStr?: string): string {
@@ -47,25 +49,36 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   party,
   invoices = [],
   businessProfile,
+  paymentVouchers = [],
+  onUpdateParty,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(
     businessProfile.logoUrl || 'https://lh3.googleusercontent.com/d/16BUJ9mO_ZLvGvhuxxLRwnvlWxeiemQX8'
   );
-  const [openingBalance, setOpeningBalance] = useState<number>(party?.openingBalance || 0);
-  const [balanceType, setBalanceType] = useState<'Dr' | 'Cr'>((party?.openingBalance || 0) < 0 ? 'Cr' : 'Dr');
+  const [openingBalance, setOpeningBalance] = useState<number>(Math.abs(party?.openingBalance || 0));
+  const [balanceType, setBalanceType] = useState<'Dr' | 'Cr'>(
+    party?.openingBalanceType ? (party.openingBalanceType === 'CR' ? 'Cr' : 'Dr') : ((party?.openingBalance || 0) < 0 ? 'Cr' : 'Dr')
+  );
   const [financialYear, setFinancialYear] = useState<string>('2025-2026');
-  const [openingDate, setOpeningDate] = useState<string>('01-04-2025');
+  const [openingDate, setOpeningDate] = useState<string>(party?.openingBalanceDate || '01-04-2025');
+  const [isSavedOpening, setIsSavedOpening] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state when modal opens or party changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen && party) {
       setLogoUrl(businessProfile.logoUrl || 'https://lh3.googleusercontent.com/d/16BUJ9mO_ZLvGvhuxxLRwnvlWxeiemQX8');
       setOpeningBalance(Math.abs(party.openingBalance || 0));
-      setBalanceType((party.openingBalance || 0) < 0 ? 'Cr' : 'Dr');
+      setBalanceType(
+        party.openingBalanceType 
+          ? (party.openingBalanceType === 'CR' ? 'Cr' : 'Dr') 
+          : ((party.openingBalance || 0) < 0 ? 'Cr' : 'Dr')
+      );
+      setOpeningDate(party.openingBalanceDate || '01-04-2025');
+      setIsSavedOpening(false);
     }
   }, [businessProfile.logoUrl, party, isOpen]);
 
@@ -89,6 +102,21 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     }
   };
 
+  // Save Opening Balance to Party and Database permanently
+  const handleSaveOpeningBalance = () => {
+    const signedBalance = balanceType === 'Cr' ? -Math.abs(Number(openingBalance) || 0) : Math.abs(Number(openingBalance) || 0);
+    if (onUpdateParty && party) {
+      onUpdateParty({
+        ...party,
+        openingBalance: signedBalance,
+        openingBalanceType: balanceType === 'Cr' ? 'CR' : 'DR',
+        openingBalanceDate: openingDate,
+      });
+      setIsSavedOpening(true);
+      setTimeout(() => setIsSavedOpening(false), 3000);
+    }
+  };
+
   if (!isOpen) return null;
 
   // Calculate effective opening balance value with sign
@@ -96,7 +124,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
 
   // Filter invoices for this party
   const partyInvoices = invoices.filter(
-    inv => inv.partyId === party.id || inv.partyName.toLowerCase() === party.name.toLowerCase()
+    inv => (inv.partyId === party.id || inv.partyName.toLowerCase() === party.name.toLowerCase()) && 
+           inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE'
+  );
+
+  // Filter payment vouchers for this party
+  const partyVouchers = paymentVouchers.filter(
+    pv => pv.partyId === party.id || pv.partyName.toLowerCase() === party.name.toLowerCase()
   );
 
   // Build Chronological Ledger Entries
@@ -120,7 +154,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   );
 
   sortedInvoices.forEach((inv) => {
-    // Extract Item Names & descriptions from invoice items (formatted in uppercase per line)
+    // Extract Item Names & descriptions from invoice items
     const itemNamesList = inv.items && inv.items.length > 0
       ? inv.items.map(item => (item.name || item.description || '').toUpperCase()).filter(Boolean)
       : [];
@@ -163,14 +197,15 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       });
     }
 
-    // 4. Payment Received Entry if any paid amount recorded
-    if ((inv.paidAmount || 0) > 0) {
+    // 4. If invoice has recorded paidAmount that is NOT from a PaymentVoucher, include it
+    const hasVoucherForInv = partyVouchers.some(pv => pv.invoiceId === inv.id);
+    if (!hasVoucherForInv && (inv.paidAmount || 0) > 0) {
       const paidAmt = Number(inv.paidAmount || 0);
       rawEntries.push({
         id: `entry-pay-${inv.id}`,
         date: formatDateToDMY(inv.date),
-        type: '',
-        invoiceNo: '',
+        type: 'RCPT',
+        invoiceNo: inv.invoiceNumber,
         itemDescription: inv.paymentReference 
           ? `PAYMENT RECEIVED VIA ${inv.paymentMode?.toUpperCase() || 'BANK / UPI'} (REF: ${inv.paymentReference})`
           : `PAYMENT RECEIVED VIA ${inv.paymentMode?.toUpperCase() || 'BANK / UPI'}`,
@@ -179,6 +214,20 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
         entryType: 'PAYMENT',
       });
     }
+  });
+
+  // 5. Add all dedicated Payment Vouchers
+  partyVouchers.forEach((pv) => {
+    rawEntries.push({
+      id: `entry-pv-${pv.id}`,
+      date: formatDateToDMY(pv.date),
+      type: 'RCPT',
+      invoiceNo: pv.invoiceNumber || pv.voucherNumber || '-',
+      itemDescription: `PAYMENT RECEIVED VIA ${pv.paymentMode.toUpperCase()} (REF: ${pv.referenceNumber || 'N/A'})${pv.remarks ? ` - ${pv.remarks}` : ''}`,
+      amount: 0,
+      payment: Number(pv.amount || 0),
+      entryType: 'PAYMENT',
+    });
   });
 
   // Calculate running balances
@@ -209,13 +258,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     }
   };
 
-  // PDF Export Handler
+  // PDF Export Handler with intelligent 1-page fit
   const handleExportPdf = async () => {
     if (!printRef.current) return;
     setIsExporting(true);
     try {
       await downloadElementAsPdf(printRef.current, `Statement_${party.name.replace(/\s+/g, '_')}.pdf`, {
-        scale: 2.5,
+        scale: entries.length > 15 ? 2.0 : 2.5,
       });
     } catch (err) {
       console.error('Failed to export ledger PDF:', err);
@@ -228,7 +277,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   const handleShareWhatsApp = () => {
     if (!party.phone) return;
     const msg = `*STATEMENT OF ACCOUNT*
-From: *${businessProfile.name || 'NEW SR INFRA'}*
+From: *${businessProfile.name || 'SR GROUP'}*
 Customer: *${party.name}*
 Date: ${new Date().toLocaleDateString('en-IN')}
 
@@ -254,6 +303,14 @@ Thank you for your business!`;
     year: 'numeric',
   });
 
+  // Intelligent scaling classes based on number of rows to guarantee single page fit
+  const rowCount = entries.length;
+  const isDense = rowCount > 12;
+  const isSuperDense = rowCount > 20;
+
+  const tableFontSize = isSuperDense ? 'text-[8.5px]' : isDense ? 'text-[9.5px]' : 'text-[10px]';
+  const cellPadding = isSuperDense ? 'py-1 px-1' : isDense ? 'py-1.5 px-1.5' : 'py-2 px-1.5';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto">
       <div className="bg-slate-100 rounded-2xl shadow-2xl border border-slate-300 w-full max-w-5xl my-4 overflow-hidden flex flex-col max-h-[96vh]">
@@ -274,13 +331,13 @@ Thank you for your business!`;
             </span>
             <div>
               <h2 className="text-sm md:text-base font-bold text-white flex items-center gap-2">
-                <span>Party Ledger Statement</span>
+                <span>Party Ledger Statement (1-Page Fit)</span>
                 <span className="text-[11px] bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded font-mono">
                   {party.name}
                 </span>
               </h2>
               <p className="text-[11px] text-slate-300">
-                Official statement format with Item Discription, Journal entries, Payments &amp; TDS
+                Official statement format with Item Description, Bills, Payments &amp; TDS
               </p>
             </div>
           </div>
@@ -317,7 +374,7 @@ Thank you for your business!`;
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
             >
-              <Printer className="w-4 h-4" /> Print Ledger (लेजर प्रिंट)
+              <Printer className="w-4 h-4" /> Print (1-Page)
             </button>
 
             <button
@@ -344,18 +401,18 @@ Thank you for your business!`;
           </div>
         </div>
 
-        {/* Opening Balance & Financial Year Quick Toolbar (no-print) */}
-        <div className="bg-slate-800 border-b border-slate-700 px-5 py-2 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+        {/* Opening Balance Toolbar & Save Option (no-print) */}
+        <div className="bg-slate-800 border-b border-slate-700 px-5 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-blue-300 uppercase tracking-wider flex items-center gap-1">
-              <span>⚖️ Opening Balance &amp; F.Y. Setup:</span>
+            <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
+              <span>⚖️ Opening Balance:</span>
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Financial Year Selector */}
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-300 text-[11px] font-semibold">Financial Year:</span>
+              <span className="text-slate-300 text-[11px] font-semibold">F.Y.:</span>
               <select
                 value={financialYear}
                 onChange={(e) => setFinancialYear(e.target.value)}
@@ -370,7 +427,7 @@ Thank you for your business!`;
 
             {/* Opening Date */}
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-300 text-[11px] font-semibold">Opening Date:</span>
+              <span className="text-slate-300 text-[11px] font-semibold">Date:</span>
               <input
                 type="text"
                 value={openingDate}
@@ -415,6 +472,28 @@ Thank you for your business!`;
                 Cr (Advance)
               </button>
             </div>
+
+            {/* Save Opening Balance Button */}
+            <button
+              type="button"
+              onClick={handleSaveOpeningBalance}
+              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-xs ${
+                isSavedOpening 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+              }`}
+              title="Save Opening Balance to Party & Database permanently"
+            >
+              {isSavedOpening ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Saved to Database!
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" /> Save Opening Balance
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -422,62 +501,64 @@ Thank you for your business!`;
         <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center bg-slate-300/60">
           <div 
             ref={printRef}
-            className="printable-area bg-white text-black shadow-2xl border border-slate-300 rounded-none w-full max-w-[860px] p-6 md:p-8 space-y-4 text-xs font-sans"
-            style={{ boxSizing: 'border-box', minHeight: '1050px' }}
+            className="printable-area bg-white text-black shadow-2xl border border-slate-300 rounded-none w-full max-w-[840px] p-5 md:p-7 space-y-3 font-sans"
+            style={{ boxSizing: 'border-box' }}
           >
-            {/* 1. Header Banner - Matching Company Details & Statement Badge with Logo Section */}
-            <div className="border-b-2 border-slate-800 pb-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            {/* Embedded Print CSS for Single Page layout */}
+            <style>{`
+              @media print {
+                @page {
+                  size: A4 portrait;
+                  margin: 6mm !important;
+                }
+                html, body {
+                  height: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  overflow: hidden !important;
+                  background: #fff !important;
+                }
+                .printable-area {
+                  box-shadow: none !important;
+                  border: 1.5px solid #000 !important;
+                  padding: 8px 12px !important;
+                  margin: 0 !important;
+                  max-height: 98vh !important;
+                  page-break-inside: avoid !important;
+                  page-break-after: avoid !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}</style>
+
+            {/* 1. Header Banner - Matching Company Details & Statement Badge */}
+            <div className="border-b-2 border-slate-800 pb-2.5 flex flex-col md:flex-row justify-between items-start md:items-center gap-2.5">
               {/* Left: Company Details & Logo Section */}
-              <div className="flex items-center gap-3.5 max-w-[70%]">
-                {/* Logo Section for Ledger / PDF */}
-                {logoUrl ? (
-                  <div className="relative group shrink-0">
+              <div className="flex items-center gap-3 max-w-[70%]">
+                {logoUrl && (
+                  <div className="relative shrink-0">
                     <img 
                       src={logoUrl} 
                       alt="Company Logo" 
-                      className="max-h-20 max-w-[120px] object-contain rounded-xs border border-slate-200/80 p-0.5 bg-white shadow-2xs"
+                      className="max-h-16 max-w-[110px] object-contain rounded-xs border border-slate-200/80 p-0.5 bg-white shadow-2xs"
                     />
-                    <div className="no-print absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xs flex items-center justify-center gap-1">
-                      <button 
-                        onClick={() => logoInputRef.current?.click()}
-                        className="p-1 bg-white/90 rounded text-slate-900 hover:bg-white text-[10px]"
-                        title="Change Logo"
-                      >
-                        <ImageIcon className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={handleRemoveLogo}
-                        className="p-1 bg-red-600 rounded text-white hover:bg-red-700 text-[10px]"
-                        title="Remove Logo"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => logoInputRef.current?.click()}
-                    className="no-print shrink-0 w-24 h-16 border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 rounded-lg flex flex-col items-center justify-center text-slate-500 hover:text-blue-600 transition-colors p-1 text-center"
-                    title="Click to upload logo for Ledger PDF"
-                  >
-                    <Upload className="w-4 h-4 mb-0.5" />
-                    <span className="text-[9px] font-bold">+ Add Logo</span>
-                  </button>
                 )}
 
                 <div className="space-y-0.5">
                   <h1 className="text-xl md:text-2xl font-black text-[#0f2e6b] uppercase tracking-wide">
-                    {businessProfile.name || businessProfile.tradeName || 'BUSINESS STATEMENT'}
+                    {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
                   </h1>
                   {businessProfile.tagline && businessProfile.tagline.trim() !== '' && (
-                    <p className="text-[11px] font-bold text-slate-800">
+                    <p className="text-[10.5px] font-bold text-slate-800">
                       {businessProfile.tagline.trim()}
                     </p>
                   )}
-                  {(businessProfile.address || businessProfile.city || businessProfile.state || businessProfile.pincode) && (
+                  {(businessProfile.address || businessProfile.city || businessProfile.state) && (
                     <div className="text-[10px] text-slate-700 leading-tight">
                       {[businessProfile.address, businessProfile.city, businessProfile.state].filter(Boolean).join(', ')}
-                      {businessProfile.pincode ? ` - ${businessProfile.pincode}` : ''}
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-x-3 text-[10px] text-slate-800 pt-0.5">
@@ -495,22 +576,22 @@ Thank you for your business!`;
               </div>
 
               {/* Right: Statement of Account Badge */}
-              <div className="text-right bg-blue-50 border border-blue-200 p-2.5 rounded-xl shrink-0 min-w-[180px]">
+              <div className="text-right bg-blue-50 border border-blue-200 p-2 rounded-xl shrink-0 min-w-[170px]">
                 <div className="text-xs font-black uppercase text-[#0f2e6b] tracking-wider">
                   STATEMENT OF ACCOUNT
                 </div>
-                <div className="text-[9.5px] text-slate-500 font-semibold">Customer / Party Ledger</div>
-                <div className="text-[10.5px] font-mono font-bold text-slate-800 mt-0.5">
+                <div className="text-[9px] text-slate-500 font-semibold">Customer / Party Ledger</div>
+                <div className="text-[10px] font-mono font-bold text-slate-800 mt-0.5">
                   Date: {currentDateFormatted}
                 </div>
               </div>
             </div>
 
             {/* 2. Account / Party Details Card */}
-            <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 flex flex-col md:flex-row justify-between gap-3">
+            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 flex flex-col md:flex-row justify-between gap-2.5 text-xs">
               {/* Left: Party Details */}
-              <div className="space-y-0.5 max-w-[62%]">
-                <span className="text-[9.5px] font-bold uppercase text-slate-500 tracking-wider block">
+              <div className="space-y-0.5 max-w-[65%]">
+                <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block">
                   ACCOUNT / PARTY DETAILS:
                 </span>
                 <div className="text-sm font-black text-slate-950 uppercase">{party.name}</div>
@@ -523,12 +604,11 @@ Thank you for your business!`;
                   )}
                   {party.city && <span className="uppercase">{party.billingAddress ? ', ' : ''}CITY: {party.city}</span>}
                   {party.state && <span className="uppercase"> STATE: {party.state}</span>}
-                  {party.pincode && <span> PIN CODE: {party.pincode}</span>}
                 </div>
               </div>
 
               {/* Right: Party GSTIN, Phone, State Code */}
-              <div className="text-left md:text-right space-y-0.5 text-[10.5px] shrink-0">
+              <div className="text-left md:text-right space-y-0.5 text-[10px] shrink-0">
                 {party.gstin && (
                   <div>
                     <span className="text-slate-500">Party GSTIN: </span>
@@ -566,33 +646,33 @@ Thank you for your business!`;
               </div>
             </div>
 
-            {/* 3. Main Ledger Table - Exact Headline Format & Item Discription from Image */}
-            <div className="w-full border-2 border-black overflow-hidden mt-3">
-              <table className="w-full text-left border-collapse table-fixed text-[10px]">
+            {/* 3. Main Ledger Table */}
+            <div className="w-full border-2 border-black overflow-hidden mt-2">
+              <table className={`w-full text-left border-collapse table-fixed ${tableFontSize}`}>
                 <colgroup>
                   <col style={{ width: '13%' }} />
-                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '9%' }} />
                   <col style={{ width: '13%' }} />
-                  <col style={{ width: '36%' }} />
+                  <col style={{ width: '37%' }} />
                   <col style={{ width: '14%' }} />
                   <col style={{ width: '14%' }} />
-                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '14%' }} />
                 </colgroup>
                 <thead>
-                  <tr className="bg-[#cad9e8] text-black font-bold text-center border-b-2 border-black text-[10.5px]">
-                    <th className="py-2 px-1 border-r border-black font-bold text-center">Date</th>
-                    <th className="py-2 px-1 border-r border-black font-bold text-center">Type</th>
-                    <th className="py-2 px-1 border-r border-black font-bold text-center">Invoice #</th>
-                    <th className="py-2 px-2 border-r border-black font-bold text-center">Item Discription</th>
-                    <th className="py-2 px-1.5 border-r border-black font-bold text-center">Amount</th>
-                    <th className="py-2 px-1.5 border-r border-black font-bold text-center">Payment</th>
-                    <th className="py-2 px-1.5 font-bold text-center">Balance</th>
+                  <tr className="bg-[#cad9e8] text-black font-bold text-center border-b-2 border-black text-[10px]">
+                    <th className="py-1.5 px-1 border-r border-black font-bold text-center">Date</th>
+                    <th className="py-1.5 px-1 border-r border-black font-bold text-center">Type</th>
+                    <th className="py-1.5 px-1 border-r border-black font-bold text-center">Invoice #</th>
+                    <th className="py-1.5 px-2 border-r border-black font-bold text-center">Item Description</th>
+                    <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">Amount (Dr)</th>
+                    <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">Payment (Cr)</th>
+                    <th className="py-1.5 px-1.5 font-bold text-center">Balance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black font-medium text-black">
                   {entries.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 font-semibold">
+                      <td colSpan={7} className="py-6 text-center text-slate-500 font-semibold">
                         No transactions recorded for this party.
                       </td>
                     </tr>
@@ -603,39 +683,39 @@ Thank you for your business!`;
                         className="border-b border-black"
                       >
                         {/* Date */}
-                        <td className="py-2 px-1 font-mono text-center font-bold border-r border-black align-middle text-[10px]">
+                        <td className={`${cellPadding} font-mono text-center font-bold border-r border-black align-middle`}>
                           {entry.date}
                         </td>
 
                         {/* Type */}
-                        <td className="py-2 px-1 text-center font-bold border-r border-black uppercase align-middle text-[9.5px]">
+                        <td className={`${cellPadding} text-center font-bold border-r border-black uppercase align-middle`}>
                           {entry.type}
                         </td>
 
                         {/* Invoice # */}
-                        <td className="py-2 px-1 text-center font-mono font-bold border-r border-black align-middle text-[10px]">
+                        <td className={`${cellPadding} text-center font-mono font-bold border-r border-black align-middle`}>
                           {entry.invoiceNo}
                         </td>
 
-                        {/* Item Discription */}
-                        <td className="py-2 px-2.5 border-r border-black align-middle text-left font-bold text-black text-[9.5px]">
-                          <div className="whitespace-pre-line leading-relaxed">
+                        {/* Item Description */}
+                        <td className={`${cellPadding} border-r border-black align-middle text-left font-bold text-black`}>
+                          <div className="whitespace-pre-line leading-tight">
                             {entry.itemDescription}
                           </div>
                         </td>
 
                         {/* Amount (Debit) */}
-                        <td className="py-2 px-1.5 text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums text-[10px]">
+                        <td className={`${cellPadding} text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums`}>
                           {entry.amount > 0 ? formatIndianCurrency(entry.amount, true) : ''}
                         </td>
 
                         {/* Payment (Credit / TDS / Payment) */}
-                        <td className="py-2 px-1.5 text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums text-[10px]">
+                        <td className={`${cellPadding} text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums`}>
                           {entry.payment > 0 ? formatIndianCurrency(entry.payment, true) : ''}
                         </td>
 
                         {/* Balance (Running Balance) */}
-                        <td className="py-2 px-1.5 text-right font-mono font-black text-black align-middle tabular-nums text-[10px]">
+                        <td className={`${cellPadding} text-right font-mono font-black text-black align-middle tabular-nums`}>
                           {formatIndianCurrency(entry.runningBalance, true)}
                         </td>
                       </tr>
@@ -645,17 +725,17 @@ Thank you for your business!`;
 
                 {/* 4. STATEMENT TOTALS ROW */}
                 <tfoot>
-                  <tr className="bg-slate-100 font-black border-t-2 border-black text-[10.5px]">
-                    <td colSpan={4} className="py-2 px-2 text-right uppercase text-slate-900 border-r border-black tracking-wider font-extrabold">
+                  <tr className="bg-slate-100 font-black border-t-2 border-black text-[10px]">
+                    <td colSpan={4} className="py-1.5 px-2 text-right uppercase text-slate-900 border-r border-black tracking-wider font-extrabold">
                       STATEMENT TOTALS:
                     </td>
-                    <td className="py-2 px-1.5 text-right font-mono text-slate-950 border-r border-black tabular-nums font-bold">
+                    <td className="py-1.5 px-1.5 text-right font-mono text-slate-950 border-r border-black tabular-nums font-bold">
                       {formatIndianCurrency(totalDebit, true)}
                     </td>
-                    <td className="py-2 px-1.5 text-right font-mono text-slate-950 border-r border-black tabular-nums font-bold">
+                    <td className="py-1.5 px-1.5 text-right font-mono text-slate-950 border-r border-black tabular-nums font-bold">
                       {formatIndianCurrency(totalCredit, true)}
                     </td>
-                    <td className="py-2 px-2 text-right font-mono font-black text-[#0f2e6b] bg-[#dce6f1] tabular-nums">
+                    <td className="py-1.5 px-2 text-right font-mono font-black text-[#0f2e6b] bg-[#dce6f1] tabular-nums">
                       {formatIndianCurrency(Math.abs(finalBalance), true)} {finalBalance >= 0 ? 'Dr' : 'Cr'}
                     </td>
                   </tr>
@@ -664,28 +744,28 @@ Thank you for your business!`;
             </div>
 
             {/* 5. Net Outstanding In Words Card */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 text-[10.5px]">
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-1.5 text-[10px]">
               <div>
-                <span className="text-[9.5px] font-bold uppercase text-slate-500 block">
+                <span className="text-[9px] font-bold uppercase text-slate-500 block">
                   NET OUTSTANDING BALANCE IN WORDS:
                 </span>
-                <span className="font-bold text-slate-900 leading-snug">
+                <span className="font-bold text-slate-900 leading-tight">
                   {numberToIndianWords(Math.abs(finalBalance))} Only {finalBalance >= 0 ? '(Receivable)' : '(Settled)'}
                 </span>
               </div>
               <div className="text-right shrink-0">
-                <span className="text-[9.5px] font-bold text-slate-500 uppercase block">TOTAL TDS INCLUDED:</span>
+                <span className="text-[9px] font-bold text-slate-500 uppercase block">TOTAL TDS INCLUDED:</span>
                 <span className="font-mono font-bold text-amber-900">
-                  {formatIndianCurrency(totalTdsDeducted, true)} (1%)
+                  {formatIndianCurrency(totalTdsDeducted, true)}
                 </span>
               </div>
             </div>
 
             {/* 6. Bank Details & Authorized Signatory */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 text-[10.5px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[10px]">
               {/* Left: Bank Details */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                <div className="font-bold text-slate-900 uppercase text-[9.5px]">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+                <div className="font-bold text-slate-900 uppercase text-[9px]">
                   BANK DETAILS FOR PAYMENT SETTLEMENT:
                 </div>
                 {businessProfile.bankName && (
@@ -698,20 +778,20 @@ Thank you for your business!`;
                   <div><span className="text-slate-500">IFSC Code: </span><strong className="font-mono text-slate-800">{businessProfile.ifscCode}</strong></div>
                 )}
                 {!businessProfile.bankName && !businessProfile.accountNumber && (
-                  <div className="text-slate-500 text-[10px] italic">Bank details not configured in Profile Settings</div>
+                  <div className="text-slate-500 text-[9.5px] italic">Bank details not configured in Profile Settings</div>
                 )}
               </div>
 
-              {/* Right: Authorised Signatory (without top line) */}
-              <div className="flex flex-col justify-between items-end text-right p-3 min-h-[95px]">
-                <div className="text-slate-700 text-[10.5px]">
-                  For <strong>{businessProfile.name || businessProfile.tradeName || 'AUTHORIZED FIRM'}</strong>
+              {/* Right: Authorised Signatory */}
+              <div className="flex flex-col justify-between items-end text-right p-2.5 min-h-[75px]">
+                <div className="text-slate-700 text-[10px]">
+                  For <strong>{businessProfile.name || businessProfile.tradeName || 'SR GROUP'}</strong>
                 </div>
-                <div className="space-y-0.5 pt-8">
-                  <div className="font-bold text-slate-900 text-[10px] uppercase tracking-wider">
+                <div className="space-y-0.5 pt-4">
+                  <div className="font-bold text-slate-900 text-[9.5px] uppercase tracking-wider">
                     AUTHORISED SIGNATORY
                   </div>
-                  <div className="text-[9px] text-slate-400">Computer Generated Statement</div>
+                  <div className="text-[8.5px] text-slate-400">Computer Generated Statement</div>
                 </div>
               </div>
             </div>
@@ -723,6 +803,3 @@ Thank you for your business!`;
     </div>
   );
 };
-
-
-

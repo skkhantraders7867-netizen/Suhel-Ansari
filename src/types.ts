@@ -123,10 +123,31 @@ export interface Party {
   stateCode: string;
   pincode: string;
   openingBalance: number; // positive = receivable, negative = payable
+  openingBalanceDate?: string;
+  openingBalanceType?: 'DR' | 'CR';
   currentBalance: number;
   creditLimit?: number;
   paymentTermsDays?: number;
   createdAt: string;
+}
+
+export interface PaymentVoucher {
+  id: string;
+  voucherNumber: string;
+  date: string;
+  partyId: string;
+  partyName: string;
+  amount: number;
+  paymentMode: PaymentMode;
+  referenceNumber: string; // UTS No, Cheque No, UTR, Bank Ref
+  invoiceId?: string;
+  invoiceNumber?: string;
+  invoiceAmount?: number;
+  remarks?: string;
+  bankAccountId?: string;
+  bankAccountName?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Item {
