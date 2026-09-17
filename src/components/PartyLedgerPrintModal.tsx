@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  X, Printer, Download, Share2, Upload, Image as ImageIcon, Trash2, Check, Save
+  X, Printer, Download, Share2, Upload, Image as ImageIcon, Trash2, Check, Save,
+  ZoomIn, ZoomOut, Layers, Maximize2, Minimize2, FileText, Sliders
 } from 'lucide-react';
 import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
 import { GST_STATES } from '../data/mockData';
@@ -12,7 +13,7 @@ interface LedgerEntry {
   date: string;
   type: string;        // e.g. JOURNAL, RCPT, OB
   invoiceNo: string;   // e.g. 13(26-27) or INV-001
-  itemDescription: string; // Item Discription / Typed description
+  itemDescription: string; // Item Description
   amount: number;      // Bill Amount (Debit)
   payment: number;     // Payment or TDS (Credit)
   tdsAmount?: number;
@@ -31,6 +32,9 @@ interface PartyLedgerPrintModalProps {
   paymentVouchers?: PaymentVoucher[];
   onUpdateParty?: (party: Party) => void;
 }
+
+type PageLayoutMode = 'AUTO_MULTI' | 'FIT_1_PAGE' | 'FIT_2_PAGES' | 'CUSTOM';
+type DensityMode = 'COMPACT' | 'NORMAL' | 'COMFORTABLE';
 
 function formatDateToDMY(dateStr?: string): string {
   if (!dateStr) return '';
@@ -63,6 +67,12 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   const [financialYear, setFinancialYear] = useState<string>('2025-2026');
   const [openingDate, setOpeningDate] = useState<string>(party?.openingBalanceDate || '01-04-2025');
   const [isSavedOpening, setIsSavedOpening] = useState(false);
+
+  // Layout and Page scaling controls (पेज छोटा/बड़ा करने और 1-पेज या 2-पेज में बदलने के लिए)
+  const [pageMode, setPageMode] = useState<PageLayoutMode>('AUTO_MULTI');
+  const [zoomScale, setZoomScale] = useState<number>(100); // 65% to 130%
+  const [density, setDensity] = useState<DensityMode>('NORMAL');
+  const [showAdvanceControls, setShowAdvanceControls] = useState<boolean>(false);
 
   const printRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -148,51 +158,37 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     entryType: 'OPENING',
   });
 
-  // Sort invoices by date ascending
-  const sortedInvoices = [...partyInvoices].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  // 2. Add all Invoices
+  partyInvoices.forEach((inv) => {
+    const itemDesc = (inv.items && inv.items.length > 0)
+      ? inv.items.map(item => `${item.name} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')
+      : 'TAX INVOICE GOODS / SERVICES';
 
-  sortedInvoices.forEach((inv) => {
-    // Extract Item Names & descriptions from invoice items
-    const itemNamesList = inv.items && inv.items.length > 0
-      ? inv.items.map(item => (item.name || item.description || '').toUpperCase()).filter(Boolean)
-      : [];
-
-    const itemDescription = itemNamesList.length > 0
-      ? itemNamesList.join('\n')
-      : (inv.notes?.toUpperCase() || 'SALES / BILL ISSUED');
-
-    const billAmount = Number(inv.grandTotal || 0);
-
-    // 2. Invoice Debit Entry (Bill Amount)
     rawEntries.push({
       id: `entry-inv-${inv.id}`,
       date: formatDateToDMY(inv.date),
       type: 'JOURNAL',
       invoiceNo: inv.invoiceNumber,
-      itemDescription: itemDescription,
-      amount: billAmount,
+      itemDescription: itemDesc,
+      amount: Number(inv.total || 0),
       payment: 0,
       entryType: 'INVOICE',
     });
 
-    // 3. TDS Deduction Entry if applicable (Accounted as Credit in Ledger)
-    if (inv.isTdsApplicable && (inv.tdsAmount || 0) > 0) {
+    // 3. If invoice has TDS, add separate TDS line
+    if ((inv.tdsAmount || 0) > 0) {
       const tdsAmt = Number(inv.tdsAmount || 0);
-      const tdsRate = inv.tdsRate || 1;
-      const tdsSec = inv.tdsSection || 'Sec 194C / 194Q';
       rawEntries.push({
         id: `entry-tds-${inv.id}`,
         date: formatDateToDMY(inv.date),
-        type: '',
-        invoiceNo: '',
-        itemDescription: `TDS On Contract - ${tdsSec} (${tdsRate}%)`,
+        type: 'RCPT',
+        invoiceNo: inv.invoiceNumber,
+        itemDescription: `TDS DEDUCTED @${inv.tdsRate || 0}% SEC ${inv.tdsSection || '194C'} (CHALLAN ADJUSTMENT)`,
         amount: 0,
         payment: tdsAmt,
         tdsAmount: tdsAmt,
-        tdsRate: tdsRate,
-        tdsSection: tdsSec,
+        tdsRate: inv.tdsRate,
+        tdsSection: inv.tdsSection,
         entryType: 'TDS',
       });
     }
@@ -251,6 +247,60 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   const totalPaymentsReceived = entries.reduce((sum, e) => sum + (e.entryType === 'PAYMENT' ? e.payment : 0), 0);
   const finalBalance = runningBal;
 
+  const rowCount = entries.length;
+
+  // Auto-estimate pages based on mode and row count
+  let estimatedPages = 1;
+  if (pageMode === 'FIT_1_PAGE') {
+    estimatedPages = 1;
+  } else if (pageMode === 'FIT_2_PAGES') {
+    estimatedPages = 2;
+  } else {
+    // AUTO_MULTI
+    const effectiveRowsPerPage = density === 'COMPACT' ? 22 : density === 'COMFORTABLE' ? 12 : 16;
+    estimatedPages = Math.max(1, Math.ceil((rowCount + 4) / effectiveRowsPerPage));
+  }
+
+  // Determine effective font and padding styles
+  let effectiveFontSize = 'text-[10px]';
+  let cellPadding = 'py-1.5 px-1.5';
+  let tableHeaderSize = 'text-[10px]';
+
+  if (pageMode === 'FIT_1_PAGE') {
+    if (rowCount > 22) {
+      effectiveFontSize = 'text-[7.5px]';
+      cellPadding = 'py-0.5 px-1';
+      tableHeaderSize = 'text-[8.5px]';
+    } else if (rowCount > 14) {
+      effectiveFontSize = 'text-[8.5px]';
+      cellPadding = 'py-1 px-1';
+      tableHeaderSize = 'text-[9px]';
+    } else {
+      effectiveFontSize = 'text-[9.5px]';
+      cellPadding = 'py-1.5 px-1.5';
+      tableHeaderSize = 'text-[10px]';
+    }
+  } else if (pageMode === 'FIT_2_PAGES') {
+    effectiveFontSize = 'text-[9px]';
+    cellPadding = 'py-1 px-1.5';
+    tableHeaderSize = 'text-[9.5px]';
+  } else {
+    // AUTO_MULTI or CUSTOM
+    if (density === 'COMPACT') {
+      effectiveFontSize = 'text-[8.5px]';
+      cellPadding = 'py-1 px-1';
+      tableHeaderSize = 'text-[9px]';
+    } else if (density === 'COMFORTABLE') {
+      effectiveFontSize = 'text-[11px]';
+      cellPadding = 'py-2.5 px-2';
+      tableHeaderSize = 'text-[11px]';
+    } else {
+      effectiveFontSize = 'text-[9.5px]';
+      cellPadding = 'py-1.5 px-1.5';
+      tableHeaderSize = 'text-[10px]';
+    }
+  }
+
   // Print Handler
   const handlePrint = () => {
     if (printRef.current) {
@@ -258,13 +308,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     }
   };
 
-  // PDF Export Handler with intelligent 1-page fit
+  // PDF Export Handler
   const handleExportPdf = async () => {
     if (!printRef.current) return;
     setIsExporting(true);
     try {
       await downloadElementAsPdf(printRef.current, `Statement_${party.name.replace(/\s+/g, '_')}.pdf`, {
-        scale: entries.length > 15 ? 2.0 : 2.5,
+        scale: 2.2,
       });
     } catch (err) {
       console.error('Failed to export ledger PDF:', err);
@@ -303,14 +353,6 @@ Thank you for your business!`;
     year: 'numeric',
   });
 
-  // Intelligent scaling classes based on number of rows to guarantee single page fit
-  const rowCount = entries.length;
-  const isDense = rowCount > 12;
-  const isSuperDense = rowCount > 20;
-
-  const tableFontSize = isSuperDense ? 'text-[8.5px]' : isDense ? 'text-[9.5px]' : 'text-[10px]';
-  const cellPadding = isSuperDense ? 'py-1 px-1' : isDense ? 'py-1.5 px-1.5' : 'py-2 px-1.5';
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto">
       <div className="bg-slate-100 rounded-2xl shadow-2xl border border-slate-300 w-full max-w-5xl my-4 overflow-hidden flex flex-col max-h-[96vh]">
@@ -325,19 +367,26 @@ Thank you for your business!`;
             className="hidden" 
           />
 
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-xs">
               📜
             </span>
             <div>
               <h2 className="text-sm md:text-base font-bold text-white flex items-center gap-2">
-                <span>Party Ledger Statement (1-Page Fit)</span>
+                <span>Party Ledger Statement</span>
                 <span className="text-[11px] bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded font-mono">
                   {party.name}
                 </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                  estimatedPages === 1 
+                    ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                    : 'bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                }`}>
+                  📄 {estimatedPages} {estimatedPages === 1 ? 'Page' : 'Pages'}
+                </span>
               </h2>
               <p className="text-[11px] text-slate-300">
-                Official statement format with Item Description, Bills, Payments &amp; TDS
+                1-पेज या मल्टी-पेज (2+ पेज) लेज़र प्रिंटिंग और कस्टम स्केलिंग
               </p>
             </div>
           </div>
@@ -374,7 +423,7 @@ Thank you for your business!`;
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
             >
-              <Printer className="w-4 h-4" /> Print (1-Page)
+              <Printer className="w-4 h-4" /> Print ({estimatedPages} Page{estimatedPages > 1 ? 's' : ''})
             </button>
 
             <button
@@ -401,131 +450,295 @@ Thank you for your business!`;
           </div>
         </div>
 
-        {/* Opening Balance Toolbar & Save Option (no-print) */}
-        <div className="bg-slate-800 border-b border-slate-700 px-5 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
-              <span>⚖️ Opening Balance:</span>
+        {/* 🌟 USER PAGE SIZE & SCALING CONTROLS TOOLBAR (पेज छोटा/बड़ा करने के ऑप्शंस) */}
+        <div className="bg-slate-800/95 border-b border-slate-700 px-5 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+          {/* Left: Page Mode Selector */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1 mr-1">
+              <Layers className="w-3.5 h-3.5" /> पेज मोड:
             </span>
+
+            <div className="inline-flex bg-slate-900 rounded-lg p-0.5 border border-slate-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setPageMode('AUTO_MULTI');
+                  setZoomScale(100);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  pageMode === 'AUTO_MULTI' 
+                    ? 'bg-blue-600 text-white shadow-xs' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+                title="लंबा लेज़र अपने आप 2, 3 या उससे अधिक पेजों पर बिना कटे साफ़ प्रिंट होगा"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Auto Multi-Page (ऑटो 2+ पेज)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPageMode('FIT_1_PAGE');
+                  setZoomScale(100);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  pageMode === 'FIT_1_PAGE' 
+                    ? 'bg-blue-600 text-white shadow-xs' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+                title="पूरे लेज़र को 1 ही पेज में ऑटोमैटिकली कंप्रेस करके फिट करेगा"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Fit 1-Page (1 पेज में फिट)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPageMode('FIT_2_PAGES');
+                  setZoomScale(95);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  pageMode === 'FIT_2_PAGES' 
+                    ? 'bg-blue-600 text-white shadow-xs' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+                title="मध्यम व बड़े लेज़र को बराबर 2 पेजों में फिट करेगा"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Fit 2-Pages (2 पेज में)</span>
+              </button>
+            </div>
           </div>
 
+          {/* Right: Zoom Scale % & Row Density Controls */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Financial Year Selector */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-300 text-[11px] font-semibold">F.Y.:</span>
-              <select
-                value={financialYear}
-                onChange={(e) => setFinancialYear(e.target.value)}
-                className="bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1 text-white font-mono font-bold text-xs focus:ring-1 focus:ring-blue-500"
+            {/* Scale +/- Buttons */}
+            <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
+              <span className="text-[11px] font-semibold text-slate-300">स्केल:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPageMode('CUSTOM');
+                  setZoomScale(prev => Math.max(65, prev - 5));
+                }}
+                disabled={zoomScale <= 65}
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 cursor-pointer"
+                title="फॉन्ट और पेज साइज छोटा करें (-5%)"
               >
-                <option value="2025-2026">2025-2026</option>
-                <option value="2024-2025">2024-2025</option>
-                <option value="2026-2027">2026-2027</option>
-                <option value="2023-2024">2023-2024</option>
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="font-mono font-bold text-xs text-amber-300 w-11 text-center">
+                {zoomScale}%
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPageMode('CUSTOM');
+                  setZoomScale(prev => Math.min(130, prev + 5));
+                }}
+                disabled={zoomScale >= 130}
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 cursor-pointer"
+                title="फॉन्ट और पेज साइज बड़ा करें (+5%)"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+              {zoomScale !== 100 && (
+                <button
+                  type="button"
+                  onClick={() => setZoomScale(100)}
+                  className="text-[10px] text-blue-400 hover:underline ml-1 font-semibold"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+
+            {/* Density Toggle */}
+            <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
+              <span className="text-[11px] font-semibold text-slate-300">दूरी:</span>
+              <select
+                value={density}
+                onChange={(e) => setDensity(e.target.value as DensityMode)}
+                className="bg-slate-800 border-none text-white text-xs rounded px-1.5 py-0.5 focus:ring-0 font-medium"
+              >
+                <option value="COMPACT">Compact (कम जगह)</option>
+                <option value="NORMAL">Normal (सामान्य)</option>
+                <option value="COMFORTABLE">Relaxed (खुला-खुला)</option>
               </select>
             </div>
 
-            {/* Opening Date */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-300 text-[11px] font-semibold">Date:</span>
-              <input
-                type="text"
-                value={openingDate}
-                onChange={(e) => setOpeningDate(e.target.value)}
-                placeholder="01-04-2025"
-                className="bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-white font-mono text-xs w-24 text-center focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Opening Balance Amount */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-300 text-[11px] font-semibold">Amount (₹):</span>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={openingBalance || ''}
-                onChange={(e) => setOpeningBalance(Number(e.target.value) || 0)}
-                placeholder="0.00"
-                className="bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1 text-white font-mono font-bold text-xs w-28 focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Dr / Cr Toggle */}
-            <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-600">
-              <button
-                type="button"
-                onClick={() => setBalanceType('Dr')}
-                className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors ${
-                  balanceType === 'Dr' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Dr (Receivable)
-              </button>
-              <button
-                type="button"
-                onClick={() => setBalanceType('Cr')}
-                className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors ${
-                  balanceType === 'Cr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Cr (Advance)
-              </button>
-            </div>
-
-            {/* Save Opening Balance Button */}
+            {/* Advance Opening Settings Button */}
             <button
               type="button"
-              onClick={handleSaveOpeningBalance}
-              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-xs ${
-                isSavedOpening 
-                  ? 'bg-emerald-600 text-white' 
-                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+              onClick={() => setShowAdvanceControls(!showAdvanceControls)}
+              className={`p-1.5 rounded-lg border flex items-center gap-1 text-xs font-semibold transition-colors ${
+                showAdvanceControls 
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                  : 'bg-slate-900 text-slate-300 hover:text-white border-slate-700'
               }`}
-              title="Save Opening Balance to Party & Database permanently"
+              title="Toggle Opening Balance & FY Controls"
             >
-              {isSavedOpening ? (
-                <>
-                  <Check className="w-3.5 h-3.5" /> Saved to Database!
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" /> Save Opening Balance
-                </>
-              )}
+              <Sliders className="w-3.5 h-3.5" />
+              <span>ओपनिंग बैलेंस</span>
             </button>
           </div>
         </div>
+
+        {/* Opening Balance Toolbar & Save Option (Dropdown/Expandable) */}
+        {showAdvanceControls && (
+          <div className="bg-slate-850 border-b border-slate-700 px-5 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                <span>⚖️ Opening Balance Settings:</span>
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Financial Year Selector */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-300 text-[11px] font-semibold">F.Y.:</span>
+                <select
+                  value={financialYear}
+                  onChange={(e) => setFinancialYear(e.target.value)}
+                  className="bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1 text-white font-mono font-bold text-xs focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="2025-2026">2025-2026</option>
+                  <option value="2024-2025">2024-2025</option>
+                  <option value="2026-2027">2026-2027</option>
+                  <option value="2023-2024">2023-2024</option>
+                </select>
+              </div>
+
+              {/* Opening Date */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-300 text-[11px] font-semibold">Date:</span>
+                <input
+                  type="text"
+                  value={openingDate}
+                  onChange={(e) => setOpeningDate(e.target.value)}
+                  placeholder="01-04-2025"
+                  className="bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-white font-mono text-xs w-24 text-center focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Opening Balance Amount */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-300 text-[11px] font-semibold">Amount (₹):</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={openingBalance || ''}
+                  onChange={(e) => setOpeningBalance(Number(e.target.value) || 0)}
+                  placeholder="0.00"
+                  className="bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1 text-white font-mono font-bold text-xs w-28 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Dr / Cr Toggle */}
+              <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setBalanceType('Dr')}
+                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors ${
+                    balanceType === 'Dr' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Dr (Receivable)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBalanceType('Cr')}
+                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors ${
+                    balanceType === 'Cr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Cr (Advance)
+                </button>
+              </div>
+
+              {/* Save Opening Balance Button */}
+              <button
+                type="button"
+                onClick={handleSaveOpeningBalance}
+                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-xs ${
+                  isSavedOpening 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
+                title="Save Opening Balance to Party & Database permanently"
+              >
+                {isSavedOpening ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" /> Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" /> Save to Party
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Scrollable Printable Statement Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center bg-slate-300/60">
           <div 
             ref={printRef}
-            className="printable-area bg-white text-black shadow-2xl border border-slate-300 rounded-none w-full max-w-[840px] p-5 md:p-7 space-y-3 font-sans"
-            style={{ boxSizing: 'border-box' }}
+            className={`printable-area ${pageMode !== 'FIT_1_PAGE' ? 'multi-page-doc' : ''} bg-white text-black shadow-2xl border border-slate-300 rounded-none w-full max-w-[840px] p-5 md:p-7 space-y-3 font-sans`}
+            style={{ 
+              boxSizing: 'border-box',
+              zoom: zoomScale !== 100 ? `${zoomScale}%` : undefined,
+              transformOrigin: 'top center'
+            }}
           >
-            {/* Embedded Print CSS for Single Page layout */}
+            {/* Embedded Print CSS for Dynamic Single or Multi-Page layout */}
             <style>{`
               @media print {
                 @page {
                   size: A4 portrait;
-                  margin: 6mm !important;
+                  margin: ${pageMode === 'FIT_1_PAGE' ? '6mm 8mm' : '8mm 10mm'} !important;
                 }
                 html, body {
-                  height: 100% !important;
+                  height: ${pageMode === 'FIT_1_PAGE' ? '100%' : 'auto'} !important;
                   margin: 0 !important;
                   padding: 0 !important;
-                  overflow: hidden !important;
+                  overflow: ${pageMode === 'FIT_1_PAGE' ? 'hidden' : 'visible'} !important;
                   background: #fff !important;
                 }
                 .printable-area {
                   box-shadow: none !important;
                   border: 1.5px solid #000 !important;
-                  padding: 8px 12px !important;
-                  margin: 0 !important;
-                  max-height: 98vh !important;
+                  padding: ${pageMode === 'FIT_1_PAGE' ? '6px 10px' : '10px 14px'} !important;
+                  margin: 0 auto !important;
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  height: ${pageMode === 'FIT_1_PAGE' ? '98vh' : 'auto'} !important;
+                  max-height: ${pageMode === 'FIT_1_PAGE' ? '98vh' : 'none'} !important;
+                  overflow: ${pageMode === 'FIT_1_PAGE' ? 'hidden' : 'visible'} !important;
+                  page-break-inside: ${pageMode === 'FIT_1_PAGE' ? 'avoid' : 'auto'} !important;
+                  page-break-after: ${pageMode === 'FIT_1_PAGE' ? 'avoid' : 'auto'} !important;
+                }
+                table {
+                  width: 100% !important;
+                  page-break-inside: auto !important;
+                }
+                thead {
+                  display: table-header-group !important;
+                }
+                tfoot {
+                  display: table-row-group !important;
+                }
+                tr {
                   page-break-inside: avoid !important;
-                  page-break-after: avoid !important;
+                  page-break-after: auto !important;
+                }
+                .avoid-page-break {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
                 .no-print {
                   display: none !important;
@@ -588,7 +801,7 @@ Thank you for your business!`;
             </div>
 
             {/* 2. Account / Party Details Card */}
-            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 flex flex-col md:flex-row justify-between gap-2.5 text-xs">
+            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 flex flex-col md:flex-row justify-between gap-2.5 text-xs avoid-page-break">
               {/* Left: Party Details */}
               <div className="space-y-0.5 max-w-[65%]">
                 <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block">
@@ -648,7 +861,7 @@ Thank you for your business!`;
 
             {/* 3. Main Ledger Table */}
             <div className="w-full border-2 border-black overflow-hidden mt-2">
-              <table className={`w-full text-left border-collapse table-fixed ${tableFontSize}`}>
+              <table className={`w-full text-left border-collapse table-fixed ${effectiveFontSize}`}>
                 <colgroup>
                   <col style={{ width: '13%' }} />
                   <col style={{ width: '9%' }} />
@@ -659,7 +872,7 @@ Thank you for your business!`;
                   <col style={{ width: '14%' }} />
                 </colgroup>
                 <thead>
-                  <tr className="bg-[#cad9e8] text-black font-bold text-center border-b-2 border-black text-[10px]">
+                  <tr className={`bg-[#cad9e8] text-black font-bold text-center border-b-2 border-black ${tableHeaderSize}`}>
                     <th className="py-1.5 px-1 border-r border-black font-bold text-center">Date</th>
                     <th className="py-1.5 px-1 border-r border-black font-bold text-center">Type</th>
                     <th className="py-1.5 px-1 border-r border-black font-bold text-center">Invoice #</th>
@@ -744,7 +957,7 @@ Thank you for your business!`;
             </div>
 
             {/* 5. Net Outstanding In Words Card */}
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-1.5 text-[10px]">
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-1.5 text-[10px] avoid-page-break">
               <div>
                 <span className="text-[9px] font-bold uppercase text-slate-500 block">
                   NET OUTSTANDING BALANCE IN WORDS:
@@ -762,7 +975,7 @@ Thank you for your business!`;
             </div>
 
             {/* 6. Bank Details & Authorized Signatory */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[10px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[10px] avoid-page-break">
               {/* Left: Bank Details */}
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
                 <div className="font-bold text-slate-900 uppercase text-[9px]">
