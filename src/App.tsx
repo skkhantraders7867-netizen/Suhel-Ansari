@@ -45,6 +45,8 @@ import { EwayBillsView } from './components/EwayBillsView';
 import { CashBankView } from './components/CashBankView';
 import { BarcodeStudioView } from './components/BarcodeStudioView';
 import { PartiesView } from './components/PartiesView';
+import { OpeningBalancesView } from './components/OpeningBalancesView';
+import { PaymentVouchersView } from './components/PaymentVouchersView';
 import { InventoryView } from './components/InventoryView';
 import { GstReportsView } from './components/GstReportsView';
 import { LetterheadDocumentView } from './components/LetterheadDocumentView';
@@ -1500,6 +1502,34 @@ export default function App() {
                   onDeleteParty={handleDeleteParty}
                   onCreateInvoiceForParty={(partyId) => handleOpenCreateInvoice('TAX_INVOICE', partyId)}
                   onRecordPayment={(party) => handleOpenPaymentVoucherModal(party)}
+                />
+              )}
+
+              {currentView === 'OPENING_BALANCES' && (
+                <OpeningBalancesView 
+                  parties={parties}
+                  invoices={invoices}
+                  businessProfile={businessProfile}
+                  paymentVouchers={paymentVouchers}
+                  onUpdateParty={handleUpdateParty}
+                  onAddNewParty={handleAddNewParty}
+                />
+              )}
+
+              {currentView === 'PAYMENT_VOUCHERS' && (
+                <PaymentVouchersView 
+                  paymentVouchers={paymentVouchers}
+                  parties={parties}
+                  invoices={invoices}
+                  bankAccounts={bankAccounts}
+                  businessProfile={businessProfile}
+                  onOpenCreateVoucher={(party, invoice) => handleOpenPaymentVoucherModal(party, invoice)}
+                  onOpenEditVoucher={(voucher) => {
+                    const p = parties.find(party => party.id === voucher.partyId);
+                    const inv = voucher.invoiceId ? invoices.find(i => i.id === voucher.invoiceId) : undefined;
+                    handleOpenPaymentVoucherModal(p, inv, voucher);
+                  }}
+                  onDeleteVoucher={handleDeletePaymentVoucher}
                 />
               )}
 

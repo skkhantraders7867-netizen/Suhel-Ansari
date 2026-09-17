@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, 
   Users, Package, FileSpreadsheet, Settings, Plus, Sparkles,
   Receipt, Truck, Wallet, QrCode, Layers, ShieldCheck,
-  User, LogIn, KeyRound, UserCheck, ShoppingCart
+  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale
 } from 'lucide-react';
 import { ViewMode, AuthUser } from '../types';
 
@@ -92,6 +92,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id: 'PARTIES' as ViewMode,
           label: 'Customer & Supplier Ledger',
           icon: Users,
+        },
+        {
+          id: 'OPENING_BALANCES' as ViewMode,
+          label: 'Opening Balance (ओपनिंग बैलेंस)',
+          icon: Scale,
+          tag: 'DR/CR FY',
+        },
+        {
+          id: 'PAYMENT_VOUCHERS' as ViewMode,
+          label: 'Payment Vouchers (पेमेंट वाउचर)',
+          icon: Receipt,
+          tag: 'Receipts',
         },
       ],
     },

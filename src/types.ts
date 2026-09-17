@@ -27,6 +27,8 @@ export type ViewMode =
   | 'CREATE_INVOICE' 
   | 'POS' 
   | 'PARTIES' 
+  | 'OPENING_BALANCES'
+  | 'PAYMENT_VOUCHERS'
   | 'INVENTORY' 
   | 'EXPENSES'
   | 'EWAY_BILLS'

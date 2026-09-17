@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   // Determine which of the 4 main pages is currently active
   const isPage1 = ['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'POS', 'CREATE_INVOICE'].includes(currentView);
-  const isPage2 = currentView === 'PARTIES';
+  const isPage2 = ['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS'].includes(currentView);
   const isPage3 = ['INVENTORY', 'BARCODE_STUDIO'].includes(currentView);
   const isPage4 = ['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView);
 
