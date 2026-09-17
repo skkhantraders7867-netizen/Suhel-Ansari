@@ -16,6 +16,9 @@ interface PaymentReceivedVoucherModalProps {
   businessProfile: BusinessProfile;
   preSelectedParty?: Party | null;
   preSelectedInvoice?: Invoice | null;
+  targetParty?: Party | null;
+  targetInvoice?: Invoice | null;
+  paymentVouchers?: PaymentVoucher[];
   editingVoucher?: PaymentVoucher | null;
   onSaveVoucher: (voucher: PaymentVoucher, linkedInvoiceId?: string, bankAccountId?: string) => void;
   onDeleteVoucher?: (voucherId: string) => void;
@@ -30,6 +33,9 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
   businessProfile,
   preSelectedParty = null,
   preSelectedInvoice = null,
+  targetParty = null,
+  targetInvoice = null,
+  paymentVouchers = [],
   editingVoucher = null,
   onSaveVoucher,
   onDeleteVoucher,
@@ -48,6 +54,22 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
 
   const printReceiptRef = useRef<HTMLDivElement>(null);
 
+  // Helper to get next sequential serial number (1, 2, 3, 4, 5...)
+  const getNextVoucherSerial = () => {
+    if (!paymentVouchers || paymentVouchers.length === 0) return '1';
+    const numericIds = paymentVouchers
+      .map(v => {
+        const match = v.voucherNumber ? v.voucherNumber.trim().match(/\d+$/) : null;
+        return match ? parseInt(match[0], 10) : 0;
+      })
+      .filter(n => !isNaN(n) && n > 0);
+
+    if (numericIds.length > 0) {
+      return String(Math.max(...numericIds) + 1);
+    }
+    return String(paymentVouchers.length + 1);
+  };
+
   // Initialize form state
   useEffect(() => {
     if (!isOpen) return;
@@ -63,13 +85,16 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
       setSelectedBankAccountId(editingVoucher.bankAccountId || '');
       setVoucherNumber(editingVoucher.voucherNumber);
     } else {
-      const initialParty = preSelectedParty || (preSelectedInvoice ? parties.find(p => p.id === preSelectedInvoice.partyId) : parties[0]);
+      const activeTargetParty = targetParty || preSelectedParty;
+      const activeTargetInvoice = targetInvoice || preSelectedInvoice;
+
+      const initialParty = activeTargetParty || (activeTargetInvoice ? parties.find(p => p.id === activeTargetInvoice.partyId) : parties[0]);
       setSelectedPartyId(initialParty?.id || '');
       
-      if (preSelectedInvoice) {
-        setSelectedInvoiceId(preSelectedInvoice.id);
-        setAmount(preSelectedInvoice.balanceDue > 0 ? preSelectedInvoice.balanceDue : preSelectedInvoice.grandTotal);
-        setRemarks(`Payment received for Invoice ${preSelectedInvoice.invoiceNumber}`);
+      if (activeTargetInvoice) {
+        setSelectedInvoiceId(activeTargetInvoice.id);
+        setAmount(activeTargetInvoice.balanceDue > 0 ? activeTargetInvoice.balanceDue : activeTargetInvoice.grandTotal);
+        setRemarks(`Payment received for Invoice ${activeTargetInvoice.invoiceNumber}`);
       } else {
         setSelectedInvoiceId('');
         setAmount(initialParty ? Math.max(0, initialParty.currentBalance || 0) : 0);
@@ -81,11 +106,12 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
       setReferenceNumber('');
       setSelectedBankAccountId(bankAccounts[0]?.id || '');
       
-      const vNum = `RCV-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
-      setVoucherNumber(vNum);
+      // Sequential Serial Number: 1, 2, 3, 4, 5...
+      const nextSerial = getNextVoucherSerial();
+      setVoucherNumber(nextSerial);
     }
     setShowPrintPreview(false);
-  }, [isOpen, editingVoucher, preSelectedParty, preSelectedInvoice, parties, bankAccounts]);
+  }, [isOpen, editingVoucher, preSelectedParty, preSelectedInvoice, targetParty, targetInvoice, parties, bankAccounts, paymentVouchers]);
 
   if (!isOpen) return null;
 
@@ -433,14 +459,14 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm('Are you sure you want to delete this payment voucher? This will reverse the ledger credit.')) {
-                      onDeleteVoucher(editingVoucher.id);
-                      onClose();
-                    }
+                    onDeleteVoucher(editingVoucher.id);
+                    onClose();
                   }}
-                  className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-rose-200 cursor-pointer"
+                  title="Delete Voucher (वाउचर हटाएं)"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete Voucher
+                  <Trash2 className="w-3.5 h-3.5" /> 
+                  <span>Delete Voucher</span>
                 </button>
               ) : (
                 <div />

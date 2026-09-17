@@ -282,6 +282,7 @@ Thank you for your payment!`;
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <th className="py-3 px-3 text-center w-12">क्र.सं. (S.No.)</th>
                 <th className="py-3 px-4">Voucher No &amp; Date</th>
                 <th className="py-3 px-4">Received From (Party)</th>
                 <th className="py-3 px-3">Payment Mode &amp; Account</th>
@@ -294,18 +295,23 @@ Thank you for your payment!`;
             <tbody className="divide-y divide-slate-100">
               {filteredVouchers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-slate-400">
+                  <td colSpan={8} className="py-16 text-center text-slate-400">
                     <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                     <p className="font-semibold">No payment vouchers found</p>
                     <p className="text-[11px] text-slate-400 mt-0.5">Click "+ Create Payment Voucher" to record your first payment received</p>
                   </td>
                 </tr>
               ) : (
-                filteredVouchers.map((v) => {
+                filteredVouchers.map((v, index) => {
                   const party = parties.find(p => p.id === v.partyId);
 
                   return (
                     <tr key={v.id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* S.No. (1, 2, 3, 4, 5...) */}
+                      <td className="py-3.5 px-3 text-center font-mono font-bold text-slate-600 bg-slate-50/50">
+                        {index + 1}
+                      </td>
+
                       {/* Voucher No & Date */}
                       <td className="py-3.5 px-4">
                         <div className="font-mono font-bold text-slate-900 text-xs flex items-center gap-1.5">
@@ -383,7 +389,7 @@ Thank you for your payment!`;
                           {/* Print Receipt */}
                           <button
                             onClick={() => setPrintingVoucher(v)}
-                            className="p-1.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 rounded-lg transition-colors"
+                            className="p-1.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 rounded-lg transition-colors cursor-pointer"
                             title="Print 1-Page Receipt (प्रिंट रसीद)"
                           >
                             <Printer className="w-3.5 h-3.5" />
@@ -393,7 +399,7 @@ Thank you for your payment!`;
                           {party?.phone && (
                             <button
                               onClick={() => handleShareWhatsApp(v)}
-                              className="p-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded-lg border border-emerald-200 transition-colors"
+                              className="p-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
                               title="Send WhatsApp Receipt"
                             >
                               <Share2 className="w-3.5 h-3.5" />
@@ -403,7 +409,7 @@ Thank you for your payment!`;
                           {/* Edit */}
                           <button
                             onClick={() => onOpenEditVoucher(v)}
-                            className="p-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 rounded-lg transition-colors"
+                            className="p-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 rounded-lg transition-colors cursor-pointer"
                             title="Edit Voucher"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -411,13 +417,11 @@ Thank you for your payment!`;
 
                           {/* Delete */}
                           <button
-                            onClick={() => {
-                              if (window.confirm(`Are you sure you want to delete Voucher #${v.voucherNumber}? This will reverse the credit balance.`)) {
-                                onDeleteVoucher(v.id);
-                              }
-                            }}
-                            className="p-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 rounded-lg transition-colors"
-                            title="Delete Voucher"
+                            type="button"
+                            onClick={() => onDeleteVoucher(v.id)}
+                            className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                            title={`वाउचर #${v.voucherNumber} हटाएं (Delete Voucher)`}
+                            aria-label="Delete Voucher"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

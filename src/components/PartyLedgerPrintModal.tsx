@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Printer, Download, Share2, Upload, Image as ImageIcon, Trash2, Check, Save,
-  ZoomIn, ZoomOut, Layers, Maximize2, Minimize2, FileText, Sliders
+  ZoomIn, ZoomOut, Layers, Maximize2, Minimize2, FileText, Sliders, Building2, Eye, EyeOff
 } from 'lucide-react';
 import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
 import { GST_STATES } from '../data/mockData';
@@ -74,6 +74,9 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   const [density, setDensity] = useState<DensityMode>('NORMAL');
   const [showAdvanceControls, setShowAdvanceControls] = useState<boolean>(false);
 
+  // Bank Details Delete/Hide Toggle
+  const [showBankDetails, setShowBankDetails] = useState<boolean>(true);
+
   const printRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,6 +92,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       );
       setOpeningDate(party.openingBalanceDate || '01-04-2025');
       setIsSavedOpening(false);
+      setShowBankDetails(true);
     }
   }, [businessProfile.logoUrl, party, isOpen]);
 
@@ -134,13 +138,19 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
 
   // Filter invoices for this party
   const partyInvoices = invoices.filter(
-    inv => (inv.partyId === party.id || inv.partyName.toLowerCase() === party.name.toLowerCase()) && 
-           inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE'
+    inv => (
+      (inv.partyId && party.id && inv.partyId === party.id) || 
+      (inv.partyName && party.name && inv.partyName.trim().toLowerCase() === party.name.trim().toLowerCase())
+    ) && 
+    inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE'
   );
 
   // Filter payment vouchers for this party
   const partyVouchers = paymentVouchers.filter(
-    pv => pv.partyId === party.id || pv.partyName.toLowerCase() === party.name.toLowerCase()
+    pv => (
+      (pv.partyId && party.id && pv.partyId === party.id) || 
+      (pv.partyName && party.name && pv.partyName.trim().toLowerCase() === party.name.trim().toLowerCase())
+    )
   );
 
   // Build Chronological Ledger Entries
@@ -161,8 +171,17 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   // 2. Add all Invoices
   partyInvoices.forEach((inv) => {
     const itemDesc = (inv.items && inv.items.length > 0)
-      ? inv.items.map(item => `${item.name} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')
+      ? inv.items.map(item => `${item.name || item.description || 'Item'} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')
       : 'TAX INVOICE GOODS / SERVICES';
+
+    // Calculate invoice bill total amount safely with all possible fallbacks
+    const invBillAmount = Number(
+      inv.grandTotal ?? 
+      (inv as any).total ?? 
+      (inv as any).finalAmount ?? 
+      (inv.taxableTotal ? (inv.taxableTotal + (inv.cgstTotal || 0) + (inv.sgstTotal || 0) + (inv.igstTotal || 0) + (inv.cessTotal || 0) + (inv.roundOff || 0)) : 0) ??
+      (inv.items && inv.items.length > 0 ? inv.items.reduce((sum, it) => sum + (it.totalAmount || (it.quantity * it.rate)), 0) : 0)
+    ) || 0;
 
     rawEntries.push({
       id: `entry-inv-${inv.id}`,
@@ -170,7 +189,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       type: 'JOURNAL',
       invoiceNo: inv.invoiceNumber,
       itemDescription: itemDesc,
-      amount: Number(inv.total || 0),
+      amount: invBillAmount,
       payment: 0,
       entryType: 'INVOICE',
     });
@@ -397,14 +416,14 @@ Thank you for your business!`;
               <div className="flex items-center bg-slate-800 rounded-xl p-1 border border-slate-700">
                 <button
                   onClick={() => logoInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-slate-200 hover:text-white hover:bg-slate-700 font-medium text-xs rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-slate-200 hover:text-white hover:bg-slate-700 font-medium text-xs rounded-lg transition-colors cursor-pointer"
                   title="Change Logo for PDF"
                 >
                   <ImageIcon className="w-3.5 h-3.5 text-blue-400" /> Change Logo
                 </button>
                 <button
                   onClick={handleRemoveLogo}
-                  className="p-1 text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition-colors"
+                  className="p-1 text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
                   title="Remove Logo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -413,15 +432,15 @@ Thank you for your business!`;
             ) : (
               <button
                 onClick={() => logoInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-medium text-xs rounded-xl border border-slate-700 shadow-xs transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-medium text-xs rounded-xl border border-slate-700 shadow-xs transition-colors cursor-pointer"
               >
-                <Upload className="w-3.5 h-3.5 text-blue-400" /> Upload Logo (लोगो लगाएं)
+                <Upload className="w-3.5 h-3.5 text-blue-400" /> Upload Logo
               </button>
             )}
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               <Printer className="w-4 h-4" /> Print ({estimatedPages} Page{estimatedPages > 1 ? 's' : ''})
             </button>
@@ -429,21 +448,21 @@ Thank you for your business!`;
             <button
               onClick={handleExportPdf}
               disabled={isExporting}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-4 h-4" /> {isExporting ? 'Exporting...' : 'PDF'}
             </button>
 
             <button
               onClick={handleShareWhatsApp}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
             >
               <Share2 className="w-4 h-4" /> WhatsApp
             </button>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors ml-1"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors ml-1 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -465,7 +484,7 @@ Thank you for your business!`;
                   setPageMode('AUTO_MULTI');
                   setZoomScale(100);
                 }}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   pageMode === 'AUTO_MULTI' 
                     ? 'bg-blue-600 text-white shadow-xs' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -482,7 +501,7 @@ Thank you for your business!`;
                   setPageMode('FIT_1_PAGE');
                   setZoomScale(100);
                 }}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   pageMode === 'FIT_1_PAGE' 
                     ? 'bg-blue-600 text-white shadow-xs' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -499,7 +518,7 @@ Thank you for your business!`;
                   setPageMode('FIT_2_PAGES');
                   setZoomScale(95);
                 }}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   pageMode === 'FIT_2_PAGES' 
                     ? 'bg-blue-600 text-white shadow-xs' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -548,7 +567,7 @@ Thank you for your business!`;
                 <button
                   type="button"
                   onClick={() => setZoomScale(100)}
-                  className="text-[10px] text-blue-400 hover:underline ml-1 font-semibold"
+                  className="text-[10px] text-blue-400 hover:underline ml-1 font-semibold cursor-pointer"
                 >
                   Reset
                 </button>
@@ -561,7 +580,7 @@ Thank you for your business!`;
               <select
                 value={density}
                 onChange={(e) => setDensity(e.target.value as DensityMode)}
-                className="bg-slate-800 border-none text-white text-xs rounded px-1.5 py-0.5 focus:ring-0 font-medium"
+                className="bg-slate-800 border-none text-white text-xs rounded px-1.5 py-0.5 focus:ring-0 font-medium cursor-pointer"
               >
                 <option value="COMPACT">Compact (कम जगह)</option>
                 <option value="NORMAL">Normal (सामान्य)</option>
@@ -569,11 +588,26 @@ Thank you for your business!`;
               </select>
             </div>
 
+            {/* Bank Details Delete/Hide Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowBankDetails(!showBankDetails)}
+              className={`p-1.5 rounded-lg border flex items-center gap-1 text-xs font-semibold transition-colors cursor-pointer ${
+                !showBankDetails 
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
+                  : 'bg-slate-900 text-slate-300 hover:text-white border-slate-700'
+              }`}
+              title="Toggle Bank Details"
+            >
+              {showBankDetails ? <Building2 className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-rose-400" />}
+              <span>{showBankDetails ? 'Bank Info' : 'Bank Hidden'}</span>
+            </button>
+
             {/* Advance Opening Settings Button */}
             <button
               type="button"
               onClick={() => setShowAdvanceControls(!showAdvanceControls)}
-              className={`p-1.5 rounded-lg border flex items-center gap-1 text-xs font-semibold transition-colors ${
+              className={`p-1.5 rounded-lg border flex items-center gap-1 text-xs font-semibold transition-colors cursor-pointer ${
                 showAdvanceControls 
                   ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
                   : 'bg-slate-900 text-slate-300 hover:text-white border-slate-700'
@@ -642,7 +676,7 @@ Thank you for your business!`;
                 <button
                   type="button"
                   onClick={() => setBalanceType('Dr')}
-                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors ${
+                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors cursor-pointer ${
                     balanceType === 'Dr' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -651,7 +685,7 @@ Thank you for your business!`;
                 <button
                   type="button"
                   onClick={() => setBalanceType('Cr')}
-                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors ${
+                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-colors cursor-pointer ${
                     balanceType === 'Cr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -663,7 +697,7 @@ Thank you for your business!`;
               <button
                 type="button"
                 onClick={handleSaveOpeningBalance}
-                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-xs ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-xs cursor-pointer ${
                   isSavedOpening 
                     ? 'bg-emerald-600 text-white' 
                     : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
@@ -919,12 +953,12 @@ Thank you for your business!`;
 
                         {/* Amount (Debit) */}
                         <td className={`${cellPadding} text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums`}>
-                          {entry.amount > 0 ? formatIndianCurrency(entry.amount, true) : ''}
+                          {(entry.entryType === 'INVOICE' || entry.amount > 0) ? formatIndianCurrency(entry.amount, true) : ''}
                         </td>
 
                         {/* Payment (Credit / TDS / Payment) */}
                         <td className={`${cellPadding} text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums`}>
-                          {entry.payment > 0 ? formatIndianCurrency(entry.payment, true) : ''}
+                          {(entry.entryType === 'PAYMENT' || entry.entryType === 'TDS' || entry.payment > 0) ? formatIndianCurrency(entry.payment, true) : ''}
                         </td>
 
                         {/* Balance (Running Balance) */}
@@ -977,23 +1011,44 @@ Thank you for your business!`;
             {/* 6. Bank Details & Authorized Signatory */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[10px] avoid-page-break">
               {/* Left: Bank Details */}
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
-                <div className="font-bold text-slate-900 uppercase text-[9px]">
-                  BANK DETAILS FOR PAYMENT SETTLEMENT:
+              {showBankDetails ? (
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5 relative group">
+                  <button
+                    type="button"
+                    onClick={() => setShowBankDetails(false)}
+                    className="no-print absolute top-1 right-1 text-slate-400 hover:text-rose-600 p-0.5 rounded text-[9px]"
+                    title="Hide Bank Details"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                  <div className="font-bold text-slate-900 uppercase text-[9px]">
+                    BANK DETAILS FOR PAYMENT SETTLEMENT:
+                  </div>
+                  {businessProfile.bankName && (
+                    <div><span className="text-slate-500">Bank Name: </span><strong className="text-slate-800">{businessProfile.bankName}</strong></div>
+                  )}
+                  {businessProfile.accountNumber && (
+                    <div><span className="text-slate-500">Account No: </span><strong className="font-mono text-[#0f2e6b]">{businessProfile.accountNumber}</strong></div>
+                  )}
+                  {businessProfile.ifscCode && (
+                    <div><span className="text-slate-500">IFSC Code: </span><strong className="font-mono text-slate-800">{businessProfile.ifscCode}</strong></div>
+                  )}
+                  {!businessProfile.bankName && !businessProfile.accountNumber && (
+                    <div className="text-slate-500 text-[9.5px] italic">Bank details not configured in Profile Settings</div>
+                  )}
                 </div>
-                {businessProfile.bankName && (
-                  <div><span className="text-slate-500">Bank Name: </span><strong className="text-slate-800">{businessProfile.bankName}</strong></div>
-                )}
-                {businessProfile.accountNumber && (
-                  <div><span className="text-slate-500">Account No: </span><strong className="font-mono text-[#0f2e6b]">{businessProfile.accountNumber}</strong></div>
-                )}
-                {businessProfile.ifscCode && (
-                  <div><span className="text-slate-500">IFSC Code: </span><strong className="font-mono text-slate-800">{businessProfile.ifscCode}</strong></div>
-                )}
-                {!businessProfile.bankName && !businessProfile.accountNumber && (
-                  <div className="text-slate-500 text-[9.5px] italic">Bank details not configured in Profile Settings</div>
-                )}
-              </div>
+              ) : (
+                <div className="border border-dashed border-slate-300 p-2 rounded-xl flex items-center justify-between no-print">
+                  <span className="text-slate-400 text-[10px] italic">Bank details hidden</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowBankDetails(true)}
+                    className="text-[10px] text-blue-600 hover:underline font-bold"
+                  >
+                    + Show Bank Details
+                  </button>
+                </div>
+              )}
 
               {/* Right: Authorised Signatory */}
               <div className="flex flex-col justify-between items-end text-right p-2.5 min-h-[75px]">

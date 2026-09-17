@@ -564,35 +564,45 @@ export default function App() {
     const v = paymentVouchers.find(p => p.id === voucherId);
     if (!v) return;
 
-    setPaymentVouchers(prev => prev.filter(p => p.id !== voucherId));
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Payment Voucher',
+      message: `क्या आप पेमेंट वाउचर "${v.voucherNumber}" (राशि: ₹${v.amount}) को हटाना चाहते हैं?`,
+      confirmLabel: 'हाँ, हटाएं (Delete)',
+      onConfirm: () => {
+        setPaymentVouchers(prev => prev.filter(p => p.id !== voucherId));
 
-    // Reverse invoice paid balance if linked
-    if (v.invoiceId) {
-      setInvoices(prev => prev.map(inv => {
-        if (inv.id === v.invoiceId) {
-          const newPaid = Math.max(0, (inv.paidAmount || 0) - v.amount);
-          const newDue = Math.max(0, inv.grandTotal - newPaid);
-          return {
-            ...inv,
-            paidAmount: newPaid,
-            balanceDue: newDue,
-            paymentStatus: newDue === inv.grandTotal ? 'UNPAID' : (newDue === 0 ? 'PAID' : 'PARTIAL'),
-          };
+        // Reverse invoice paid balance if linked
+        if (v.invoiceId) {
+          setInvoices(prev => prev.map(inv => {
+            if (inv.id === v.invoiceId) {
+              const newPaid = Math.max(0, (inv.paidAmount || 0) - v.amount);
+              const newDue = Math.max(0, inv.grandTotal - newPaid);
+              return {
+                ...inv,
+                paidAmount: newPaid,
+                balanceDue: newDue,
+                paymentStatus: newDue === inv.grandTotal ? 'UNPAID' : (newDue === 0 ? 'PAID' : 'PARTIAL'),
+              };
+            }
+            return inv;
+          }));
         }
-        return inv;
-      }));
-    }
 
-    // Reverse party balance
-    setParties(prev => prev.map(p => {
-      if (p.id === v.partyId) {
-        return {
-          ...p,
-          currentBalance: (p.currentBalance || 0) + v.amount,
-        };
-      }
-      return p;
-    }));
+        // Reverse party balance
+        setParties(prev => prev.map(p => {
+          if (p.id === v.partyId) {
+            return {
+              ...p,
+              currentBalance: (p.currentBalance || 0) + v.amount,
+            };
+          }
+          return p;
+        }));
+
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   // --- EXPENSES ACTIONS ---
@@ -740,9 +750,9 @@ export default function App() {
     const p = parties.find(party => party.id === id);
     setConfirmDialog({
       isOpen: true,
-      title: 'Delete Party / Customer',
-      message: `Are you sure you want to delete "${p?.name || 'this party'}"?`,
-      confirmLabel: 'Delete Now',
+      title: 'पार्टी हटाएं (Delete Party)',
+      message: `क्या आप पार्टी "${p?.name || 'this party'}" को हटाना चाहते हैं?`,
+      confirmLabel: 'हाँ, हटाएं (Delete)',
       onConfirm: () => {
         setParties(prev => prev.filter(p => p.id !== id));
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
@@ -1366,12 +1376,20 @@ export default function App() {
                   parties={parties}
                   items={items}
                   businessProfile={businessProfile}
+                  paymentVouchers={paymentVouchers}
                   onCreateInvoice={handleOpenCreateInvoice}
                   onViewInvoice={(inv) => setPreviewInvoice(inv)}
                   onDeleteInvoice={handleDeleteInvoice}
+                  onDeleteParty={handleDeleteParty}
                   onOpenPos={() => setCurrentView('POS')}
                   onOpenHsnFinder={() => setIsHsnFinderOpen(true)}
                   onNavigateTab={(view) => setCurrentView(view)}
+                  onUpdateParty={handleUpdateParty}
+                  onRecordVoucherForParty={(p) => {
+                    setVoucherTargetParty(p);
+                    setEditingPaymentVoucher(null);
+                    setIsPaymentVoucherModalOpen(true);
+                  }}
                 />
               )}
 
@@ -1502,6 +1520,8 @@ export default function App() {
                   onDeleteParty={handleDeleteParty}
                   onCreateInvoiceForParty={(partyId) => handleOpenCreateInvoice('TAX_INVOICE', partyId)}
                   onRecordPayment={(party) => handleOpenPaymentVoucherModal(party)}
+                  onDeleteInvoice={handleDeleteInvoice}
+                  onDeleteVoucher={handleDeletePaymentVoucher}
                 />
               )}
 
@@ -1673,6 +1693,7 @@ export default function App() {
         invoices={invoices}
         bankAccounts={bankAccounts}
         businessProfile={businessProfile}
+        paymentVouchers={paymentVouchers}
         editingVoucher={editingPaymentVoucher}
         onSaveVoucher={handleSavePaymentVoucher}
         onDeleteVoucher={handleDeletePaymentVoucher}

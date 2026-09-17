@@ -19,6 +19,8 @@ interface PartiesViewProps {
   onDeleteParty: (id: string) => void;
   onCreateInvoiceForParty: (partyId: string) => void;
   onRecordPayment: (party: Party) => void;
+  onDeleteInvoice?: (id: string) => void;
+  onDeleteVoucher?: (id: string) => void;
 }
 
 export const PartiesView: React.FC<PartiesViewProps> = ({
@@ -31,6 +33,8 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   onDeleteParty,
   onCreateInvoiceForParty,
   onRecordPayment,
+  onDeleteInvoice,
+  onDeleteVoucher,
 }) => {
   const [activeType, setActiveType] = useState<'CUSTOMER' | 'SUPPLIER'>('CUSTOMER');
   const [searchTerm, setSearchTerm] = useState('');
@@ -244,7 +248,7 @@ Thank you for your prompt response!`;
                   <div
                     key={p.id}
                     onClick={() => setSelectedParty(p)}
-                    className={`p-4 cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                    className={`p-4 cursor-pointer transition-all flex items-center justify-between gap-3 group ${
                       isSelected ? 'bg-blue-50/80 border-l-4 border-blue-600' : 'hover:bg-slate-50'
                     }`}
                   >
@@ -260,15 +264,30 @@ Thank you for your prompt response!`;
                       <div className="text-[11px] text-slate-500">{p.phone} • {p.city || p.state}</div>
                     </div>
 
-                    <div className="text-right">
-                      <div className={`font-mono font-bold text-xs ${
-                        p.currentBalance > 0 ? 'text-rose-600' : p.currentBalance < 0 ? 'text-emerald-600' : 'text-slate-500'
-                      }`}>
-                        {formatIndianCurrency(Math.abs(p.currentBalance))}
+                    <div className="text-right flex items-center gap-2">
+                      <div>
+                        <div className={`font-mono font-bold text-xs ${
+                          p.currentBalance > 0 ? 'text-rose-600' : p.currentBalance < 0 ? 'text-emerald-600' : 'text-slate-500'
+                        }`}>
+                          {formatIndianCurrency(Math.abs(p.currentBalance))}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {p.currentBalance > 0 ? 'To Collect' : p.currentBalance < 0 ? 'To Pay' : 'Settled'}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-400">
-                        {p.currentBalance > 0 ? 'To Collect' : p.currentBalance < 0 ? 'To Pay' : 'Settled'}
-                      </div>
+
+                      {/* Red circle delete button on Party card */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteParty(p.id);
+                        }}
+                        className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                        title={`पार्टी "${p.name}" हटाएं (Delete Party)`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -301,17 +320,32 @@ Thank you for your prompt response!`;
                     )}
                   </div>
 
-                  {/* Balance Highlight Box */}
-                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-right min-w-[160px]">
-                    <span className="text-[10px] font-bold uppercase text-slate-500 block">Current Outstanding</span>
-                    <div className={`font-mono text-xl font-black ${
-                      selectedParty.currentBalance > 0 ? 'text-rose-700' : selectedParty.currentBalance < 0 ? 'text-emerald-700' : 'text-slate-800'
-                    }`}>
-                      {formatIndianCurrency(Math.abs(selectedParty.currentBalance))}
+                  {/* Balance Highlight Box & Delete Party Button */}
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-right min-w-[160px]">
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Current Outstanding</span>
+                      <div className={`font-mono text-xl font-black ${
+                        selectedParty.currentBalance > 0 ? 'text-rose-700' : selectedParty.currentBalance < 0 ? 'text-emerald-700' : 'text-slate-800'
+                      }`}>
+                        {formatIndianCurrency(Math.abs(selectedParty.currentBalance))}
+                      </div>
+                      <span className="text-[10px] text-slate-500 block">
+                        {selectedParty.currentBalance > 0 ? 'Receivable (Pending)' : selectedParty.currentBalance < 0 ? 'Advance Paid' : 'Zero Balance'}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-slate-500 block">
-                      {selectedParty.currentBalance > 0 ? 'Receivable (Pending)' : selectedParty.currentBalance < 0 ? 'Advance Paid' : 'Zero Balance'}
-                    </span>
+
+                    {/* Red Circular Delete Party Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onDeleteParty(selectedParty.id);
+                      }}
+                      className="w-10 h-10 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-110 shrink-0"
+                      title={`पार्टी "${selectedParty.name}" को हटाएं (Delete Party)`}
+                      aria-label="Delete Party"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
 
@@ -482,28 +516,44 @@ Thank you for your prompt response!`;
                             )}
                           </div>
 
-                          <div className="text-left sm:text-right space-y-0.5">
-                            <div className="font-mono font-bold text-slate-900 flex sm:justify-end items-center gap-2">
-                              <span>Bill: {formatIndianCurrency(inv.grandTotal)}</span>
-                              {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
-                                <span className="text-[11px] font-normal text-slate-500">
-                                  (Net: {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
-                                </span>
-                              )}
+                          <div className="flex items-center justify-between sm:justify-end gap-3">
+                            <div className="text-left sm:text-right space-y-0.5">
+                              <div className="font-mono font-bold text-slate-900 flex sm:justify-end items-center gap-2">
+                                <span>Bill: {formatIndianCurrency(inv.grandTotal)}</span>
+                                {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
+                                  <span className="text-[11px] font-normal text-slate-500">
+                                    (Net: {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
+                                  </span>
+                                )}
+                              </div>
+                              <div className={`text-[10px] font-semibold ${inv.paymentStatus === 'PAID' ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                {inv.paymentStatus === 'PAID' ? '✓ FULLY PAID' : `${inv.paymentStatus} (${formatIndianCurrency(inv.balanceDue)} due)`}
+                                {inv.paidAmount > 0 && inv.paymentStatus !== 'PAID' && (
+                                  <span className="text-slate-500 ml-1">[{formatIndianCurrency(inv.paidAmount)} received]</span>
+                                )}
+                              </div>
                             </div>
-                            <div className={`text-[10px] font-semibold ${inv.paymentStatus === 'PAID' ? 'text-emerald-700' : 'text-rose-600'}`}>
-                              {inv.paymentStatus === 'PAID' ? '✓ FULLY PAID' : `${inv.paymentStatus} (${formatIndianCurrency(inv.balanceDue)} due)`}
-                              {inv.paidAmount > 0 && inv.paymentStatus !== 'PAID' && (
-                                <span className="text-slate-500 ml-1">[{formatIndianCurrency(inv.paidAmount)} received]</span>
-                              )}
-                            </div>
+
+                            {onDeleteInvoice && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onDeleteInvoice(inv.id);
+                                }}
+                                className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                title={`बिल ${inv.invoiceNumber} हटाएं (Delete Bill)`}
+                                aria-label="Delete Invoice"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
 
                       {/* Payment Vouchers */}
                       {partyVouchers.map((pv) => (
-                        <div key={pv.id} className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs border-l-4 border-emerald-600">
+                        <div key={pv.id} className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs border-l-4 border-emerald-600 group">
                           <div className="space-y-0.5">
                             <div className="font-mono font-bold text-emerald-950 flex items-center gap-2">
                               <span>{pv.voucherNumber}</span>
@@ -521,13 +571,29 @@ Thank you for your prompt response!`;
                             )}
                           </div>
 
-                          <div className="text-left sm:text-right space-y-0.5">
-                            <div className="font-mono font-black text-emerald-800 text-sm">
-                              - {formatIndianCurrency(pv.amount)} (Cr)
+                          <div className="flex items-center justify-between sm:justify-end gap-3">
+                            <div className="text-left sm:text-right space-y-0.5">
+                              <div className="font-mono font-black text-emerald-800 text-sm">
+                                - {formatIndianCurrency(pv.amount)} (Cr)
+                              </div>
+                              <div className="text-[10px] text-emerald-700 font-semibold">
+                                Direct Ledger Credit
+                              </div>
                             </div>
-                            <div className="text-[10px] text-emerald-700 font-semibold">
-                              Direct Ledger Credit
-                            </div>
+
+                            {onDeleteVoucher && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onDeleteVoucher(pv.id);
+                                }}
+                                className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                title={`पेमेंट वाउचर ${pv.voucherNumber} हटाएं (Delete Voucher)`}
+                                aria-label="Delete Voucher"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
