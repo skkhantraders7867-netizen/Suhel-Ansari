@@ -55,9 +55,9 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
 
   const printAreaRef = useRef<HTMLDivElement>(null);
 
-  // Filter records for the selected company
+  // Filter records for the selected company (Sorted by Emp ID top-to-bottom)
   const recordsToPay = useMemo(() => {
-    return monthRecords.filter((rec) => {
+    const list = monthRecords.filter((rec) => {
       const staffObj = staffMembers.find((s) => s.id === rec.staffId);
       const effectiveComp = (rec.companyName || staffObj?.companyName || '').trim();
 
@@ -65,6 +65,19 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
         return effectiveComp.toLowerCase() === selectedCompanyFilter.trim().toLowerCase();
       }
       return true;
+    });
+
+    return list.sort((a, b) => {
+      const sObjA = staffMembers.find((s) => s.id === a.staffId);
+      const sObjB = staffMembers.find((s) => s.id === b.staffId);
+      const empIdA = a.employeeId || sObjA?.employeeId || '';
+      const empIdB = b.employeeId || sObjB?.employeeId || '';
+      const matchA = empIdA.match(/\d+/);
+      const matchB = empIdB.match(/\d+/);
+      const numA = matchA ? parseInt(matchA[0], 10) : 999999;
+      const numB = matchB ? parseInt(matchB[0], 10) : 999999;
+      if (numA !== numB) return numA - numB;
+      return (a.staffName || '').localeCompare(b.staffName || '');
     });
   }, [monthRecords, staffMembers, selectedCompanyFilter]);
 

@@ -484,9 +484,16 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     return attendanceRecords.filter((rec) => rec.month === selectedMonth);
   }, [attendanceRecords, selectedMonth]);
 
-  // Month records filtered by selected company or typed company search name
+  // Helper to extract numeric ID for employee sorting
+  const getEmpIdNumber = (empId?: string): number => {
+    if (!empId) return 999999;
+    const match = empId.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 999999;
+  };
+
+  // Month records filtered by selected company or typed company search name (Sorted by Emp ID top-to-bottom)
   const companyFilteredMonthRecords = useMemo(() => {
-    return monthRecords.filter((rec) => {
+    const list = monthRecords.filter((rec) => {
       const staffObj = staffMembers.find((s) => s.id === rec.staffId);
       const effectiveCompany = (rec.companyName || staffObj?.companyName || '').trim();
 
@@ -502,6 +509,18 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       }
 
       return true;
+    });
+
+    // Sort strictly by Employee ID in ascending order (EMP-001, EMP-002, EMP-003... top to bottom)
+    return list.sort((a, b) => {
+      const sObjA = staffMembers.find((s) => s.id === a.staffId);
+      const sObjB = staffMembers.find((s) => s.id === b.staffId);
+      const empIdA = a.employeeId || sObjA?.employeeId || '';
+      const empIdB = b.employeeId || sObjB?.employeeId || '';
+      const numA = getEmpIdNumber(empIdA);
+      const numB = getEmpIdNumber(empIdB);
+      if (numA !== numB) return numA - numB;
+      return (a.staffName || '').localeCompare(b.staffName || '');
     });
   }, [monthRecords, staffMembers, selectedCompany, companySearchInput]);
 

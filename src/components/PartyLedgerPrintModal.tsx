@@ -47,6 +47,40 @@ function formatDateToDMY(dateStr?: string): string {
   return `${day}-${month}-${year}`;
 }
 
+function parseDateForSort(dateStr?: string): number {
+  if (!dateStr) return 0;
+  const str = dateStr.trim();
+  const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    return new Date(year, month, day).getTime();
+  }
+  const ymdMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10) - 1;
+    const day = parseInt(ymdMatch[3], 10);
+    return new Date(year, month, day).getTime();
+  }
+  const parsed = Date.parse(str);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+function parseInvoiceOrVoucherSerial(invStr?: string): number {
+  if (!invStr || invStr === '-') return 999999999;
+  const leadingMatch = invStr.trim().match(/^(\d+)/);
+  if (leadingMatch) {
+    return parseInt(leadingMatch[1], 10);
+  }
+  const anyNumMatch = invStr.trim().match(/(\d+)/g);
+  if (anyNumMatch && anyNumMatch.length > 0) {
+    return parseInt(anyNumMatch[anyNumMatch.length - 1], 10);
+  }
+  return 999999999;
+}
+
 export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   isOpen,
   onClose,
@@ -154,21 +188,22 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   );
 
   // Build Chronological Ledger Entries
-  const rawEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
-
   // 1. Opening Balance Entry (Always present as top row)
-  rawEntries.push({
+  const openingEntry: Omit<LedgerEntry, 'runningBalance'> = {
     id: 'entry-opening',
-    date: openingDate || '01-04-2025',
+    date: formatDateToDMY(openingDate || '2025-04-01') || '01-04-2025',
     type: 'OB',
     invoiceNo: '-',
     itemDescription: `OPENING BALANCE B/F (F.Y. ${financialYear})`,
     amount: effectiveOpeningBalance > 0 ? effectiveOpeningBalance : 0,
     payment: effectiveOpeningBalance < 0 ? Math.abs(effectiveOpeningBalance) : 0,
     entryType: 'OPENING',
-  });
+  };
 
-  // 2. Add all Invoices
+  // 2. Collect all transaction entries (Invoices, TDS, Payments)
+  const transactionEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
+
+  // Add all Invoices
   partyInvoices.forEach((inv) => {
     const itemDesc = (inv.items && inv.items.length > 0)
       ? inv.items.map(item => `${item.name || item.description || 'Item'} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')
@@ -183,7 +218,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       (inv.items && inv.items.length > 0 ? inv.items.reduce((sum, it) => sum + (it.totalAmount || (it.quantity * it.rate)), 0) : 0)
     ) || 0;
 
-    rawEntries.push({
+    transactionEntries.push({
       id: `entry-inv-${inv.id}`,
       date: formatDateToDMY(inv.date),
       type: 'JOURNAL',
@@ -197,7 +232,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     // 3. If invoice has TDS, add separate TDS line
     if ((inv.tdsAmount || 0) > 0) {
       const tdsAmt = Number(inv.tdsAmount || 0);
-      rawEntries.push({
+      transactionEntries.push({
         id: `entry-tds-${inv.id}`,
         date: formatDateToDMY(inv.date),
         type: 'RCPT',
@@ -216,7 +251,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     const hasVoucherForInv = partyVouchers.some(pv => pv.invoiceId === inv.id);
     if (!hasVoucherForInv && (inv.paidAmount || 0) > 0) {
       const paidAmt = Number(inv.paidAmount || 0);
-      rawEntries.push({
+      transactionEntries.push({
         id: `entry-pay-${inv.id}`,
         date: formatDateToDMY(inv.date),
         type: 'RCPT',
@@ -233,7 +268,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
 
   // 5. Add all dedicated Payment Vouchers
   partyVouchers.forEach((pv) => {
-    rawEntries.push({
+    transactionEntries.push({
       id: `entry-pv-${pv.id}`,
       date: formatDateToDMY(pv.date),
       type: 'RCPT',
@@ -244,6 +279,38 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       entryType: 'PAYMENT',
     });
   });
+
+  // Sort transaction entries strictly in ascending date and serial number order
+  transactionEntries.sort((a, b) => {
+    const dateA = parseDateForSort(a.date);
+    const dateB = parseDateForSort(b.date);
+    if (dateA !== dateB) {
+      return dateA - dateB;
+    }
+
+    const serialA = parseInvoiceOrVoucherSerial(a.invoiceNo);
+    const serialB = parseInvoiceOrVoucherSerial(b.invoiceNo);
+    if (serialA !== serialB) {
+      return serialA - serialB;
+    }
+
+    // Invoice comes first, then its TDS deduction, then Payment
+    const typePriority: Record<string, number> = {
+      INVOICE: 1,
+      TDS: 2,
+      PAYMENT: 3,
+    };
+    const orderA = typePriority[a.entryType] || 4;
+    const orderB = typePriority[b.entryType] || 4;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    return (a.invoiceNo || '').localeCompare(b.invoiceNo || '');
+  });
+
+  // Combine opening balance with sorted transaction entries
+  const rawEntries: Omit<LedgerEntry, 'runningBalance'>[] = [openingEntry, ...transactionEntries];
 
   // Calculate running balances
   let runningBal = 0;
