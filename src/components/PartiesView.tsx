@@ -19,7 +19,9 @@ interface PartiesViewProps {
   onDeleteParty: (id: string) => void;
   onCreateInvoiceForParty: (partyId: string) => void;
   onRecordPayment: (party: Party) => void;
+  onEditInvoice?: (invoice: Invoice) => void;
   onDeleteInvoice?: (id: string) => void;
+  onEditVoucher?: (voucher: PaymentVoucher) => void;
   onDeleteVoucher?: (id: string) => void;
 }
 
@@ -33,13 +35,16 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   onDeleteParty,
   onCreateInvoiceForParty,
   onRecordPayment,
+  onEditInvoice,
   onDeleteInvoice,
+  onEditVoucher,
   onDeleteVoucher,
 }) => {
   const [activeType, setActiveType] = useState<'CUSTOMER' | 'SUPPLIER'>('CUSTOMER');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedParty, setSelectedParty] = useState<Party | null>(parties[0] || null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingParty, setEditingParty] = useState<Party | null>(null);
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
 
   // Opening Balance Inline Editing
@@ -117,12 +122,72 @@ Thank you for your prompt response!`;
     window.open(url, '_blank');
   };
 
+  const handleOpenEditParty = (party: Party) => {
+    setEditingParty(party);
+    setActiveType(party.type || 'CUSTOMER');
+    setFormName(party.name || '');
+    setFormPhone(party.phone || '');
+    setFormGstin(party.gstin || '');
+    setFormEmail(party.email || '');
+    setFormAddress(party.billingAddress || '');
+    setFormCity(party.city || '');
+    setFormStateCode(party.stateCode || businessProfile.stateCode || '07');
+    setFormOpeningBalance(Math.abs(party.openingBalance || 0));
+    setFormOpeningType(party.openingBalanceType || ((party.openingBalance || 0) < 0 ? 'CR' : 'DR'));
+    setFormOpeningDate(party.openingBalanceDate || '2025-04-01');
+    setFormCreditLimit(party.creditLimit || 50000);
+    setFormPaymentDays(party.paymentTermsDays || 15);
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenAddParty = () => {
+    setEditingParty(null);
+    setFormName('');
+    setFormPhone('');
+    setFormGstin('');
+    setFormEmail('');
+    setFormAddress('');
+    setFormCity('');
+    setFormStateCode(businessProfile.stateCode || '07');
+    setFormOpeningBalance(0);
+    setFormOpeningType('DR');
+    setFormOpeningDate('2025-04-01');
+    setFormCreditLimit(50000);
+    setFormPaymentDays(15);
+    setIsAddModalOpen(true);
+  };
+
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) return;
 
     const stateObj = GST_STATES.find(s => s.code === formStateCode) || GST_STATES[0];
     const signedOpening = formOpeningType === 'CR' ? -Math.abs(formOpeningBalance) : Math.abs(formOpeningBalance);
+
+    if (editingParty) {
+      const updatedParty: Party = {
+        ...editingParty,
+        type: activeType,
+        name: formName.trim(),
+        phone: formPhone.trim() || '',
+        email: formEmail.trim() || undefined,
+        gstin: formGstin.trim().toUpperCase() || undefined,
+        billingAddress: formAddress.trim() || '',
+        city: formCity.trim() || '',
+        state: stateObj ? stateObj.name : '',
+        stateCode: stateObj ? stateObj.code : '',
+        openingBalance: signedOpening,
+        openingBalanceType: formOpeningType,
+        openingBalanceDate: formOpeningDate,
+        creditLimit: formCreditLimit,
+        paymentTermsDays: formPaymentDays,
+      };
+      onUpdateParty(updatedParty);
+      setSelectedParty(updatedParty);
+      setIsAddModalOpen(false);
+      setEditingParty(null);
+      return;
+    }
 
     const newParty = onAddNewParty({
       type: activeType,
@@ -208,7 +273,7 @@ Thank you for your prompt response!`;
           </div>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddParty}
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
           >
             <UserPlus className="w-4 h-4" /> Add {activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'}
@@ -320,8 +385,8 @@ Thank you for your prompt response!`;
                     )}
                   </div>
 
-                  {/* Balance Highlight Box & Delete Party Button */}
-                  <div className="flex items-center gap-3">
+                  {/* Balance Highlight Box & Edit / Delete Party Button */}
+                  <div className="flex items-center gap-2.5">
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-right min-w-[160px]">
                       <span className="text-[10px] font-bold uppercase text-slate-500 block">Current Outstanding</span>
                       <div className={`font-mono text-xl font-black ${
@@ -333,6 +398,17 @@ Thank you for your prompt response!`;
                         {selectedParty.currentBalance > 0 ? 'Receivable (Pending)' : selectedParty.currentBalance < 0 ? 'Advance Paid' : 'Zero Balance'}
                       </span>
                     </div>
+
+                    {/* Blue Circular Edit Party Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditParty(selectedParty)}
+                      className="w-10 h-10 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-110 shrink-0"
+                      title={`पार्टी "${selectedParty.name}" की जानकारी एडिट करें (Edit Party)`}
+                      aria-label="Edit Party"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </button>
 
                     {/* Red Circular Delete Party Button */}
                     <button
@@ -534,19 +610,35 @@ Thank you for your prompt response!`;
                               </div>
                             </div>
 
-                            {onDeleteInvoice && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  onDeleteInvoice(inv.id);
-                                }}
-                                className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                                title={`बिल ${inv.invoiceNumber} हटाएं (Delete Bill)`}
-                                aria-label="Delete Invoice"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {onEditInvoice && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onEditInvoice(inv);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  title={`बिल ${inv.invoiceNumber} एडिट करें (Edit Bill)`}
+                                  aria-label="Edit Invoice"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
+                              {onDeleteInvoice && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onDeleteInvoice(inv.id);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  title={`बिल ${inv.invoiceNumber} हटाएं (Delete Bill)`}
+                                  aria-label="Delete Invoice"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -581,19 +673,35 @@ Thank you for your prompt response!`;
                               </div>
                             </div>
 
-                            {onDeleteVoucher && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  onDeleteVoucher(pv.id);
-                                }}
-                                className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                                title={`पेमेंट वाउचर ${pv.voucherNumber} हटाएं (Delete Voucher)`}
-                                aria-label="Delete Voucher"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {onEditVoucher && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onEditVoucher(pv);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  title={`पेमेंट वाउचर ${pv.voucherNumber} एडिट करें (Edit Voucher)`}
+                                  aria-label="Edit Voucher"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
+                              {onDeleteVoucher && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onDeleteVoucher(pv.id);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  title={`पेमेंट वाउचर ${pv.voucherNumber} हटाएं (Delete Voucher)`}
+                                  aria-label="Delete Voucher"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -611,15 +719,20 @@ Thank you for your prompt response!`;
 
       </div>
 
-      {/* Add Party Modal */}
+      {/* Add / Edit Party Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="px-6 py-4 bg-blue-700 text-white flex items-center justify-between">
-              <h3 className="font-bold text-sm">Add New {activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'}</h3>
+              <h3 className="font-bold text-sm">
+                {editingParty ? `Edit ${editingParty.name} (${activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'})` : `Add New ${activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'}`}
+              </h3>
               <button 
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-white/80 hover:text-white"
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setEditingParty(null);
+                }}
+                className="text-white/80 hover:text-white cursor-pointer"
               >
                 ✕
               </button>
@@ -743,16 +856,19 @@ Thank you for your prompt response!`;
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs"
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    setEditingParty(null);
+                  }}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs cursor-pointer hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-xs"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-xs cursor-pointer"
                 >
-                  Save Party
+                  {editingParty ? 'Update Party Details' : 'Save Party'}
                 </button>
               </div>
             </form>

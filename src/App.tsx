@@ -1152,6 +1152,7 @@ export default function App() {
             onSave={handleSaveInvoice}
             onSaveInvoice={handleSaveInvoice}
             onAddNewParty={handleAddNewParty}
+            onUpdateParty={handleUpdateParty}
             onAddNewItem={handleAddNewItem}
             onCancel={() => {
               setEditingInvoice(null);
@@ -1520,7 +1521,13 @@ export default function App() {
                   onDeleteParty={handleDeleteParty}
                   onCreateInvoiceForParty={(partyId) => handleOpenCreateInvoice('TAX_INVOICE', partyId)}
                   onRecordPayment={(party) => handleOpenPaymentVoucherModal(party)}
+                  onEditInvoice={handleEditInvoice}
                   onDeleteInvoice={handleDeleteInvoice}
+                  onEditVoucher={(voucher) => {
+                    const p = parties.find(party => party.id === voucher.partyId);
+                    const inv = voucher.invoiceId ? invoices.find(i => i.id === voucher.invoiceId) : undefined;
+                    handleOpenPaymentVoucherModal(p, inv, voucher);
+                  }}
                   onDeleteVoucher={handleDeletePaymentVoucher}
                 />
               )}
