@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { 
   X, Building2, ShieldCheck, CreditCard, 
   Smartphone, FileText, Download, Upload, RefreshCw, Save,
-  Image, Sparkles, Check, Database, Cloud
+  Image, Sparkles, Check
 } from 'lucide-react';
 import { BusinessProfile } from '../types';
 import { GST_STATES } from '../data/mockData';
 import { detectStateFromGSTIN, downloadCSV } from '../utils/gstCalculations';
-import { SUPABASE_PROJECT_ID } from '../utils/supabaseClient';
 
 interface BusinessSettingsModalProps {
   isOpen: boolean;
@@ -16,7 +15,6 @@ interface BusinessSettingsModalProps {
   onSaveProfile: (profile: BusinessProfile) => void;
   onExportAllData: () => void;
   onResetData: () => void;
-  onOpenCloudSync?: () => void;
 }
 
 export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
@@ -26,7 +24,6 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
   onSaveProfile,
   onExportAllData,
   onResetData,
-  onOpenCloudSync,
 }) => {
   const [profile, setProfile] = useState<BusinessProfile>({ 
     ...businessProfile,
@@ -619,38 +616,6 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
           {/* TAB 4: DATA BACKUP */}
           {activeTab === 'DATA_BACKUP' && (
             <div className="space-y-4 py-2">
-              {/* Supabase Cloud Database Sync Card */}
-              <div className="bg-emerald-50/80 p-4 rounded-xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <Database className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="font-bold text-emerald-950 text-sm">Supabase Cloud Database</div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-200 text-emerald-900 uppercase">
-                        Connected
-                      </span>
-                    </div>
-                    <div className="text-emerald-800 text-xs mt-0.5">
-                      Project ID: <span className="font-mono font-bold text-emerald-950">{SUPABASE_PROJECT_ID}</span> — Automatic cloud sync for invoices, parties, items &amp; settings.
-                    </div>
-                  </div>
-                </div>
-                {onOpenCloudSync && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenCloudSync();
-                    }}
-                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer"
-                  >
-                    Manage Cloud Sync
-                  </button>
-                )}
-              </div>
-
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
                 <div>
                   <div className="font-bold text-slate-900 text-sm">Export Full Accounting Data</div>
@@ -659,7 +624,7 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
                 <button
                   type="button"
                   onClick={onExportAllData}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   <Download className="w-4 h-4 inline-block mr-1" /> Backup Data
                 </button>

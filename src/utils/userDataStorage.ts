@@ -1,7 +1,8 @@
 import { 
   Invoice, Party, Item, BusinessProfile, Expense, 
   BankAccount, CashTransaction, EWayBillRecord, AuthUser,
-  StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher
+  StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher,
+  GstFilingRecord, PurchaseBillReturnRecord
 } from '../types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -32,6 +33,8 @@ export interface UserAccountData {
   staffMembers?: StaffMember[];
   attendanceRecords?: AttendanceRecord[];
   attendanceCompanies?: AttendanceCompany[];
+  gstFilingRecords?: GstFilingRecord[];
+  purchaseBillReturns?: PurchaseBillReturnRecord[];
 }
 
 const STORAGE_PREFIX = 'vyapar_user_data_';
@@ -76,6 +79,8 @@ export function createFreshUserData(user: AuthUser): UserAccountData {
     staffMembers: [],
     attendanceRecords: [],
     attendanceCompanies: [],
+    gstFilingRecords: [],
+    purchaseBillReturns: [],
   };
 }
 
@@ -158,6 +163,8 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
         staffMembers,
         attendanceRecords,
         attendanceCompanies: Array.isArray(parsed.attendanceCompanies) ? parsed.attendanceCompanies : [],
+        gstFilingRecords: Array.isArray(parsed.gstFilingRecords) ? parsed.gstFilingRecords : [],
+        purchaseBillReturns: Array.isArray(parsed.purchaseBillReturns) ? parsed.purchaseBillReturns : [],
       };
     }
   } catch (e) {

@@ -150,7 +150,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-black text-white">
-                  Bank Salary Payment Advice (बैंक भुगतान पत्र)
+                  Bank Salary Payment Advice
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] uppercase tracking-wider border border-emerald-500/30">
                   {formattedMonthTitle}
@@ -183,7 +183,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
             >
               <Printer className="w-3.5 h-3.5" />
-              Print Letter (प्रिंट)
+              Print Letter
             </button>
 
             <button
@@ -193,7 +193,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
-              {isExportingPdf ? 'Exporting PDF...' : 'Download PDF (लेटर पैड)'}
+              {isExportingPdf ? 'Exporting PDF...' : 'Download PDF'}
             </button>
 
             <button
@@ -253,7 +253,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                     }`}
                   >
                     <div className="font-bold text-[11px]">Official Letter Pad</div>
-                    <div className="text-[9px] opacity-80">प्रिंट में पैड दिखेगा</div>
+                    <div className="text-[9px] opacity-80">Includes header &amp; logo</div>
                   </button>
                   <button
                     type="button"
@@ -265,13 +265,13 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                     }`}
                   >
                     <div className="font-bold text-[11px]">Pre-printed Paper</div>
-                    <div className="text-[9px] opacity-80">सादे लेटर पैड हेतु</div>
+                    <div className="text-[9px] opacity-80">For blank stationery</div>
                   </button>
                 </div>
                 <div className="text-[10px] text-slate-500 pt-0.5">
                   {useLetterheadPad 
-                    ? 'कंपनी का ऑथेंटिक लेटर पैड बैकग्राउंड और वॉटरमार्क सहित प्रिंट होगा।' 
-                    : 'प्रिंटर में पहले से मौजूद लेटर पैड स्टेशनरी पर सीधे प्रिंट करने के लिए बैकग्राउंड छुपा दिया गया है।'}
+                    ? 'Prints complete company letterhead background and branding.' 
+                    : 'Hides letterhead background for feeding pre-printed company stationery into printer.'}
                 </div>
               </div>
 
@@ -294,7 +294,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
-                    Ultra Compact (ज्यादा नाम)
+                    Ultra Compact
                   </button>
                   <button
                     type="button"
@@ -305,7 +305,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
-                    Standard (सामान्य)
+                    Standard
                   </button>
                 </div>
                 
@@ -317,13 +317,13 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                     className="w-4 h-4 text-blue-600 rounded border-slate-300"
                   />
                   <span className="font-semibold text-slate-800 text-xs">
-                    Show IFSC Code Column (आईएफएससी कोड)
+                    Show IFSC Code Column
                   </span>
                 </label>
 
                 <div className="pt-1">
                   <div className="flex justify-between text-[11px] text-slate-600 mb-1">
-                    <span>Font Size (फॉन्ट आकार):</span>
+                    <span>Font Size:</span>
                     <span className="font-bold text-slate-900">{contentFontSize}px</span>
                   </div>
                   <input
@@ -668,7 +668,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
 
                       {/* Generous Rubber Stamp / Mohar Area */}
                       <div className="h-12 flex items-center justify-center border border-dashed border-slate-400 rounded-lg text-[9px] text-slate-400 font-serif italic my-0.5 bg-slate-50/60">
-                        [ Company Rubber Stamp / कंपनी की मुहर ]
+                        [ Company Rubber Stamp &amp; Seal ]
                       </div>
 
                       {/* Authorized Signatory Line */}

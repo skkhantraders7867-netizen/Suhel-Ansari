@@ -182,7 +182,7 @@ export const ServiceOrdersView: React.FC<ServiceOrdersViewProps> = ({
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 border border-white/10">
               <Layers className="w-3.5 h-3.5 text-blue-400" />
-              <span>Service Orders &amp; Work Estimates (सर्विस ऑर्डर व एस्टीमेट)</span>
+              <span>Service Orders &amp; Work Estimates</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
               <span>Service Orders &amp; Estimates</span>

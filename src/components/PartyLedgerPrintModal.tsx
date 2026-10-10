@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Printer, Download, Share2, Upload, Image as ImageIcon, Trash2, Check, Save,
-  ZoomIn, ZoomOut, Layers, Maximize2, Minimize2, FileText, Sliders, Building2, Eye, EyeOff
+  ZoomIn, ZoomOut, Layers, Maximize2, Minimize2, FileText, Sliders, Building2, Eye, EyeOff,
+  Calendar, Filter, RefreshCw
 } from 'lucide-react';
 import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
 import { GST_STATES } from '../data/mockData';
@@ -11,6 +12,8 @@ import { printElementSafely, downloadElementAsPdf } from '../utils/pdfExport';
 interface LedgerEntry {
   id: string;
   date: string;
+  rawDate?: string;
+  txTimestamp?: number;
   type: string;        // e.g. JOURNAL, RCPT, OB
   invoiceNo: string;   // e.g. 13(26-27) or INV-001
   itemDescription: string; // Item Description
@@ -31,6 +34,9 @@ interface PartyLedgerPrintModalProps {
   businessProfile: BusinessProfile;
   paymentVouchers?: PaymentVoucher[];
   onUpdateParty?: (party: Party) => void;
+  initialDateFilterEnabled?: boolean;
+  initialFromDate?: string;
+  initialToDate?: string;
 }
 
 type PageLayoutMode = 'AUTO_MULTI' | 'FIT_1_PAGE' | 'FIT_2_PAGES' | 'CUSTOM';
@@ -68,6 +74,46 @@ function parseDateForSort(dateStr?: string): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
+function parseDateToMidnight(dateStr?: string): number {
+  if (!dateStr) return 0;
+  const str = dateStr.trim();
+  const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    return new Date(year, month, day, 0, 0, 0, 0).getTime();
+  }
+  const ymdMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10) - 1;
+    const day = parseInt(ymdMatch[3], 10);
+    return new Date(year, month, day, 0, 0, 0, 0).getTime();
+  }
+  const parsed = Date.parse(str);
+  if (!isNaN(parsed)) {
+    const d = new Date(parsed);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).getTime();
+  }
+  return 0;
+}
+
+function getTodayYmd(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getFirstDayOfCurrentMonthYmd(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+
 function parseInvoiceOrVoucherSerial(invStr?: string): number {
   if (!invStr || invStr === '-') return 999999999;
   const leadingMatch = invStr.trim().match(/^(\d+)/);
@@ -89,6 +135,9 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   businessProfile,
   paymentVouchers = [],
   onUpdateParty,
+  initialDateFilterEnabled = false,
+  initialFromDate,
+  initialToDate,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(
@@ -102,7 +151,12 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   const [openingDate, setOpeningDate] = useState<string>(party?.openingBalanceDate || '01-04-2025');
   const [isSavedOpening, setIsSavedOpening] = useState(false);
 
-  // Layout and Page scaling controls (पेज छोटा/बड़ा करने और 1-पेज या 2-पेज में बदलने के लिए)
+  // Date to Date Filtering State
+  const [isDateFilterActive, setIsDateFilterActive] = useState<boolean>(initialDateFilterEnabled);
+  const [fromDate, setFromDate] = useState<string>(initialFromDate || getFirstDayOfCurrentMonthYmd());
+  const [toDate, setToDate] = useState<string>(initialToDate || getTodayYmd());
+
+  // Layout and Page scaling controls (1-Page or Multi-Page custom scaling)
   const [pageMode, setPageMode] = useState<PageLayoutMode>('AUTO_MULTI');
   const [zoomScale, setZoomScale] = useState<number>(100); // 65% to 130%
   const [density, setDensity] = useState<DensityMode>('NORMAL');
@@ -127,8 +181,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       setOpeningDate(party.openingBalanceDate || '01-04-2025');
       setIsSavedOpening(false);
       setShowBankDetails(true);
+      if (initialDateFilterEnabled !== undefined) {
+        setIsDateFilterActive(initialDateFilterEnabled);
+      }
+      if (initialFromDate) setFromDate(initialFromDate);
+      if (initialToDate) setToDate(initialToDate);
     }
-  }, [businessProfile.logoUrl, party, isOpen]);
+  }, [businessProfile.logoUrl, party, isOpen, initialDateFilterEnabled, initialFromDate, initialToDate]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -188,20 +247,8 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   );
 
   // Build Chronological Ledger Entries
-  // 1. Opening Balance Entry (Always present as top row)
-  const openingEntry: Omit<LedgerEntry, 'runningBalance'> = {
-    id: 'entry-opening',
-    date: formatDateToDMY(openingDate || '2025-04-01') || '01-04-2025',
-    type: 'OB',
-    invoiceNo: '-',
-    itemDescription: `OPENING BALANCE B/F (F.Y. ${financialYear})`,
-    amount: effectiveOpeningBalance > 0 ? effectiveOpeningBalance : 0,
-    payment: effectiveOpeningBalance < 0 ? Math.abs(effectiveOpeningBalance) : 0,
-    entryType: 'OPENING',
-  };
-
-  // 2. Collect all transaction entries (Invoices, TDS, Payments)
-  const transactionEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
+  // 1. Collect all transaction entries (Invoices, TDS, Payments)
+  const allTransactionEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
 
   // Add all Invoices
   partyInvoices.forEach((inv) => {
@@ -218,9 +265,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       (inv.items && inv.items.length > 0 ? inv.items.reduce((sum, it) => sum + (it.totalAmount || (it.quantity * it.rate)), 0) : 0)
     ) || 0;
 
-    transactionEntries.push({
+    const txTime = parseDateToMidnight(inv.date);
+
+    allTransactionEntries.push({
       id: `entry-inv-${inv.id}`,
       date: formatDateToDMY(inv.date),
+      rawDate: inv.date,
+      txTimestamp: txTime,
       type: 'JOURNAL',
       invoiceNo: inv.invoiceNumber,
       itemDescription: itemDesc,
@@ -229,12 +280,14 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       entryType: 'INVOICE',
     });
 
-    // 3. If invoice has TDS, add separate TDS line
+    // 2. If invoice has TDS, add separate TDS line
     if ((inv.tdsAmount || 0) > 0) {
       const tdsAmt = Number(inv.tdsAmount || 0);
-      transactionEntries.push({
+      allTransactionEntries.push({
         id: `entry-tds-${inv.id}`,
         date: formatDateToDMY(inv.date),
+        rawDate: inv.date,
+        txTimestamp: txTime,
         type: 'RCPT',
         invoiceNo: inv.invoiceNumber,
         itemDescription: `TDS DEDUCTED @${inv.tdsRate || 0}% SEC ${inv.tdsSection || '194C'} (CHALLAN ADJUSTMENT)`,
@@ -247,13 +300,15 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       });
     }
 
-    // 4. If invoice has recorded paidAmount that is NOT from a PaymentVoucher, include it
+    // 3. If invoice has recorded paidAmount that is NOT from a PaymentVoucher, include it
     const hasVoucherForInv = partyVouchers.some(pv => pv.invoiceId === inv.id);
     if (!hasVoucherForInv && (inv.paidAmount || 0) > 0) {
       const paidAmt = Number(inv.paidAmount || 0);
-      transactionEntries.push({
+      allTransactionEntries.push({
         id: `entry-pay-${inv.id}`,
         date: formatDateToDMY(inv.date),
+        rawDate: inv.date,
+        txTimestamp: txTime,
         type: 'RCPT',
         invoiceNo: inv.invoiceNumber,
         itemDescription: inv.paymentReference 
@@ -266,11 +321,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     }
   });
 
-  // 5. Add all dedicated Payment Vouchers
+  // 4. Add all dedicated Payment Vouchers
   partyVouchers.forEach((pv) => {
-    transactionEntries.push({
+    allTransactionEntries.push({
       id: `entry-pv-${pv.id}`,
       date: formatDateToDMY(pv.date),
+      rawDate: pv.date,
+      txTimestamp: parseDateToMidnight(pv.date),
       type: 'RCPT',
       invoiceNo: pv.invoiceNumber || pv.voucherNumber || '-',
       itemDescription: `PAYMENT RECEIVED VIA ${pv.paymentMode.toUpperCase()} (REF: ${pv.referenceNumber || 'N/A'})${pv.remarks ? ` - ${pv.remarks}` : ''}`,
@@ -280,10 +337,10 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     });
   });
 
-  // Sort transaction entries strictly in ascending date and serial number order
-  transactionEntries.sort((a, b) => {
-    const dateA = parseDateForSort(a.date);
-    const dateB = parseDateForSort(b.date);
+  // Sort all transactions strictly in ascending date and serial number order
+  allTransactionEntries.sort((a, b) => {
+    const dateA = a.txTimestamp ?? parseDateForSort(a.date);
+    const dateB = b.txTimestamp ?? parseDateForSort(b.date);
     if (dateA !== dateB) {
       return dateA - dateB;
     }
@@ -309,8 +366,54 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     return (a.invoiceNo || '').localeCompare(b.invoiceNo || '');
   });
 
-  // Combine opening balance with sorted transaction entries
-  const rawEntries: Omit<LedgerEntry, 'runningBalance'>[] = [openingEntry, ...transactionEntries];
+  // Date Filtering Calculations
+  let openingEntry: Omit<LedgerEntry, 'runningBalance'>;
+  let activeTransactionEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
+
+  const fromTimestamp = isDateFilterActive && fromDate ? parseDateToMidnight(fromDate) : 0;
+  const toTimestamp = isDateFilterActive && toDate ? (parseDateToMidnight(toDate) + 86399999) : Infinity;
+
+  if (isDateFilterActive && fromDate) {
+    // Calculate accurate Opening Balance as on fromDate by adding prior debits & subtracting prior credits
+    const priorEntries = allTransactionEntries.filter(t => (t.txTimestamp || 0) < fromTimestamp);
+    const priorDebits = priorEntries.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const priorCredits = priorEntries.reduce((sum, t) => sum + (t.payment || 0), 0);
+    const periodOpeningBalance = effectiveOpeningBalance + priorDebits - priorCredits;
+
+    openingEntry = {
+      id: 'entry-opening-period',
+      date: formatDateToDMY(fromDate),
+      rawDate: fromDate,
+      txTimestamp: fromTimestamp,
+      type: 'OB',
+      invoiceNo: '-',
+      itemDescription: `OPENING BALANCE B/F (As on ${formatDateToDMY(fromDate)})`,
+      amount: periodOpeningBalance > 0 ? periodOpeningBalance : 0,
+      payment: periodOpeningBalance < 0 ? Math.abs(periodOpeningBalance) : 0,
+      entryType: 'OPENING',
+    };
+
+    activeTransactionEntries = allTransactionEntries.filter(
+      t => (t.txTimestamp || 0) >= fromTimestamp && (t.txTimestamp || 0) <= toTimestamp
+    );
+  } else {
+    // Full statement mode
+    openingEntry = {
+      id: 'entry-opening',
+      date: formatDateToDMY(openingDate || '2025-04-01') || '01-04-2025',
+      type: 'OB',
+      invoiceNo: '-',
+      itemDescription: `OPENING BALANCE B/F (F.Y. ${financialYear})`,
+      amount: effectiveOpeningBalance > 0 ? effectiveOpeningBalance : 0,
+      payment: effectiveOpeningBalance < 0 ? Math.abs(effectiveOpeningBalance) : 0,
+      entryType: 'OPENING',
+    };
+
+    activeTransactionEntries = allTransactionEntries;
+  }
+
+  // Combine opening balance with active transaction entries
+  const rawEntries: Omit<LedgerEntry, 'runningBalance'>[] = [openingEntry, ...activeTransactionEntries];
 
   // Calculate running balances
   let runningBal = 0;
@@ -412,9 +515,13 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   // WhatsApp Statement Message
   const handleShareWhatsApp = () => {
     if (!party.phone) return;
+    const periodLine = isDateFilterActive && fromDate && toDate 
+      ? `\n📅 *Period:* ${formatDateToDMY(fromDate)} to ${formatDateToDMY(toDate)}` 
+      : '';
+
     const msg = `*STATEMENT OF ACCOUNT*
 From: *${businessProfile.name || 'SR GROUP'}*
-Customer: *${party.name}*
+${party.type === 'SUPPLIER' ? 'Supplier' : 'Customer'}: *${party.name}*${periodLine}
 Date: ${new Date().toLocaleDateString('en-IN')}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
@@ -472,7 +579,7 @@ Thank you for your business!`;
                 </span>
               </h2>
               <p className="text-[11px] text-slate-300">
-                1-पेज या मल्टी-पेज (2+ पेज) लेज़र प्रिंटिंग और कस्टम स्केलिंग
+                1-Page or Multi-Page (2+ Page) Ledger Printing and Custom Scaling
               </p>
             </div>
           </div>
@@ -536,12 +643,150 @@ Thank you for your business!`;
           </div>
         </div>
 
-        {/* 🌟 USER PAGE SIZE & SCALING CONTROLS TOOLBAR (पेज छोटा/बड़ा करने के ऑप्शंस) */}
+        {/* 📅 DATE TO DATE LEDGER FILTER TOOLBAR */}
+        <div className="bg-slate-850 border-b border-slate-700 px-5 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-amber-400" />
+              <span>Ledger Date Range:</span>
+            </span>
+
+            {/* Toggle All Dates vs Date-to-Date */}
+            <div className="inline-flex bg-slate-900 rounded-lg p-0.5 border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setIsDateFilterActive(false)}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  !isDateFilterActive 
+                    ? 'bg-blue-600 text-white shadow-xs' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+                title="Full statement from start to today"
+              >
+                All Dates
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDateFilterActive(true)}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isDateFilterActive 
+                    ? 'bg-indigo-600 text-white shadow-xs' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+                title="Date to date statement"
+              >
+                <span>📅 Date to Date</span>
+                <span className={`w-2 h-2 rounded-full ${isDateFilterActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Date Pickers & Presets (Visible when Date-to-Date is active) */}
+          {isDateFilterActive ? (
+            <div className="flex flex-wrap items-center gap-2 animate-in fade-in duration-200">
+              {/* From Date */}
+              <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">
+                <span className="text-slate-400 text-[10.5px] font-bold">FROM:</span>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="bg-slate-800 text-white text-xs px-2 py-0.5 rounded border border-slate-600 font-mono font-bold focus:outline-hidden focus:ring-1 focus:ring-indigo-400"
+                />
+              </div>
+
+              {/* To Date */}
+              <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">
+                <span className="text-slate-400 text-[10.5px] font-bold">TO:</span>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="bg-slate-800 text-white text-xs px-2 py-0.5 rounded border border-slate-600 font-mono font-bold focus:outline-hidden focus:ring-1 focus:ring-indigo-400"
+                />
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const y = now.getFullYear();
+                    const m = String(now.getMonth() + 1).padStart(2, '0');
+                    const lastD = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');
+                    setFromDate(`${y}-${m}-01`);
+                    setToDate(`${y}-${m}-${lastD}`);
+                  }}
+                  className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-200 text-[10.5px] font-medium rounded-md border border-slate-700 hover:border-slate-500 transition-colors cursor-pointer"
+                  title="Current month"
+                >
+                  This Month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    const y = prevMonth.getFullYear();
+                    const m = String(prevMonth.getMonth() + 1).padStart(2, '0');
+                    const lastD = String(new Date(y, prevMonth.getMonth() + 1, 0).getDate()).padStart(2, '0');
+                    setFromDate(`${y}-${m}-01`);
+                    setToDate(`${y}-${m}-${lastD}`);
+                  }}
+                  className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-200 text-[10.5px] font-medium rounded-md border border-slate-700 hover:border-slate-500 transition-colors cursor-pointer"
+                  title="Last month"
+                >
+                  Last Month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const fyStart = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+                    setFromDate(`${fyStart}-04-01`);
+                    setToDate(`${fyStart + 1}-03-31`);
+                  }}
+                  className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-200 text-[10.5px] font-medium rounded-md border border-slate-700 hover:border-slate-500 transition-colors cursor-pointer"
+                  title="Financial year (1 Apr to 31 Mar)"
+                >
+                  Current FY
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const d30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                    const y30 = d30.getFullYear();
+                    const m30 = String(d30.getMonth() + 1).padStart(2, '0');
+                    const day30 = String(d30.getDate()).padStart(2, '0');
+                    const yNow = now.getFullYear();
+                    const mNow = String(now.getMonth() + 1).padStart(2, '0');
+                    const dayNow = String(now.getDate()).padStart(2, '0');
+                    setFromDate(`${y30}-${m30}-${day30}`);
+                    setToDate(`${yNow}-${mNow}-${dayNow}`);
+                  }}
+                  className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-200 text-[10.5px] font-medium rounded-md border border-slate-700 hover:border-slate-500 transition-colors cursor-pointer"
+                  title="Last 30 days"
+                >
+                  Last 30 Days
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <span>Showing: <strong>All bills &amp; vouchers from start to date</strong></span>
+            </div>
+          )}
+        </div>
+
+        {/* 🌟 USER PAGE SIZE & SCALING CONTROLS TOOLBAR */}
         <div className="bg-slate-800/95 border-b border-slate-700 px-5 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           {/* Left: Page Mode Selector */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1 mr-1">
-              <Layers className="w-3.5 h-3.5" /> पेज मोड:
+              <Layers className="w-3.5 h-3.5" /> Page Mode:
             </span>
 
             <div className="inline-flex bg-slate-900 rounded-lg p-0.5 border border-slate-700">
@@ -556,10 +801,10 @@ Thank you for your business!`;
                     ? 'bg-blue-600 text-white shadow-xs' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
-                title="लंबा लेज़र अपने आप 2, 3 या उससे अधिक पेजों पर बिना कटे साफ़ प्रिंट होगा"
+                title="Clean multi-page printing across 2, 3 or more pages"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Auto Multi-Page (ऑटो 2+ पेज)</span>
+                <span>Auto Multi-Page</span>
               </button>
 
               <button
@@ -573,10 +818,10 @@ Thank you for your business!`;
                     ? 'bg-blue-600 text-white shadow-xs' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
-                title="पूरे लेज़र को 1 ही पेज में ऑटोमैटिकली कंप्रेस करके फिट करेगा"
+                title="Fit entire statement on 1 page"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
-                <span>Fit 1-Page (1 पेज में फिट)</span>
+                <span>Fit 1-Page</span>
               </button>
 
               <button
@@ -590,10 +835,10 @@ Thank you for your business!`;
                     ? 'bg-blue-600 text-white shadow-xs' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
-                title="मध्यम व बड़े लेज़र को बराबर 2 पेजों में फिट करेगा"
+                title="Fit entire statement cleanly across 2 pages"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
-                <span>Fit 2-Pages (2 पेज में)</span>
+                <span>Fit 2-Pages</span>
               </button>
             </div>
           </div>
@@ -602,7 +847,7 @@ Thank you for your business!`;
           <div className="flex flex-wrap items-center gap-3">
             {/* Scale +/- Buttons */}
             <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
-              <span className="text-[11px] font-semibold text-slate-300">स्केल:</span>
+              <span className="text-[11px] font-semibold text-slate-300">Scale:</span>
               <button
                 type="button"
                 onClick={() => {
@@ -611,7 +856,7 @@ Thank you for your business!`;
                 }}
                 disabled={zoomScale <= 65}
                 className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 cursor-pointer"
-                title="फॉन्ट और पेज साइज छोटा करें (-5%)"
+                title="Zoom Out (-5%)"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
@@ -626,7 +871,7 @@ Thank you for your business!`;
                 }}
                 disabled={zoomScale >= 130}
                 className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 cursor-pointer"
-                title="फॉन्ट और पेज साइज बड़ा करें (+5%)"
+                title="Zoom In (+5%)"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
@@ -643,15 +888,15 @@ Thank you for your business!`;
 
             {/* Density Toggle */}
             <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
-              <span className="text-[11px] font-semibold text-slate-300">दूरी:</span>
+              <span className="text-[11px] font-semibold text-slate-300">Density:</span>
               <select
                 value={density}
                 onChange={(e) => setDensity(e.target.value as DensityMode)}
                 className="bg-slate-800 border-none text-white text-xs rounded px-1.5 py-0.5 focus:ring-0 font-medium cursor-pointer"
               >
-                <option value="COMPACT">Compact (कम जगह)</option>
-                <option value="NORMAL">Normal (सामान्य)</option>
-                <option value="COMFORTABLE">Relaxed (खुला-खुला)</option>
+                <option value="COMPACT">Compact</option>
+                <option value="NORMAL">Normal</option>
+                <option value="COMFORTABLE">Relaxed</option>
               </select>
             </div>
 
@@ -682,7 +927,7 @@ Thank you for your business!`;
               title="Toggle Opening Balance & FY Controls"
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span>ओपनिंग बैलेंस</span>
+              <span>Opening Balance</span>
             </button>
           </div>
         </div>
@@ -894,9 +1139,20 @@ Thank you for your business!`;
                 <div className="text-xs font-black uppercase text-[#0f2e6b] tracking-wider">
                   STATEMENT OF ACCOUNT
                 </div>
-                <div className="text-[9px] text-slate-500 font-semibold">Customer / Party Ledger</div>
-                <div className="text-[10px] font-mono font-bold text-slate-800 mt-0.5">
-                  Date: {currentDateFormatted}
+                <div className="text-[9px] text-slate-500 font-semibold">
+                  {party.type === 'SUPPLIER' ? 'Supplier / Vendor Ledger' : 'Customer / Party Ledger'}
+                </div>
+                {isDateFilterActive && fromDate && toDate ? (
+                  <div className="text-[9.5px] font-bold text-indigo-950 bg-indigo-100/90 border border-indigo-200 px-2 py-0.5 rounded mt-1 inline-block">
+                    PERIOD: {formatDateToDMY(fromDate)} TO {formatDateToDMY(toDate)}
+                  </div>
+                ) : (
+                  <div className="text-[9.5px] font-mono font-bold text-slate-700 mt-0.5">
+                    F.Y.: {financialYear}
+                  </div>
+                )}
+                <div className="text-[9.5px] font-mono font-bold text-slate-800 mt-0.5">
+                  Print Date: {currentDateFormatted}
                 </div>
               </div>
             </div>
@@ -906,7 +1162,7 @@ Thank you for your business!`;
               {/* Left: Party Details */}
               <div className="space-y-0.5 max-w-[65%]">
                 <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block">
-                  ACCOUNT / PARTY DETAILS:
+                  {party.type === 'SUPPLIER' ? 'SUPPLIER / VENDOR DETAILS:' : 'ACCOUNT / PARTY DETAILS:'}
                 </span>
                 <div className="text-sm font-black text-slate-950 uppercase">{party.name}</div>
                 <div className="text-[10px] text-slate-700 leading-snug">
@@ -1041,7 +1297,9 @@ Thank you for your business!`;
                 <tfoot>
                   <tr className="bg-slate-100 font-black border-t-2 border-black text-[10px]">
                     <td colSpan={4} className="py-1.5 px-2 text-right uppercase text-slate-900 border-r border-black tracking-wider font-extrabold">
-                      STATEMENT TOTALS:
+                      {isDateFilterActive && fromDate && toDate
+                        ? `PERIOD TOTALS (${formatDateToDMY(fromDate)} TO ${formatDateToDMY(toDate)}):`
+                        : 'STATEMENT TOTALS:'}
                     </td>
                     <td className="py-1.5 px-1.5 text-right font-mono text-slate-950 border-r border-black tabular-nums font-bold">
                       {formatIndianCurrency(totalDebit, true)}
@@ -1061,7 +1319,9 @@ Thank you for your business!`;
             <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-1.5 text-[10px] avoid-page-break">
               <div>
                 <span className="text-[9px] font-bold uppercase text-slate-500 block">
-                  NET OUTSTANDING BALANCE IN WORDS:
+                  {isDateFilterActive && toDate
+                    ? `CLOSING BALANCE AS ON ${formatDateToDMY(toDate)} IN WORDS:`
+                    : 'NET OUTSTANDING BALANCE IN WORDS:'}
                 </span>
                 <span className="font-bold text-slate-900 leading-tight">
                   {numberToIndianWords(Math.abs(finalBalance))} Only {finalBalance >= 0 ? '(Receivable)' : '(Settled)'}

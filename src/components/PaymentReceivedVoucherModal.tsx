@@ -206,7 +206,7 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
             </div>
             <div>
               <h2 className="text-base font-bold tracking-tight">
-                {editingVoucher ? 'Edit Payment Received Voucher' : 'Payment Received Voucher (पेमेंट रिसीप्ट)'}
+                {editingVoucher ? 'Edit Payment Received Voucher' : 'Payment Received Voucher'}
               </h2>
               <p className="text-[11px] text-emerald-200">
                 Direct Party Ledger Credit &amp; Invoice Settlement
@@ -269,7 +269,7 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
             <div>
               <label className="block font-bold text-slate-800 mb-1 flex items-center justify-between">
                 <span className="flex items-center gap-1">
-                  <Building2 className="w-3.5 h-3.5 text-blue-700" /> Customer / Company (पार्टी का नाम) *
+                  <Building2 className="w-3.5 h-3.5 text-blue-700" /> Customer / Company *
                 </span>
                 {currentParty && (
                   <span className="text-[11px] font-mono font-bold text-slate-600">
@@ -463,7 +463,7 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
                     onClose();
                   }}
                   className="px-3.5 py-2 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-rose-200 cursor-pointer"
-                  title="Delete Voucher (वाउचर हटाएं)"
+                  title="Delete Voucher"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> 
                   <span>Delete Voucher</span>
@@ -484,7 +484,7 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
                   type="submit"
                   className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition-all"
                 >
-                  <Check className="w-4 h-4" /> Save Payment Voucher (वाउचर सेव करें)
+                  <Check className="w-4 h-4" /> Save Payment Voucher
                 </button>
               </div>
             </div>

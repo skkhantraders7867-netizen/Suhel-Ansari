@@ -182,7 +182,7 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-900 flex items-center gap-2 font-heading tracking-tight">
-                Quotations & Estimates <span className="text-sm font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">कोटेशन हब</span>
+                Quotations & Estimates <span className="text-sm font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">Estimates Hub</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium">
                 Create commercial estimates, structural BOQ quotes with 18% GST & 1-Click Tax Invoice conversion
@@ -197,7 +197,7 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ Create New Quotation (नया कोटेशन)</span>
+            <span>+ Create New Quotation</span>
           </button>
         </div>
       </div>
@@ -321,7 +321,7 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({
                 onClick={onCreateQuotation}
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm"
               >
-                + Create First Quotation (पहला कोटेशन बनाएं)
+                + Create First Quotation
               </button>
             </div>
           </div>

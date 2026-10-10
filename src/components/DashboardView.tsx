@@ -55,8 +55,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Recent 5 Invoices
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
-  // --- LEDGER & VOUCHER KHATA SUMMARY COMPUTATION ---
-  const partyKhataSummaries = useMemo(() => {
+  // --- LEDGER & VOUCHER SUMMARY COMPUTATION ---
+  const partyLedgerSummaries = useMemo(() => {
     return parties.map((party) => {
       // 1. Opening Balance
       const opBal = party.openingBalanceType === 'CR' 
@@ -123,13 +123,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, [parties, invoices, paymentVouchers]);
 
   // Aggregate Totals across all parties
-  const aggregateKhata = useMemo(() => {
+  const aggregateLedgerTotals = useMemo(() => {
     let totalBilledAll = 0;
     let totalReceivedAll = 0;
     let totalPendingReceivableAll = 0;
     let totalAdvanceAll = 0;
 
-    partyKhataSummaries.forEach(p => {
+    partyLedgerSummaries.forEach(p => {
       totalBilledAll += p.totalBilled;
       totalReceivedAll += p.totalReceived;
       if (p.netBalance > 0) {
@@ -145,7 +145,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       totalPendingReceivableAll,
       totalAdvanceAll,
     };
-  }, [partyKhataSummaries]);
+  }, [partyLedgerSummaries]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -163,7 +163,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {businessProfile.name}
             </h1>
             <p className="text-sm text-blue-200 max-w-xl">
-              India's premier GST compliant billing & inventory dashboard. Manage invoices, track party khata, and file GST returns seamlessly.
+              India's premier GST compliant billing & inventory dashboard. Manage invoices, track party ledgers, and file GST returns seamlessly.
             </p>
           </div>
 
@@ -179,13 +179,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onClick={() => onNavigateTab?.('PAYMENT_VOUCHERS')}
               className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs md:text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer"
             >
-              <Wallet className="w-4 h-4" /> Payment Vouchers (वाउचर)
+              <Wallet className="w-4 h-4" /> Payment Vouchers
             </button>
             <button
               onClick={() => onNavigateTab?.('PARTIES')}
               className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs md:text-sm rounded-xl shadow-lg shadow-amber-500/20 transition-all transform active:scale-95 cursor-pointer"
             >
-              <BookOpen className="w-4 h-4" /> Party Khata & Ledgers
+              <BookOpen className="w-4 h-4" /> Party Ledgers
             </button>
             <button
               onClick={onOpenPos}
@@ -197,21 +197,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3 Metric Cards Grid: कुल बिल (Billed), कुल प्राप्त (Received), कुल बाकी (Pending Due) */}
+      {/* 3 Metric Cards Grid: Total Billed, Total Received, Total Pending Due */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
         
-        {/* 1. कुल बिल (Billed) */}
+        {/* 1. Total Billed */}
         <div className="bg-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              कुल बिल (Billed)
+              Total Billed
             </span>
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
           <div className="font-mono text-2xl lg:text-3xl font-black text-slate-900">
-            {formatIndianCurrency(aggregateKhata.totalBilledAll)}
+            {formatIndianCurrency(aggregateLedgerTotals.totalBilledAll)}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -219,18 +219,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* 2. कुल प्राप्त (Received) */}
+        {/* 2. Total Received */}
         <div className="bg-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              कुल प्राप्त (Received)
+              Total Received
             </span>
             <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
           <div className="font-mono text-2xl lg:text-3xl font-black text-emerald-700">
-            {formatIndianCurrency(aggregateKhata.totalReceivedAll)}
+            {formatIndianCurrency(aggregateLedgerTotals.totalReceivedAll)}
           </div>
           <div className="text-xs text-emerald-600 font-medium flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -238,21 +238,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* 3. कुल बाकी (Pending Due) */}
+        {/* 3. Total Pending Due */}
         <div className="bg-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              कुल बाकी (Pending Due)
+              Total Pending Due
             </span>
             <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
               <ArrowDownRight className="w-5 h-5" />
             </div>
           </div>
           <div className="font-mono text-2xl lg:text-3xl font-black text-rose-700">
-            {formatIndianCurrency(aggregateKhata.totalPendingReceivableAll)}
+            {formatIndianCurrency(aggregateLedgerTotals.totalPendingReceivableAll)}
           </div>
           <div className="text-xs text-slate-500 font-medium">
-            Outstanding from {partyKhataSummaries.filter(p => p.netBalance > 0).length} parties
+            Outstanding from {partyLedgerSummaries.filter(p => p.netBalance > 0).length} parties
           </div>
         </div>
 

@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Parties & Khata Ledger Table
+-- 3. Parties & Ledger Table
 CREATE TABLE IF NOT EXISTS public.parties (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,

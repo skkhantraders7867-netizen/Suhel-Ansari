@@ -356,7 +356,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Unit (टाइप करें)</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Unit (Select or Type)</label>
                   <input
                     type="text"
                     list="inventory-unit-datalist"

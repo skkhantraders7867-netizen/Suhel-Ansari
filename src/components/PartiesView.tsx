@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Search, Plus, Phone, Mail, MapPin, Share2, 
   ArrowUpRight, ArrowDownRight, FileText, UserPlus, Trash2, Edit2, ShieldCheck, ChevronRight,
-  Printer, Percent, Download, Receipt, Save, Check
+  Printer, Percent, Download, Receipt, Save, Check, Calendar, X
 } from 'lucide-react';
 import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
 import { formatIndianCurrency, generateUpiUrl, detectStateFromGSTIN, numberToIndianWords } from '../utils/gstCalculations';
@@ -46,6 +46,18 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingParty, setEditingParty] = useState<Party | null>(null);
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
+
+  // Date to Date Ledger Range Modal State
+  const [isDateRangeModalOpen, setIsDateRangeModalOpen] = useState(false);
+  const [dateFilterEnabled, setDateFilterEnabled] = useState(false);
+  const [ledgerFromDate, setLedgerFromDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [ledgerToDate, setLedgerToDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
 
   // Opening Balance Inline Editing
   const [isEditingOpeningBalance, setIsEditingOpeningBalance] = useState(false);
@@ -349,7 +361,7 @@ Thank you for your prompt response!`;
                           onDeleteParty(p.id);
                         }}
                         className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                        title={`पार्टी "${p.name}" हटाएं (Delete Party)`}
+                        title={`Delete Party "${p.name}"`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -404,7 +416,7 @@ Thank you for your prompt response!`;
                       type="button"
                       onClick={() => handleOpenEditParty(selectedParty)}
                       className="w-10 h-10 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-110 shrink-0"
-                      title={`पार्टी "${selectedParty.name}" की जानकारी एडिट करें (Edit Party)`}
+                      title={`Edit Party "${selectedParty.name}"`}
                       aria-label="Edit Party"
                     >
                       <Edit2 className="w-5 h-5" />
@@ -417,7 +429,7 @@ Thank you for your prompt response!`;
                         onDeleteParty(selectedParty.id);
                       }}
                       className="w-10 h-10 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-110 shrink-0"
-                      title={`पार्टी "${selectedParty.name}" को हटाएं (Delete Party)`}
+                      title={`Delete Party "${selectedParty.name}"`}
                       aria-label="Delete Party"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -489,8 +501,8 @@ Thank you for your prompt response!`;
                         onChange={(e) => setQuickOpeningType(e.target.value as 'DR' | 'CR')}
                         className="px-2 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-bold"
                       >
-                        <option value="DR">DR (Receivable / लेना है)</option>
-                        <option value="CR">CR (Advance / देना है)</option>
+                        <option value="DR">DR (Receivable)</option>
+                        <option value="CR">CR (Advance / Payable)</option>
                       </select>
                       <input 
                         type="date"
@@ -511,10 +523,23 @@ Thank you for your prompt response!`;
                 {/* Party Actions Bar */}
                 <div className="flex flex-wrap items-center gap-2.5">
                   <button
-                    onClick={() => setIsLedgerModalOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                    onClick={() => {
+                      setDateFilterEnabled(false);
+                      setIsLedgerModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
-                    <Printer className="w-3.5 h-3.5 text-blue-400" /> 🖨️ Print Ledger (लेजर प्रिंट)
+                    <Printer className="w-3.5 h-3.5 text-blue-400" /> 🖨️ Print Ledger
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsDateRangeModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                    title="Date to Date Ledger Print"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-amber-300" /> 📅 Date to Date Print
                   </button>
 
                   <button
@@ -528,7 +553,7 @@ Thank you for your prompt response!`;
                     onClick={() => onRecordPayment(selectedParty)}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
                   >
-                    <Receipt className="w-3.5 h-3.5" /> ₹ Record Payment (वाउचर)
+                    <Receipt className="w-3.5 h-3.5" /> ₹ Record Payment
                   </button>
 
                   {selectedParty.currentBalance > 0 && (
@@ -552,12 +577,25 @@ Thank you for your prompt response!`;
                     <span className="text-[10px] text-slate-500">Includes Sales, TDS Deductions (1%), and Payment receipts</span>
                   </div>
 
-                  <button
-                    onClick={() => setIsLedgerModalOpen(true)}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-[11px] rounded-lg border border-blue-200 transition-colors"
-                  >
-                    <Printer className="w-3.5 h-3.5" /> Full Statement Print (1-Page)
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setIsDateRangeModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-lg border border-indigo-200 transition-colors cursor-pointer"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-indigo-600" /> 📅 Date to Date Statement
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDateFilterEnabled(false);
+                        setIsLedgerModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-[11px] rounded-lg border border-blue-200 transition-colors cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5" /> Full Statement Print (1-Page)
+                    </button>
+                  </div>
                 </div>
 
                 <div className="divide-y divide-slate-100">
@@ -618,7 +656,7 @@ Thank you for your prompt response!`;
                                     onEditInvoice(inv);
                                   }}
                                   className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                                  title={`बिल ${inv.invoiceNumber} एडिट करें (Edit Bill)`}
+                                  title={`Edit Bill ${inv.invoiceNumber}`}
                                   aria-label="Edit Invoice"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
@@ -632,7 +670,7 @@ Thank you for your prompt response!`;
                                     onDeleteInvoice(inv.id);
                                   }}
                                   className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                                  title={`बिल ${inv.invoiceNumber} हटाएं (Delete Bill)`}
+                                  title={`Delete Bill ${inv.invoiceNumber}`}
                                   aria-label="Delete Invoice"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -681,7 +719,7 @@ Thank you for your prompt response!`;
                                     onEditVoucher(pv);
                                   }}
                                   className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                                  title={`पेमेंट वाउचर ${pv.voucherNumber} एडिट करें (Edit Voucher)`}
+                                  title={`Edit Voucher ${pv.voucherNumber}`}
                                   aria-label="Edit Voucher"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
@@ -695,7 +733,7 @@ Thank you for your prompt response!`;
                                     onDeleteVoucher(pv.id);
                                   }}
                                   className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                                  title={`पेमेंट वाउचर ${pv.voucherNumber} हटाएं (Delete Voucher)`}
+                                  title={`Delete Voucher ${pv.voucherNumber}`}
                                   aria-label="Delete Voucher"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -876,6 +914,195 @@ Thank you for your prompt response!`;
         </div>
       )}
 
+      {/* Date-to-Date Ledger Range Selection Dialog */}
+      {isDateRangeModalOpen && selectedParty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="px-5 py-4 bg-gradient-to-r from-indigo-700 via-indigo-800 to-blue-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">Date to Date Ledger Print</h3>
+                  <p className="text-[11px] text-indigo-200">
+                    {selectedParty.type === 'SUPPLIER' ? 'Supplier' : 'Customer'} Date-wise Ledger Statement
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsDateRangeModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Party Information Banner */}
+              <div className="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-indigo-700 block">
+                    {selectedParty.type === 'SUPPLIER' ? 'Supplier:' : 'Party / Customer:'}
+                  </span>
+                  <div className="font-bold text-slate-900 text-sm">{selectedParty.name}</div>
+                  {selectedParty.phone && (
+                    <div className="text-[11px] text-slate-500">📞 {selectedParty.phone}</div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Current Balance:</span>
+                  <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border inline-block mt-0.5 ${
+                    selectedParty.currentBalance > 0 
+                      ? 'bg-rose-50 text-rose-800 border-rose-200' 
+                      : selectedParty.currentBalance < 0 
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                      : 'bg-slate-50 text-slate-800 border-slate-200'
+                  }`}>
+                    {formatIndianCurrency(Math.abs(selectedParty.currentBalance))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                  Quick Presets:
+                </label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const y = now.getFullYear();
+                      const m = String(now.getMonth() + 1).padStart(2, '0');
+                      const lastD = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');
+                      setLedgerFromDate(`${y}-${m}-01`);
+                      setLedgerToDate(`${y}-${m}-${lastD}`);
+                    }}
+                    className="p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl font-semibold text-slate-800 text-left transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📅 This Month</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                      const y = prevMonth.getFullYear();
+                      const m = String(prevMonth.getMonth() + 1).padStart(2, '0');
+                      const lastD = String(new Date(y, prevMonth.getMonth() + 1, 0).getDate()).padStart(2, '0');
+                      setLedgerFromDate(`${y}-${m}-01`);
+                      setLedgerToDate(`${y}-${m}-${lastD}`);
+                    }}
+                    className="p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl font-semibold text-slate-800 text-left transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📅 Last Month</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const fyStart = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+                      setLedgerFromDate(`${fyStart}-04-01`);
+                      setLedgerToDate(`${fyStart + 1}-03-31`);
+                    }}
+                    className="p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl font-semibold text-slate-800 text-left transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📈 Current FY (FY 2025-26)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const d30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                      const y30 = d30.getFullYear();
+                      const m30 = String(d30.getMonth() + 1).padStart(2, '0');
+                      const day30 = String(d30.getDate()).padStart(2, '0');
+                      const yNow = now.getFullYear();
+                      const mNow = String(now.getMonth() + 1).padStart(2, '0');
+                      const dayNow = String(now.getDate()).padStart(2, '0');
+                      setLedgerFromDate(`${y30}-${m30}-${day30}`);
+                      setLedgerToDate(`${yNow}-${mNow}-${dayNow}`);
+                    }}
+                    className="p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl font-semibold text-slate-800 text-left transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>⏱️ Last 30 Days</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Date Inputs */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    From Date:
+                  </label>
+                  <input
+                    type="date"
+                    value={ledgerFromDate}
+                    onChange={(e) => setLedgerFromDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    To Date:
+                  </label>
+                  <input
+                    type="date"
+                    value={ledgerToDate}
+                    onChange={(e) => setLedgerToDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateFilterEnabled(false);
+                    setIsDateRangeModalOpen(false);
+                    setIsLedgerModalOpen(true);
+                  }}
+                  className="px-3 py-2 text-slate-600 hover:text-slate-900 font-semibold text-xs rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  All Dates (Full Ledger)
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDateRangeModalOpen(false)}
+                    className="px-3 py-2 text-slate-500 hover:text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDateFilterEnabled(true);
+                      setIsDateRangeModalOpen(false);
+                      setIsLedgerModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-md transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Print Ledger
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Party Ledger Statement Print Modal */}
       {isLedgerModalOpen && selectedParty && (
         <PartyLedgerPrintModal 
@@ -886,6 +1113,9 @@ Thank you for your prompt response!`;
           businessProfile={businessProfile}
           paymentVouchers={paymentVouchers}
           onUpdateParty={onUpdateParty}
+          initialDateFilterEnabled={dateFilterEnabled}
+          initialFromDate={ledgerFromDate}
+          initialToDate={ledgerToDate}
         />
       )}
 

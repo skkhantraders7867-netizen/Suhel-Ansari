@@ -18,12 +18,12 @@ interface AppLoadingScreenProps {
 const loadingTips = [
   { icon: Database, text: 'Connecting to Supabase Cloud Database...' },
   { icon: ShieldCheck, text: 'Verifying 256-bit encrypted auth session...' },
-  { icon: Receipt, text: 'Loading GST Invoices, Ledger Khata & Inventory...' },
+  { icon: Receipt, text: 'Loading GST Invoices, Ledgers & Inventory...' },
   { icon: Zap, text: 'Preparing fast billing & report dashboard...' }
 ];
 
 export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
-  message = 'SR Group Bills & Khata',
+  message = 'SR Group Bills',
   subMessage = 'Loading your business account & cloud data...'
 }) => {
   const [tipIndex, setTipIndex] = useState(0);
@@ -122,7 +122,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
           </div>
           <div className="flex items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 bg-slate-800/40 py-1.5 px-2 rounded-xl border border-slate-700/30">
             <TrendingUp className="w-3 h-3 text-indigo-400" />
-            <span>Khata Book</span>
+            <span>Ledger Book</span>
           </div>
           <div className="flex items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 bg-slate-800/40 py-1.5 px-2 rounded-xl border border-slate-700/30">
             <ShieldCheck className="w-3 h-3 text-emerald-400" />

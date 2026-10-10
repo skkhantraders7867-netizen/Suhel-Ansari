@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, 
   Users, Package, FileSpreadsheet, Settings, Plus, Sparkles,
   Receipt, Truck, Wallet, QrCode, Layers, ShieldCheck,
-  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale
+  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale, FileCheck2
 } from 'lucide-react';
 import { ViewMode, AuthUser } from '../types';
 
@@ -54,19 +54,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           id: 'QUOTATIONS' as ViewMode,
-          label: 'Quotations & Estimates (कोटेशन)',
+          label: 'Quotations & Estimates',
           icon: FileSpreadsheet,
           tag: '18% GST',
         },
         {
           id: 'SERVICE_ORDERS' as ViewMode,
-          label: 'Service Order & Estimate (सर्विस ऑर्डर)',
+          label: 'Service Order & Estimate',
           icon: Layers,
           tag: 'Work Order',
         },
         {
           id: 'PURCHASE_ESTIMATES' as ViewMode,
-          label: 'Purchase Estimate (खरीद एस्टीमेट)',
+          label: 'Purchase Estimates',
           icon: ShoppingCart,
           tag: 'Inward PO',
         },
@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       pageNumber: '2',
-      title: 'Parties & Khata',
+      title: 'Parties & Ledgers',
       items: [
         {
           id: 'PARTIES' as ViewMode,
@@ -95,15 +95,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           id: 'OPENING_BALANCES' as ViewMode,
-          label: 'Opening Balance (ओपनिंग बैलेंस)',
+          label: 'Opening Balance',
           icon: Scale,
           tag: 'DR/CR FY',
         },
         {
           id: 'PAYMENT_VOUCHERS' as ViewMode,
-          label: 'Payment Vouchers (पेमेंट वाउचर)',
+          label: 'Payment Vouchers',
           icon: Receipt,
           tag: 'Receipts',
+        },
+        {
+          id: 'GST_LEDGER' as ViewMode,
+          label: 'GST Ledger',
+          icon: FileCheck2,
+          tag: 'GST Ledger',
         },
       ],
     },
@@ -275,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
             <p className="text-xs text-blue-950 font-medium leading-tight">
-              Sign in with Google or Email to access your business khata & invoices.
+              Sign in with Google or Email to access your business ledgers & invoices.
             </p>
             {onOpenAuthModal && (
               <div className="space-y-1.5">
@@ -306,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span>100% Offline & Private</span>
         </div>
         <p className="text-[10px] text-slate-300 leading-relaxed">
-          Your GST data, client khata & invoices are securely saved with 1-click JSON backup export.
+          Your GST data, client ledgers & invoices are securely saved with 1-click JSON backup export.
         </p>
       </div>
     </aside>

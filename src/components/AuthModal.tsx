@@ -295,7 +295,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </h3>
                 <p className="text-xs text-blue-200/90 font-medium">
                   {mode === 'signup' && 'Register your business to sync billing data'}
-                  {mode === 'login' && 'Sign in to access bills, khata & reports'}
+                  {mode === 'login' && 'Sign in to access bills, ledgers & reports'}
                   {mode === 'forgot' && 'Enter your email to receive recovery instructions'}
                   {mode === 'reset-password' && 'Enter your new secure password'}
                 </p>

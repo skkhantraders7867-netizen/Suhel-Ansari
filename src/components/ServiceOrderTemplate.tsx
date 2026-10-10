@@ -548,7 +548,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
                 ANNEXURE: TERMS &amp; CONDITIONS
               </h2>
               <p className="text-[10.5px] font-semibold text-slate-800">
-                (नियम एवं शर्तें - Service Order / Work Order Clauses)
+                (Standard Service Order &amp; Work Contract Clauses)
               </p>
             </div>
             <div className="text-right text-[10px] font-bold text-slate-900 space-y-0.5">

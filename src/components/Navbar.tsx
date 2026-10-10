@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Building2, Plus, ShoppingBag, Search, 
   HelpCircle, Settings, ShieldCheck, Download, Bell, Sparkles,
-  LayoutDashboard, Users, Package, WalletCards, User, LogIn, LogOut, ChevronDown,
-  Database, Cloud, RefreshCw
+  LayoutDashboard, Users, Package, WalletCards, User, LogIn, LogOut, ChevronDown
 } from 'lucide-react';
 import { BusinessProfile, ViewMode, AuthUser } from '../types';
-import { getCloudSyncState, subscribeToSyncState, CloudSyncState } from '../utils/supabaseSync';
-import { SUPABASE_PROJECT_ID } from '../utils/supabaseClient';
 
 interface NavbarProps {
   businessProfile: BusinessProfile;
@@ -17,7 +14,6 @@ interface NavbarProps {
   onOpenPos: () => void;
   onOpenHsnFinder: () => void;
   onOpenSettings: () => void;
-  onOpenCloudSync?: () => void;
   currentUser: AuthUser | null;
   onOpenAuthModal: () => void;
   onLogout: () => void;
@@ -41,18 +37,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPos,
   onOpenHsnFinder,
   onOpenSettings,
-  onOpenCloudSync,
   currentUser,
   onOpenAuthModal,
   onLogout,
 }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [syncState, setSyncState] = useState<CloudSyncState>(getCloudSyncState());
-
-  useEffect(() => {
-    const unsub = subscribeToSyncState(state => setSyncState({ ...state }));
-    return unsub;
-  }, []);
 
   // Determine which of the 4 main pages is currently active
   const isPage1 = ['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'POS', 'CREATE_INVOICE'].includes(currentView);
@@ -115,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-800 text-[10px] flex items-center justify-center font-black">2</span>
-              <span>Parties & Khata</span>
+              <span>Parties & Ledgers</span>
             </button>
 
             {/* Page 3 */}
@@ -167,29 +156,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ShoppingBag className="w-3.5 h-3.5 text-slate-950" />
               <span className="hidden xs:inline">POS</span>
-            </button>
-
-            {/* Supabase Cloud Sync Status Button */}
-            <button
-              onClick={onOpenCloudSync}
-              className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                syncState.status === 'ERROR'
-                  ? 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
-                  : 'bg-emerald-50/80 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
-              }`}
-              title={`Supabase Cloud Backend (Project: ${SUPABASE_PROJECT_ID})\nStatus: ${syncState.status === 'SYNCING' ? 'Syncing...' : syncState.lastSyncedAt ? 'Synced at ' + syncState.lastSyncedAt : 'Active'}`}
-            >
-              <Database className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="flex items-center gap-1">
-                <span>Supabase</span>
-                <span className={`w-2 h-2 rounded-full ${
-                  syncState.status === 'SYNCING' 
-                    ? 'bg-amber-500 animate-spin' 
-                    : syncState.status === 'ERROR'
-                    ? 'bg-rose-500'
-                    : 'bg-emerald-500 animate-pulse'
-                }`} />
-              </span>
             </button>
 
             {/* + New GST Bill Button */}
@@ -251,8 +217,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <span>Google</span>
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded-full">
-                          <span>Supabase Auth</span>
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-100/80 px-1.5 py-0.5 rounded-full">
+                          <span>Verified</span>
                         </span>
                       )}
                     </div>
@@ -282,17 +248,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <Settings className="w-4 h-4 text-slate-500" />
                     <span>Business Settings</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setShowUserDropdown(false);
-                      if (onOpenCloudSync) onOpenCloudSync();
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <Database className="w-4 h-4 text-emerald-600" />
-                    <span>Supabase Cloud DB</span>
                   </button>
 
                   <div className="border-t border-slate-100 my-1"></div>
@@ -340,7 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               isPage2 ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
             }`}
           >
-            <span>2. Parties & Khata</span>
+            <span>2. Parties & Ledgers</span>
           </button>
           <button
             onClick={() => onSelectView('INVENTORY')}

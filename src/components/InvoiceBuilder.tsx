@@ -738,7 +738,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-900">
-                {docType === 'SERVICE_ORDER' ? 'TO / Supplier / Vendor Details (सर्विस पार्टी)' : (docType === 'PURCHASE_BILL' || docType === 'PURCHASE_ESTIMATE') ? 'Supplier / Vendor Details (सप्लायर पार्टी)' : 'Customer (Billed To) Details'}
+                {docType === 'SERVICE_ORDER' ? 'TO / Supplier / Vendor Details' : (docType === 'PURCHASE_BILL' || docType === 'PURCHASE_ESTIMATE') ? 'Supplier / Vendor Details' : 'Customer (Billed To) Details'}
               </span>
               <div className="flex items-center gap-2">
                 {selectedParty && (
@@ -1141,7 +1141,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                     {/* Item Remarks for Quotations */}
                     {docType === 'QUOTATION' && (
                       <div className="col-span-12 pt-2 border-t border-slate-200/80 flex items-center gap-2">
-                        <label className="text-[11px] font-semibold text-slate-600 whitespace-nowrap">Remarks (ऑफर रिमार्क):</label>
+                        <label className="text-[11px] font-semibold text-slate-600 whitespace-nowrap">Remarks:</label>
                         <input
                           type="text"
                           placeholder="e.g. As per technical drawing / Site clearance by client / Extra at actuals..."
@@ -1181,7 +1181,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-                      Service Order &amp; Work Contract Details (सर्विस / वर्क ऑर्डर सेक्शन)
+                      Service Order &amp; Work Contract Details
                     </span>
                     <span className="text-[11px] text-slate-500 font-normal">
                       Service No., Date, Site Location, RA Bill &amp; Scope of Work
@@ -1310,7 +1310,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
                         <Briefcase className="w-3 h-3 text-slate-500" />
-                        <span>Scope of Work / Service Description (कार्य का विस्तृत विवरण):</span>
+                        <span>Scope of Work / Service Description:</span>
                       </label>
                       <div className="flex items-center gap-1">
                         <button
@@ -1434,7 +1434,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                   </div>
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                      Buyer Account Details (खरीदार के बैंक खाते का विवरण)
+                      Buyer Account Details
                     </h3>
                     <p className="text-[11px] text-slate-500">
                       These bank details will be printed on the Purchase Bill PDF for vendor reference.
@@ -1638,9 +1638,9 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
             <h3 className="text-xs font-bold uppercase tracking-wider text-blue-900 pb-2 border-b border-slate-100 flex items-center justify-between">
               <span>
                 {docType === 'SERVICE_ORDER' 
-                  ? 'SERVICE ORDER IDENTIFICATION (सर्विस ऑर्डर विवरण)' 
+                  ? 'SERVICE ORDER IDENTIFICATION' 
                   : docType === 'QUOTATION' 
-                    ? 'Quotation Identification (कोटेशन विवरण)' 
+                    ? 'Quotation Identification' 
                     : 'Invoice Identification'}
               </span>
               {duplicateInvoice ? (
@@ -1659,9 +1659,9 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-slate-700">
                     {docType === 'SERVICE_ORDER' 
-                      ? 'SARVICE NO : (सर्विस ऑर्डर नं.) *' 
+                      ? 'SARVICE NO. *' 
                       : docType === 'QUOTATION' 
-                        ? 'Quotation Number (कोटेशन नं.) *' 
+                        ? 'Quotation Number *' 
                         : 'Invoice Number *'}
                   </label>
                   {duplicateInvoice && (
@@ -1702,7 +1702,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                   <div className="grid grid-cols-1 gap-2">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        SARVICE DATE : (सर्विस दिनांक) *
+                        SARVICE DATE *
                       </label>
                       <input 
                         type="date"
@@ -1777,7 +1777,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                   <div className="pt-2 border-t border-slate-100">
                     <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
                       <span>Quotation Subject / Scope of Work</span>
-                      <span className="text-[10px] text-blue-600 font-bold">विषय</span>
+                      <span className="text-[10px] text-blue-600 font-bold">Subject</span>
                     </label>
                     <textarea
                       rows={2}
@@ -2029,7 +2029,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                       </div>
 
                       <div className="p-2 bg-blue-50 border border-blue-200/80 rounded-lg text-[10px] text-blue-900 leading-tight">
-                        ✓ <strong>Ledger Integrated:</strong> TDS will be added directly to this party's Khata &amp; Ledger statement (will not be printed on the invoice letter pad).
+                        ✓ <strong>Ledger Integrated:</strong> TDS will be added directly to this party's Ledger statement (will not be printed on the invoice letter pad).
                       </div>
                     </div>
                   )}

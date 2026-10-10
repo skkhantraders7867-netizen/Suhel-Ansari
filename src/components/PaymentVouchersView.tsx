@@ -125,7 +125,7 @@ Thank you for your payment!`;
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-900 tracking-tight">
-                Payment Received Vouchers (पेमेंट रिसीप्ट वाउचर)
+                Payment Received Vouchers
               </h1>
               <p className="text-xs text-slate-500">
                 Direct party ledger credit vouchers, invoice payment reconciliation, cash &amp; bank allocation with 1-page receipt printing
@@ -140,7 +140,7 @@ Thank you for your payment!`;
             onClick={() => onOpenCreateVoucher()}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
           >
-            <Plus className="w-4 h-4" /> + Create Payment Voucher (नया वाउचर)
+            <Plus className="w-4 h-4" /> + Create Payment Voucher
           </button>
 
           <button
@@ -168,7 +168,7 @@ Thank you for your payment!`;
         <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-1 border-l-4 border-l-emerald-600">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 block">
-              Total Receipts (कुल वसूली)
+              Total Receipts
             </span>
             <ArrowDownRight className="w-4 h-4 text-emerald-600" />
           </div>
@@ -191,7 +191,7 @@ Thank you for your payment!`;
         <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">
-              Cash Inflow (गल्ला)
+              Cash Inflow
             </span>
             <Wallet className="w-4 h-4 text-amber-600" />
           </div>
@@ -255,7 +255,7 @@ Thank you for your payment!`;
               className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700"
             >
               <option value="ALL">All Modes</option>
-              <option value="CASH">Cash (रोकड़)</option>
+              <option value="CASH">Cash</option>
               <option value="UPI">UPI (Google Pay / PhonePe)</option>
               <option value="NEFT_RTGS">NEFT / RTGS</option>
               <option value="CHEQUE">Cheque</option>
@@ -282,7 +282,7 @@ Thank you for your payment!`;
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
-                <th className="py-3 px-3 text-center w-12">क्र.सं. (S.No.)</th>
+                <th className="py-3 px-3 text-center w-12">S.No.</th>
                 <th className="py-3 px-4">Voucher No &amp; Date</th>
                 <th className="py-3 px-4">Received From (Party)</th>
                 <th className="py-3 px-3">Payment Mode &amp; Account</th>
@@ -390,7 +390,7 @@ Thank you for your payment!`;
                           <button
                             onClick={() => setPrintingVoucher(v)}
                             className="p-1.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 rounded-lg transition-colors cursor-pointer"
-                            title="Print 1-Page Receipt (प्रिंट रसीद)"
+                            title="Print 1-Page Receipt"
                           >
                             <Printer className="w-3.5 h-3.5" />
                           </button>
@@ -420,7 +420,7 @@ Thank you for your payment!`;
                             type="button"
                             onClick={() => onDeleteVoucher(v.id)}
                             className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
-                            title={`वाउचर #${v.voucherNumber} हटाएं (Delete Voucher)`}
+                            title={`Delete Voucher #${v.voucherNumber}`}
                             aria-label="Delete Voucher"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -447,14 +447,14 @@ Thank you for your payment!`;
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-bold text-sm">Payment Receipt Preview (रसीद पूर्वावलोकन)</h3>
+                <h3 className="font-bold text-sm">Payment Receipt Preview</h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => window.print()}
                   className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
                 >
-                  <Printer className="w-3.5 h-3.5" /> Print Receipt (प्रिंट)
+                  <Printer className="w-3.5 h-3.5" /> Print Receipt
                 </button>
                 <button
                   onClick={() => setPrintingVoucher(null)}
@@ -497,7 +497,7 @@ Thank you for your payment!`;
 
                 <div className="text-right">
                   <div className="inline-block bg-slate-900 text-white text-xs font-black px-3 py-1 rounded-md tracking-wider uppercase mb-1.5">
-                    Payment Receipt / रसीद
+                    Payment Receipt
                   </div>
                   <div className="font-mono text-xs space-y-0.5">
                     <div>Receipt No: <strong className="text-slate-900">{printingVoucher.voucherNumber}</strong></div>

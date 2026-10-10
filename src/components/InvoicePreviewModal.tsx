@@ -437,7 +437,7 @@ Thank you for doing business with us!`;
             <option value="TRIPLICATE FOR SUPPLIER">Copy: Triplicate</option>
             <option value="PAID">Stamp: PAID</option>
             <option value="SAMPLE">Stamp: SAMPLE</option>
-            <option value="NONE">No Watermark (हटाएं)</option>
+            <option value="NONE">No Watermark</option>
           </select>
 
           <button
@@ -706,9 +706,9 @@ Thank you for doing business with us!`;
                     ? 'bg-rose-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-800'
                 }`}
-                title="Watermark hatao (No Watermark)"
+                title="No Watermark"
               >
-                ✕ Watermark हटाएं
+                ✕ No Watermark
               </button>
 
               <button
@@ -722,7 +722,7 @@ Thank you for doing business with us!`;
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-800'
                 }`}
-                title="QUOTATION Watermark lagayein"
+                title="Apply QUOTATION Watermark"
               >
                 QUOTATION
               </button>
@@ -738,7 +738,7 @@ Thank you for doing business with us!`;
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-800'
                 }`}
-                title="S.K. KHAN TRADERS Watermark lagayein"
+                title="Apply S.K. KHAN TRADERS Watermark"
               >
                 S.K. KHAN TRADERS
               </button>
@@ -757,7 +757,7 @@ Thank you for doing business with us!`;
                     }`}
                     title={`${lvl} watermark visibility`}
                   >
-                    {lvl === 'CLEAR' ? 'Clear (स्पष्ट)' : lvl}
+                    {lvl}
                   </button>
                 ))}
               </div>
@@ -772,9 +772,9 @@ Thank you for doing business with us!`;
                 className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
                   termsPageBreak ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Print T&C on second page (पेज 2 पर T&C)"
+                title="Print T&C on second page"
               >
-                Page 2 (अलग पेज)
+                Page 2 (Separate)
               </button>
               <button
                 type="button"
@@ -784,7 +784,7 @@ Thank you for doing business with us!`;
                 }`}
                 title="Print inline on single page"
               >
-                Same Page (1 ही पेज)
+                Same Page (1 Page)
               </button>
             </div>
 
@@ -859,7 +859,7 @@ Thank you for doing business with us!`;
                 }`}
                 title="HSN/SAC column: Only printed when code is entered"
               >
-                {showHsnColumn ? 'Print HSN (चालू)' : 'Hide HSN (बंद)'}
+                {showHsnColumn ? 'Print HSN (On)' : 'Hide HSN (Off)'}
               </button>
             </div>
 
@@ -1046,7 +1046,7 @@ Thank you for doing business with us!`;
 
             {/* Terms Layout & Multi-Page Mode Controls */}
             <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">
-              <span className="text-slate-400 text-[11px] font-bold">Terms / शर्तें:</span>
+              <span className="text-slate-400 text-[11px] font-bold">Terms:</span>
               <button
                 type="button"
                 onClick={() => setTermsMode('auto')}
@@ -1063,9 +1063,9 @@ Thank you for doing business with us!`;
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
                   termsMode === 'page_2' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Force print Terms on 2nd Page (अलग पेज पर)"
+                title="Force print Terms on 2nd Page"
               >
-                Page 2 (अलग पेज)
+                Page 2 (Separate)
               </button>
               <button
                 type="button"
@@ -1075,7 +1075,7 @@ Thank you for doing business with us!`;
                 }`}
                 title="Force fit on 1 Page"
               >
-                1 Page (एक पेज)
+                1 Page (Single Page)
               </button>
             </div>
 
@@ -2770,7 +2770,7 @@ Thank you for doing business with us!`;
               {/* Subject */}
               <div>
                 <label className="block font-bold text-slate-900 mb-1">
-                  Quotation Subject / Scope of Work (ऑफर का विषय)
+                  Quotation Subject / Scope of Work
                 </label>
                 <textarea
                   rows={2}
@@ -2797,7 +2797,7 @@ Thank you for doing business with us!`;
                 </div>
                 <div>
                   <label className="block font-bold text-slate-900 mb-1">
-                    Validity Expiry (वैधता)
+                    Validity Expiry
                   </label>
                   <input
                     type="text"
@@ -2812,7 +2812,7 @@ Thank you for doing business with us!`;
               {/* Intro Salutation / Dear Sir text */}
               <div>
                 <label className="block font-bold text-slate-900 mb-1">
-                  Intro Salutation (प्रारंभिक संदेश)
+                  Intro Salutation
                 </label>
                 <input
                   type="text"
@@ -2826,7 +2826,7 @@ Thank you for doing business with us!`;
               {/* Layout controls */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900">T&amp;C Print Layout (नियम एवं शर्तें लेआउट):</span>
+                  <span className="font-bold text-slate-900">T&amp;C Print Layout:</span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -2859,7 +2859,7 @@ Thank you for doing business with us!`;
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                  <span className="font-bold text-slate-900">Multi-page T&amp;C Overflow (लंबी शर्तें दूसरे पेज पर):</span>
+                  <span className="font-bold text-slate-900">Multi-page T&amp;C Overflow:</span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -2868,7 +2868,7 @@ Thank you for doing business with us!`;
                         termsPageBreak ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border'
                       }`}
                     >
-                      ✓ Page 2 (दूसरा पेज - Multi-Page A4)
+                      ✓ Page 2 (Multi-Page A4)
                     </button>
                     <button
                       type="button"
@@ -2877,7 +2877,7 @@ Thank you for doing business with us!`;
                         !termsPageBreak ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border'
                       }`}
                     >
-                      Same Page (1 ही पेज)
+                      Same Page (1 Page)
                     </button>
                   </div>
                 </div>
@@ -2887,7 +2887,7 @@ Thank you for doing business with us!`;
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block font-bold text-slate-900">
-                    Terms &amp; Conditions (नियम एवं शर्तें)
+                    Terms &amp; Conditions
                   </label>
                   <div className="flex items-center gap-1">
                     <button

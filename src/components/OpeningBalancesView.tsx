@@ -343,11 +343,11 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
           </p>
         </div>
 
-        {/* Total DR (Receivable / लेना है) */}
+        {/* Total DR (Receivable) */}
         <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-1 border-l-4 border-l-rose-500">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 block">
-              Total DR (Receivable / लेना है)
+              Total DR (Receivable)
             </span>
             <ArrowUpRight className="w-4 h-4 text-rose-500" />
           </div>
@@ -357,11 +357,11 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
           <p className="text-[10px] text-slate-500">Opening money to be collected from customers</p>
         </div>
 
-        {/* Total CR (Payable / देना है या Advance) */}
+        {/* Total CR (Payable) */}
         <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-1 border-l-4 border-l-emerald-500">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">
-              Total CR (Payable / देना है)
+              Total CR (Payable)
             </span>
             <ArrowDownRight className="w-4 h-4 text-emerald-500" />
           </div>
@@ -541,8 +541,8 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
                               : 'bg-emerald-50 text-emerald-800 border-emerald-300'
                           }`}
                         >
-                          <option value="DR">DR (Receivable / लेना है)</option>
-                          <option value="CR">CR (Payable / देना है)</option>
+                          <option value="DR">DR (Receivable)</option>
+                          <option value="CR">CR (Payable)</option>
                         </select>
                       </td>
 
@@ -645,7 +645,7 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
                     newPartyType === 'CUSTOMER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600'
                   }`}
                 >
-                  Customer (ग्राहक)
+                  Customer
                 </button>
                 <button
                   type="button"
@@ -654,7 +654,7 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
                     newPartyType === 'SUPPLIER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600'
                   }`}
                 >
-                  Supplier / Vendor (आपूर्तिकर्ता)
+                  Supplier / Vendor
                 </button>
               </div>
 
@@ -715,8 +715,8 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
                     onChange={(e) => setNewPartyBalanceType(e.target.value as 'DR' | 'CR')}
                     className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-bold"
                   >
-                    <option value="DR">DR (Receivable / लेना है)</option>
-                    <option value="CR">CR (Payable / देना है)</option>
+                    <option value="DR">DR (Receivable)</option>
+                    <option value="CR">CR (Payable)</option>
                   </select>
                 </div>
                 <div>

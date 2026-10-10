@@ -126,7 +126,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white"
             >
               <option value="ALL">All Invoices &amp; Bills</option>
-              <option value="TAX_INVOICE">Tax Invoices (टैक्स इनवॉइस)</option>
+              <option value="TAX_INVOICE">Tax Invoices</option>
               <option value="SERVICE_ORDER">Service Orders / Work Orders</option>
               <option value="DEBIT_NOTE">Debit Notes</option>
               <option value="CREDIT_NOTE">Credit Notes</option>

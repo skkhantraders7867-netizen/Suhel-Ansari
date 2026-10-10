@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Invoice, Party, Item, BusinessProfile, ViewMode, DocumentType, PaymentMode,
   Expense, BankAccount, CashTransaction, EWayBillRecord, AuthUser,
-  StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher
+  StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher,
+  GstFilingRecord, PurchaseBillReturnRecord
 } from './types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -32,7 +33,6 @@ import {
   signOutUser, 
   mapSupabaseUserToAuthUser 
 } from './utils/supabaseAuth';
-import { SupabaseSyncModal } from './components/SupabaseSyncModal';
 import { DashboardView } from './components/DashboardView';
 import { InvoiceListView } from './components/InvoiceListView';
 import { QuotationsView } from './components/QuotationsView';
@@ -49,6 +49,7 @@ import { OpeningBalancesView } from './components/OpeningBalancesView';
 import { PaymentVouchersView } from './components/PaymentVouchersView';
 import { InventoryView } from './components/InventoryView';
 import { GstReportsView } from './components/GstReportsView';
+import { GstLedgerView } from './components/GstLedgerView';
 import { LetterheadDocumentView } from './components/LetterheadDocumentView';
 import { AttendanceView } from './components/AttendanceView';
 import { InvoicePreviewModal } from './components/InvoicePreviewModal';
@@ -99,6 +100,16 @@ export default function App() {
       ? initialUserData.paymentVouchers
       : [];
   });
+  const [gstFilingRecords, setGstFilingRecords] = useState<GstFilingRecord[]>(() => {
+    return Array.isArray(initialUserData.gstFilingRecords)
+      ? initialUserData.gstFilingRecords
+      : [];
+  });
+  const [purchaseBillReturns, setPurchaseBillReturns] = useState<PurchaseBillReturnRecord[]>(() => {
+    return Array.isArray(initialUserData.purchaseBillReturns)
+      ? initialUserData.purchaseBillReturns
+      : [];
+  });
 
   // Handler to load user data into state
   const applyUserData = (user: AuthUser) => {
@@ -115,6 +126,8 @@ export default function App() {
     setAttendanceRecords(Array.isArray(loaded.attendanceRecords) ? [...loaded.attendanceRecords] : []);
     setAttendanceCompanies(Array.isArray(loaded.attendanceCompanies) ? [...loaded.attendanceCompanies] : []);
     setPaymentVouchers(Array.isArray(loaded.paymentVouchers) ? [...loaded.paymentVouchers] : []);
+    setGstFilingRecords(Array.isArray(loaded.gstFilingRecords) ? [...loaded.gstFilingRecords] : []);
+    setPurchaseBillReturns(Array.isArray(loaded.purchaseBillReturns) ? [...loaded.purchaseBillReturns] : []);
   };
 
   // 1. Initialize Supabase Auth session and real-time state listener
@@ -173,11 +186,13 @@ export default function App() {
         attendanceRecords,
         attendanceCompanies,
         paymentVouchers,
+        gstFilingRecords,
+        purchaseBillReturns,
       };
       // Save locally & debounced push to Supabase table
       pushUserAccountDataToSupabase(currentUser, fullData);
     }
-  }, [currentUser, businessProfile, invoices, parties, items, expenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers]);
+  }, [currentUser, businessProfile, invoices, parties, items, expenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers, gstFilingRecords, purchaseBillReturns]);
 
   // Asynchronously sync from Supabase when user logs in or switches
   useEffect(() => {
@@ -222,6 +237,12 @@ export default function App() {
       if (Array.isArray(cloudData.paymentVouchers) && cloudData.paymentVouchers.length > 0) {
         setPaymentVouchers(cloudData.paymentVouchers);
       }
+      if (Array.isArray(cloudData.gstFilingRecords) && cloudData.gstFilingRecords.length > 0) {
+        setGstFilingRecords(cloudData.gstFilingRecords);
+      }
+      if (Array.isArray(cloudData.purchaseBillReturns) && cloudData.purchaseBillReturns.length > 0) {
+        setPurchaseBillReturns(cloudData.purchaseBillReturns);
+      }
     });
 
     return () => {
@@ -262,7 +283,6 @@ export default function App() {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [isHsnFinderOpen, setIsHsnFinderOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isCloudSyncOpen, setIsCloudSyncOpen] = useState(false);
   
   // Payment Modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -567,8 +587,8 @@ export default function App() {
     setConfirmDialog({
       isOpen: true,
       title: 'Delete Payment Voucher',
-      message: `क्या आप पेमेंट वाउचर "${v.voucherNumber}" (राशि: ₹${v.amount}) को हटाना चाहते हैं?`,
-      confirmLabel: 'हाँ, हटाएं (Delete)',
+      message: `Are you sure you want to delete payment voucher "${v.voucherNumber}" (Amount: ₹${v.amount})?`,
+      confirmLabel: 'Delete Voucher',
       onConfirm: () => {
         setPaymentVouchers(prev => prev.filter(p => p.id !== voucherId));
 
@@ -750,9 +770,9 @@ export default function App() {
     const p = parties.find(party => party.id === id);
     setConfirmDialog({
       isOpen: true,
-      title: 'पार्टी हटाएं (Delete Party)',
-      message: `क्या आप पार्टी "${p?.name || 'this party'}" को हटाना चाहते हैं?`,
-      confirmLabel: 'हाँ, हटाएं (Delete)',
+      title: 'Delete Party',
+      message: `Are you sure you want to delete party "${p?.name || 'this party'}"?`,
+      confirmLabel: 'Delete Party',
       onConfirm: () => {
         setParties(prev => prev.filter(p => p.id !== id));
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
@@ -1058,6 +1078,57 @@ export default function App() {
     }
   };
 
+  // --- GST LEDGER ACTIONS ---
+  const handleSaveGstFilingRecord = (record: GstFilingRecord) => {
+    setGstFilingRecords(prev => {
+      const idx = prev.findIndex(r => r.id === record.id || r.periodKey === record.periodKey);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = record;
+        return next;
+      }
+      return [record, ...prev];
+    });
+  };
+
+  const handleDeleteGstFilingRecord = (recordId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete GST Filing Record?',
+      message: 'Are you sure you want to delete this GST Filing record?',
+      confirmLabel: 'Delete Record',
+      onConfirm: () => {
+        setGstFilingRecords(prev => prev.filter(r => r.id !== recordId));
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  const handleSavePurchaseBillReturn = (record: PurchaseBillReturnRecord) => {
+    setPurchaseBillReturns(prev => {
+      const idx = prev.findIndex(r => r.id === record.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = record;
+        return next;
+      }
+      return [record, ...prev];
+    });
+  };
+
+  const handleDeletePurchaseBillReturn = (returnId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Purchase Bill Return Record?',
+      message: 'Are you sure you want to delete this Purchase Bill Return record?',
+      confirmLabel: 'Delete Record',
+      onConfirm: () => {
+        setPurchaseBillReturns(prev => prev.filter(r => r.id !== returnId));
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
   // --- DATA BACKUP & RESET ---
   const handleExportAllData = () => {
     const fullBackup = {
@@ -1071,6 +1142,10 @@ export default function App() {
       ewayBills,
       staffMembers,
       attendanceRecords,
+      attendanceCompanies,
+      paymentVouchers,
+      gstFilingRecords,
+      purchaseBillReturns,
       exportDate: new Date().toISOString(),
       app: 'SR Group GST Billing Pro India',
     };
@@ -1128,7 +1203,6 @@ export default function App() {
         onOpenPos={() => setCurrentView('POS')}
         onOpenHsnFinder={() => setIsHsnFinderOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenCloudSync={() => setIsCloudSyncOpen(true)}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleSignOut}
@@ -1189,14 +1263,14 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                     {['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) ? '1' :
-                     currentView === 'PARTIES' ? '2' :
+                     ['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS', 'GST_LEDGER'].includes(currentView) ? '2' :
                      ['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) ? '3' :
                      ['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) ? '4' : '5'}
                   </span>
                   <div>
                     <h2 className="font-extrabold text-sm text-slate-900 font-heading">
                       {['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) && 'Page 1: Billing & Sales Center'}
-                      {currentView === 'PARTIES' && 'Page 2: Parties, Customers & Khata Ledger'}
+                      {['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS', 'GST_LEDGER'].includes(currentView) && 'Page 2: Parties, Customers & Ledger'}
                       {['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) && 'Page 3: Stock Catalog & Barcodes'}
                       {['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) && 'Page 4: Accounts, Banking & Tax Compliance'}
                       {currentView === 'ATTENDANCE' && 'Page 5: Staff Attendance & Auto-Salary Register'}
@@ -1236,7 +1310,7 @@ export default function App() {
                           currentView === 'QUOTATIONS' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
-                        <span>Quotations &amp; Estimates (कोटेशन)</span>
+                        <span>Quotations &amp; Estimates</span>
                         <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                           currentView === 'QUOTATIONS' ? 'bg-blue-800 text-white' : 'bg-blue-100 text-blue-800'
                         }`}>
@@ -1249,7 +1323,7 @@ export default function App() {
                           currentView === 'SERVICE_ORDERS' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
-                        <span>Service Order &amp; Estimate (सर्विस ऑर्डर)</span>
+                        <span>Service Order &amp; Estimate</span>
                         <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                           currentView === 'SERVICE_ORDERS' ? 'bg-blue-800 text-white' : 'bg-indigo-100 text-indigo-800'
                         }`}>
@@ -1262,7 +1336,7 @@ export default function App() {
                           currentView === 'PURCHASE_ESTIMATES' ? 'bg-amber-500 text-slate-950 font-black shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
-                        <span>Purchase Estimate (खरीद एस्टीमेट)</span>
+                        <span>Purchase Estimates</span>
                         <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                           currentView === 'PURCHASE_ESTIMATES' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-900'
                         }`}>
@@ -1560,6 +1634,19 @@ export default function App() {
                 />
               )}
 
+              {currentView === 'GST_LEDGER' && (
+                <GstLedgerView 
+                  invoices={invoices}
+                  businessProfile={businessProfile}
+                  gstFilingRecords={gstFilingRecords}
+                  purchaseBillReturns={purchaseBillReturns}
+                  onSaveGstFilingRecord={handleSaveGstFilingRecord}
+                  onDeleteGstFilingRecord={handleDeleteGstFilingRecord}
+                  onSavePurchaseBillReturn={handleSavePurchaseBillReturn}
+                  onDeletePurchaseBillReturn={handleDeletePurchaseBillReturn}
+                />
+              )}
+
               {currentView === 'INVENTORY' && (
                 <InventoryView 
                   items={items}
@@ -1638,44 +1725,6 @@ export default function App() {
         onSaveProfile={setBusinessProfile}
         onExportAllData={handleExportAllData}
         onResetData={handleResetData}
-        onOpenCloudSync={() => setIsCloudSyncOpen(true)}
-      />
-
-      {/* 3b. Supabase Cloud Sync & Database Status Modal */}
-      <SupabaseSyncModal
-        isOpen={isCloudSyncOpen}
-        onClose={() => setIsCloudSyncOpen(false)}
-        currentUser={currentUser}
-        currentData={{
-          businessProfile,
-          invoices,
-          parties,
-          items,
-          expenses,
-          bankAccounts,
-          cashTransactions,
-          ewayBills,
-          staffMembers,
-          attendanceRecords,
-          attendanceCompanies,
-          paymentVouchers,
-        }}
-        onDataRestored={(restored) => {
-          setBusinessProfile(restored.businessProfile);
-          setParties(restored.parties || []);
-          setItems(restored.items || []);
-          setInvoices(restored.invoices || []);
-          setExpenses(restored.expenses || []);
-          setBankAccounts(restored.bankAccounts || []);
-          setCashTransactions(restored.cashTransactions || []);
-          setEwayBills(restored.ewayBills || []);
-          if (restored.staffMembers) setStaffMembers(restored.staffMembers);
-          if (restored.attendanceRecords) setAttendanceRecords(restored.attendanceRecords);
-          if (restored.attendanceCompanies) setAttendanceCompanies(restored.attendanceCompanies);
-          if (restored.paymentVouchers) setPaymentVouchers(restored.paymentVouchers);
-          setIsCloudSyncOpen(false);
-        }}
-        onClearAllData={handleResetData}
       />
 
       {/* 4. Record Payment Modal (Standard Quick Payment) */}

@@ -29,11 +29,11 @@ const WorkerDocumentUploadSection: React.FC<WorkerDocumentUploadSectionProps> = 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categoryPresets: { id: 'aadhaar' | 'pan' | 'bank_passbook' | 'photo' | 'other'; label: string; defaultName: string }[] = [
-    { id: 'aadhaar', label: 'Aadhaar Card (आधार)', defaultName: 'Aadhaar Card' },
-    { id: 'pan', label: 'PAN Card (पैन)', defaultName: 'PAN Card' },
-    { id: 'bank_passbook', label: 'Bank Passbook / Cheque (पासबुक)', defaultName: 'Bank Passbook Copy' },
-    { id: 'photo', label: 'Worker Photo (फोटो)', defaultName: 'Worker Photo' },
-    { id: 'other', label: 'Other ID Proof (अन्य)', defaultName: 'Identity Document' },
+    { id: 'aadhaar', label: 'Aadhaar Card', defaultName: 'Aadhaar Card' },
+    { id: 'pan', label: 'PAN Card', defaultName: 'PAN Card' },
+    { id: 'bank_passbook', label: 'Bank Passbook / Cheque', defaultName: 'Bank Passbook Copy' },
+    { id: 'photo', label: 'Worker Photo', defaultName: 'Worker Photo' },
+    { id: 'other', label: 'Other ID Proof', defaultName: 'Identity Document' },
   ];
 
   const handleFiles = (fileList: FileList | File[]) => {
@@ -89,7 +89,7 @@ const WorkerDocumentUploadSection: React.FC<WorkerDocumentUploadSectionProps> = 
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-extrabold text-blue-950 uppercase flex items-center gap-1.5">
           <Paperclip className="w-3.5 h-3.5 text-blue-600" />
-          Worker KYC &amp; Document Upload (दस्तावेज़ अपलोड)
+          Worker KYC &amp; Document Upload
         </h4>
         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
           {documents.length} {documents.length === 1 ? 'file attached' : 'files attached'}
@@ -99,7 +99,7 @@ const WorkerDocumentUploadSection: React.FC<WorkerDocumentUploadSectionProps> = 
       {/* Category selector pills */}
       <div className="space-y-1">
         <label className="block text-[10px] font-bold text-slate-600 uppercase">
-          Select Document Type (दस्तावेज़ का प्रकार चुनें):
+          Select Document Type:
         </label>
         <div className="flex flex-wrap gap-1.5">
           {categoryPresets.map((cat) => (
@@ -1293,7 +1293,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             type="button"
             onClick={() => setIsBankAdviceModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
-            title="Bank Salary Payment Advice on Letter Pad (बैंक भुगतान पत्र PDF / प्रिंट)"
+            title="Bank Salary Payment Advice on Letter Pad (PDF / Print)"
           >
             <Landmark className="w-3.5 h-3.5" /> Bank Advice (Letter Pad PDF)
           </button>
@@ -1870,7 +1870,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               type="button"
               onClick={() => setIsBankAdviceModalOpen(true)}
               className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-              title="Bank Salary Payment Advice on Letter Pad (बैंक भुगतान पत्र PDF)"
+              title="Bank Salary Payment Advice on Letter Pad (PDF)"
             >
               <Landmark className="w-3 h-3" /> Bank Advice PDF
             </button>
@@ -2559,7 +2559,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 font-heading flex items-center gap-2">
                   <UserCheck className="w-5 h-5 text-blue-600" />
-                  New Join Worker (नया कामगार जोड़ें)
+                  New Join Worker
                 </h3>
                 <p className="text-xs text-slate-500">
                   Target Month: <strong className="text-blue-700 font-bold">{formattedMonthTitle}</strong> (Ye worker sirf {formattedMonthTitle} me save hoga)
@@ -2710,7 +2710,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-extrabold text-blue-950 uppercase flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-                    Bank Account &amp; Account Holder Details (बैंक खाता एवं खाता धारक)
+                    Bank Account &amp; Account Holder Details
                   </h4>
                   <span className="text-[10px] text-slate-500 font-medium">For Direct Wage Transfer</span>
                 </div>
@@ -2721,7 +2721,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                          <span>Account Holder Name (खाता धारक का नाम)</span>
+                          <span>Account Holder Name</span>
                           {newStaffName.trim() && (
                             <button
                               type="button"
@@ -2748,7 +2748,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                          Relation Name (संबंध / रिश्तेदार का नाम)
+                          Relation Name
                         </label>
                         <div className="flex items-center gap-1.5">
                           <select
@@ -2762,14 +2762,14 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                             }}
                             className="bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-blue-600"
                           >
-                            <option value="Self">Self (खुद का)</option>
-                            <option value="Father">Father (पिता)</option>
-                            <option value="Mother">Mother (माता)</option>
-                            <option value="Spouse / Wife">Spouse / Wife (पत्नी/पति)</option>
-                            <option value="Brother">Brother (भाई)</option>
-                            <option value="Son">Son (पुत्र)</option>
-                            <option value="Guardian">Guardian (अभिभावक)</option>
-                            <option value="Other">Other (अन्य)</option>
+                            <option value="Self">Self</option>
+                            <option value="Father">Father</option>
+                            <option value="Mother">Mother</option>
+                            <option value="Spouse / Wife">Spouse / Wife</option>
+                            <option value="Brother">Brother</option>
+                            <option value="Son">Son</option>
+                            <option value="Guardian">Guardian</option>
+                            <option value="Other">Other</option>
                           </select>
                           <input
                             type="text"
@@ -2962,7 +2962,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 font-heading flex items-center gap-2">
                   <Edit3 className="w-4 h-4 text-blue-600" />
-                  Edit Worker Profile &amp; KYC (प्रोफ़ाइल और दस्तावेज बदलें)
+                  Edit Worker Profile &amp; KYC
                 </h3>
                 <p className="text-xs text-slate-500">
                   Update profile, KYC documents, account holder name, relation, and bank details for {editingStaff.name}
@@ -3109,7 +3109,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-extrabold text-blue-950 uppercase flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-                    Bank Account &amp; Account Holder Details (बैंक खाता एवं खाता धारक)
+                    Bank Account &amp; Account Holder Details
                   </h4>
                   <span className="text-[10px] text-slate-500 font-medium">For Direct Wage Transfer</span>
                 </div>
@@ -3120,7 +3120,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                          <span>Account Holder Name (खाता धारक का नाम)</span>
+                          <span>Account Holder Name</span>
                           {editStaffName.trim() && (
                             <button
                               type="button"
@@ -3147,7 +3147,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                          Relation Name (संबंध / रिश्तेदार का नाम)
+                          Relation Name
                         </label>
                         <div className="flex items-center gap-1.5">
                           <select
@@ -3161,14 +3161,14 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                             }}
                             className="bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-blue-600"
                           >
-                            <option value="Self">Self (खुद का)</option>
-                            <option value="Father">Father (पिता)</option>
-                            <option value="Mother">Mother (माता)</option>
-                            <option value="Spouse / Wife">Spouse / Wife (पत्नी/पति)</option>
-                            <option value="Brother">Brother (भाई)</option>
-                            <option value="Son">Son (पुत्र)</option>
-                            <option value="Guardian">Guardian (अभिभावक)</option>
-                            <option value="Other">Other (अन्य)</option>
+                            <option value="Self">Self</option>
+                            <option value="Father">Father</option>
+                            <option value="Mother">Mother</option>
+                            <option value="Spouse / Wife">Spouse / Wife</option>
+                            <option value="Brother">Brother</option>
+                            <option value="Son">Son</option>
+                            <option value="Guardian">Guardian</option>
+                            <option value="Other">Other</option>
                           </select>
                           <input
                             type="text"

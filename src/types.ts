@@ -29,6 +29,7 @@ export type ViewMode =
   | 'PARTIES' 
   | 'OPENING_BALANCES'
   | 'PAYMENT_VOUCHERS'
+  | 'GST_LEDGER'
   | 'INVENTORY' 
   | 'EXPENSES'
   | 'EWAY_BILLS'
@@ -465,8 +466,8 @@ export interface StaffMember {
   joiningDate: string; // Worker joining date
   month?: string; // Specific month worker was added ('YYYY-MM')
   createdMonth?: string; // Specific month worker was created ('YYYY-MM')
-  accountHolderName?: string; // Account holder name (खाता धारक का नाम)
-  relationName?: string; // Relationship / Guardian name (रिश्ता / अभिभावक का नाम)
+  accountHolderName?: string; // Account holder name
+  relationName?: string; // Relationship / Guardian name
   accountNumber?: string; // Bank account number
   bankName?: string; // Bank name (e.g. SBI, PNB, HDFC)
   ifscCode?: string; // IFSC code
@@ -506,5 +507,54 @@ export interface AttendanceRecord {
   paymentMode?: PaymentMode;
   notes?: string;
   dailyAttendance?: Record<number, 'P' | 'A' | 'HD' | 'OT' | 'W'>; // Day 1..31
+}
+
+// --- GST LEDGER & FILING TYPES ---
+export type GstFilingStatus = 'FILED' | 'PENDING' | 'PARTIALLY_FILED';
+
+export interface GstFilingRecord {
+  id: string;
+  periodType: 'MONTHLY' | 'QUARTERLY';
+  periodKey: string; // e.g. "2026-10" for monthly, or "2026-Q3" for quarterly
+  periodLabel: string; // e.g. "October 2026" or "Q3 (Oct - Dec 2026)"
+  returnType: 'GSTR-1' | 'GSTR-3B' | 'CMP-08' | 'ALL_IN_ONE';
+  totalGstDue: number; // Total GST Due
+  gstFiledAmount: number; // GST Filed Amount
+  gstPendingAmount: number; // GST Pending Amount
+  filingStatus: GstFilingStatus; // FILED, PENDING, PARTIALLY_FILED
+  filingDate?: string; // YYYY-MM-DD
+  arnNumber?: string; // Acknowledgement / ARN
+  challanNumber?: string; // Challan reference
+  notes?: string;
+  updatedAt: string;
+}
+
+export type PurchaseReturnReceivedStatus = 'RECEIVED' | 'NOT_RECEIVED';
+export type PurchaseReturnFilingStatus = 'FILED' | 'PENDING';
+
+export interface PurchaseBillReturnRecord {
+  id: string;
+  billNumber: string; // Purchase Bill Number
+  billDate: string; // Date of original bill
+  partyId?: string;
+  partyName: string; // Supplier / Vendor Name
+  partyGstin?: string;
+  billAmount: number; // Original Bill Amount
+  billGstAmount: number; // Original GST Amount
+  // 1. Return Aaya hai ya nahi:
+  returnReceivedStatus: PurchaseReturnReceivedStatus; // 'RECEIVED' | 'NOT_RECEIVED'
+  returnDate?: string;
+  returnChallanNumber?: string; // Debit note or return challan number
+  returnTaxableAmount: number;
+  returnGstAmount: number;
+  returnTotalAmount: number;
+  // 2. Return file hua hai ya nahi:
+  returnFilingStatus: PurchaseReturnFilingStatus; // 'FILED' | 'PENDING'
+  returnFilingDate?: string;
+  arnNumber?: string;
+  returnReason?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
