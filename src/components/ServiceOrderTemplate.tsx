@@ -565,10 +565,9 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
           </div>
         </div>
 
-        {/* Page 1 of N Footer Indicator */}
+        {/* Page 1 Footer */}
         <div className="mt-3 pt-1 border-t border-slate-300 flex justify-between text-[9px] text-slate-500 font-medium">
           <span>Service Order No: {serviceOrderNo}</span>
-          <span>Page 1 of {termsPageBreak ? (serviceTermsPages.length + 1) : '1'}</span>
         </div>
       </div>
     </div>
@@ -591,7 +590,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-[14px] font-black uppercase tracking-wider text-slate-950">
-                ANNEXURE: TERMS &amp; CONDITIONS {serviceTermsPages.length > 1 ? `(Page ${chunk.pageNumber} of ${serviceTermsPages.length + 1})` : ''}
+                ANNEXURE: TERMS &amp; CONDITIONS
               </h2>
               <p className="text-[10.5px] font-semibold text-slate-800">
                 (Standard Service Order &amp; Work Contract Clauses)
@@ -709,7 +708,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
 
           <div className="mt-3 pt-1 border-t border-slate-300 flex justify-between text-[9px] text-slate-500 font-medium">
             <span>Service Order No: {serviceOrderNo}</span>
-            <span>Page {chunk.pageNumber} of {serviceTermsPages.length + 1} (Annexure &amp; Terms)</span>
+            <span>Annexure &amp; Terms</span>
           </div>
         </div>
       )}

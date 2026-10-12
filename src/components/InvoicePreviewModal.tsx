@@ -2048,12 +2048,7 @@ Thank you for doing business with us!`;
                   <div className="space-y-3">
                     {/* Header Row */}
                     <div className="bg-slate-100/90 print:bg-transparent px-3 py-1.5 font-black text-[11px] uppercase tracking-wider text-slate-950 border-b border-slate-400 flex items-center justify-between">
-                      <span>TERMS &amp; CONDITIONS {termsPages.length > 1 ? `(Page ${chunk.pageNumber} of ${termsPages.length + 1})` : ''}</span>
-                      {termsPages.length > 1 && (
-                        <span className="text-[9px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded border border-slate-300">
-                          Part {pageIdx + 1} of {termsPages.length}
-                        </span>
-                      )}
+                      <span>TERMS &amp; CONDITIONS</span>
                     </div>
 
                     {/* HORIZONTAL TERMS GRID */}

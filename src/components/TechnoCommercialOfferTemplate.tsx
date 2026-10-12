@@ -487,12 +487,7 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
             <div>
               {/* Heading */}
               <div className="font-bold text-[12.5px] uppercase tracking-wide text-slate-950 mb-4 pb-1 border-b border-slate-300 flex items-center justify-between">
-                <span>TERMS &amp; CONDITIONS {technoTermsPages.length > 1 ? `(Page ${chunk.pageNumber} of ${technoTermsPages.length + 1})` : ''}</span>
-                {technoTermsPages.length > 1 && (
-                  <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                    Part {pageIdx + 1} of {technoTermsPages.length}
-                  </span>
-                )}
+                <span>TERMS &amp; CONDITIONS</span>
               </div>
 
               {/* Numbered Terms List */}
