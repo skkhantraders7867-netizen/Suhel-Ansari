@@ -15,6 +15,7 @@ export interface ServiceOrderTemplateProps {
   verticalAlignment?: 'center' | 'top';
   cardOpacity?: 'transparent' | 'translucent' | 'opaque';
   termsPageBreak?: boolean;
+  termsMode?: 'auto' | 'page_2' | 'page_3' | 'single_page';
   previewZoom?: number;
 }
 
@@ -63,6 +64,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
   verticalAlignment = 'top',
   cardOpacity = 'transparent',
   termsPageBreak = true,
+  termsMode = 'auto',
 }) => {
   const topPadOffset = headerOffset !== undefined ? headerOffset : (showPadBg ? (businessProfile.billPadHeaderOffset ?? 148) : 32);
   const bottomPadOffset = footerOffset !== undefined ? footerOffset : (showPadBg ? (businessProfile.billPadFooterOffset ?? 125) : 32);
@@ -138,6 +140,62 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
   if (parsedTerms.length === 0) {
     parsedTerms = DEFAULT_SERVICE_ORDER_TERMS;
   }
+
+  // Terms pages pagination (strictly 2-page or 3-page matching user button selection)
+  const serviceTermsPages = React.useMemo(() => {
+    if (!termsPageBreak || parsedTerms.length === 0) return [];
+
+    // STRICT 2-PAGE MODE: Exactly 2 pages total (Page 1 Order + Page 2 Terms)
+    if (termsMode === 'page_2') {
+      return [{
+        pageNumber: 2,
+        items: parsedTerms,
+        isLastPage: true,
+      }];
+    }
+
+    // STRICT 3-PAGE MODE: Exactly 3 pages total (Page 1 Order + Page 2 Terms Part 1 + Page 3 Terms Part 2)
+    if (termsMode === 'page_3') {
+      if (parsedTerms.length >= 2) {
+        const mid = Math.ceil(parsedTerms.length / 2);
+        return [
+          { pageNumber: 2, items: parsedTerms.slice(0, mid), isLastPage: false },
+          { pageNumber: 3, items: parsedTerms.slice(mid), isLastPage: true },
+        ];
+      } else {
+        const sentences = parsedTerms[0].split(/(?<=[.!?\n])\s+/).filter(Boolean);
+        if (sentences.length >= 2) {
+          const midS = Math.ceil(sentences.length / 2);
+          return [
+            { pageNumber: 2, items: [sentences.slice(0, midS).join(' ')], isLastPage: false },
+            { pageNumber: 3, items: [sentences.slice(midS).join(' ')], isLastPage: true },
+          ];
+        }
+        return [{
+          pageNumber: 2,
+          items: parsedTerms,
+          isLastPage: true,
+        }];
+      }
+    }
+
+    // AUTO MODE:
+    // If terms are extensive (> 7 items or > 450 characters), cleanly split across Page 2 and Page 3 (Total 3 pages)
+    // Otherwise fit cleanly on Page 2 (Total 2 pages)
+    if (parsedTerms.length > 7 || rawTerms.length > 450) {
+      const mid = Math.ceil(parsedTerms.length / 2);
+      return [
+        { pageNumber: 2, items: parsedTerms.slice(0, mid), isLastPage: false },
+        { pageNumber: 3, items: parsedTerms.slice(mid), isLastPage: true },
+      ];
+    } else {
+      return [{
+        pageNumber: 2,
+        items: parsedTerms,
+        isLastPage: true,
+      }];
+    }
+  }, [termsPageBreak, parsedTerms, termsMode, rawTerms]);
 
   // Helper to check if string contains "suhel ansari" or personal name
   const isPersonalWatermark = (str?: string) => {
@@ -466,18 +524,6 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
             </tbody>
           </table>
         </div>
-
-        {/* Page 1 Informational Note when 2-Page mode is active */}
-        {termsPageBreak && (
-          <div className="border border-slate-700 bg-slate-50/80 px-2.5 py-1.5 text-[10px] text-slate-800 flex items-center justify-between rounded-sm">
-            <span className="font-semibold">
-              📌 Note: Detailed Terms &amp; Conditions, Work Scope, and Jurisdiction are printed on Page 2 (Annexure on Letter Pad).
-            </span>
-            <span className="font-bold text-slate-900 shrink-0 ml-2">
-              (Please refer to Page 2)
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Page 1 Bottom Signatory Section */}
@@ -519,17 +565,17 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
           </div>
         </div>
 
-        {/* Page 1 of 2 Footer Indicator */}
+        {/* Page 1 of N Footer Indicator */}
         <div className="mt-3 pt-1 border-t border-slate-300 flex justify-between text-[9px] text-slate-500 font-medium">
           <span>Service Order No: {serviceOrderNo}</span>
-          <span>Page 1 of {termsPageBreak ? '2' : '1'}</span>
+          <span>Page 1 of {termsPageBreak ? (serviceTermsPages.length + 1) : '1'}</span>
         </div>
       </div>
     </div>
   );
 
-  // Page 2: Terms and Conditions on Letter Pad
-  const renderPage2Content = () => (
+  // Terms and Conditions Pages (Page 2, Page 3, etc.) on Letter Pad
+  const renderTermsPageContent = (chunk: { pageNumber: number; items: string[]; isLastPage: boolean }, pageIdx: number) => (
     <div 
       className={`relative z-10 w-full flex-1 flex flex-col justify-between ${
         verticalAlignment === 'center' ? 'my-auto justify-center' : ''
@@ -545,7 +591,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-[14px] font-black uppercase tracking-wider text-slate-950">
-                ANNEXURE: TERMS &amp; CONDITIONS
+                ANNEXURE: TERMS &amp; CONDITIONS {serviceTermsPages.length > 1 ? `(Page ${chunk.pageNumber} of ${serviceTermsPages.length + 1})` : ''}
               </h2>
               <p className="text-[10.5px] font-semibold text-slate-800">
                 (Standard Service Order &amp; Work Contract Clauses)
@@ -580,82 +626,93 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
 
         {/* Detailed Numbered Terms List */}
         <div className="space-y-2 text-[10.5px] leading-relaxed text-slate-950">
-          {parsedTerms.map((term, index) => (
-            <div key={index} className="flex items-start gap-1.5 text-justify">
-              <span className="font-extrabold min-w-[20px] text-slate-950 shrink-0">
-                {index + 1}.
-              </span>
-              <p className="flex-1 text-slate-900 leading-normal">
-                {renderMarkdownText(term)}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Jurisdiction Clause */}
-        <div className="border-t border-slate-300 pt-2 space-y-1">
-          <div className="font-bold underline text-[11px] text-slate-950">
-            Jurisdiction
-          </div>
-          <div className="text-[10px] text-slate-900 leading-normal">
-            For all disputes arising out of this Service/Work Order, the Jurisdiction shall lie exclusively with the competent court in{' '}
-            <strong>{businessProfile.city || 'Anjar'}</strong>, Dist- <strong>{companyDistrict}</strong>, and State- <strong>{companyState}</strong>.
-          </div>
-        </div>
-
-        {/* Acknowledgement & Acceptance Notes */}
-        <div className="bg-slate-50/90 border border-slate-400 p-2 text-[9.5px] text-slate-900 space-y-1">
-          <div className="font-medium">
-            • The above Service Order / P.O is issued by mail. Please revert your signed Acknowledged and Acceptance copy on mail.
-          </div>
-          <div className="font-semibold text-slate-950">
-            *** In case of acceptance of the Service Order / P.O, it will be taken for granted that above scope of the work, specifications, and site conditions have been fully examined by you &amp; understood by you totally.***
-          </div>
-          <div className="font-bold pt-0.5 text-slate-950">
-            Thanking You,
-          </div>
-        </div>
-      </div>
-
-      {/* Page 2 Bottom Signatory Footer */}
-      <div className="pt-4 pb-1">
-        <div className="flex justify-end items-end">
-          {/* Right Signatory: For, Company (from Company & GST Details) */}
-          <div className="text-right flex flex-col items-end min-w-[220px]">
-            <div className="font-bold uppercase tracking-wide text-[11px] text-slate-950">
-              For, {companyName}
-            </div>
-
-            <div className="my-1 min-h-[36px] flex items-center justify-end">
-              {businessProfile.signatureUrl ? (
-                <img 
-                  src={businessProfile.signatureUrl} 
-                  alt="Signature" 
-                  className="h-9 max-w-[140px] object-contain mix-blend-multiply"
-                />
-              ) : (
-                <div className="h-9">&nbsp;</div>
-              )}
-            </div>
-
-            <div className="space-y-0.5">
-              <div className="border-t border-slate-900 w-44 inline-block mb-1"></div>
-              <div className="font-bold text-[10px] uppercase text-slate-950 tracking-wider">
-                Authorized Signatory
+          {chunk.items.map((term, index) => {
+            const overallIndex = pageIdx === 0 ? index : (serviceTermsPages[0].items.length + index);
+            return (
+              <div key={index} className="flex items-start gap-1.5 text-justify">
+                <span className="font-extrabold min-w-[20px] text-slate-950 shrink-0">
+                  {overallIndex + 1}.
+                </span>
+                <p className="flex-1 text-slate-900 leading-normal">
+                  {renderMarkdownText(term)}
+                </p>
               </div>
-              <div className="text-[9px] text-slate-600 font-medium">
-                ({companyName})
+            );
+          })}
+        </div>
+
+        {/* Jurisdiction & Notes (Last Terms Page) */}
+        {chunk.isLastPage && (
+          <>
+            <div className="border-t border-slate-300 pt-2 space-y-1">
+              <div className="font-bold underline text-[11px] text-slate-950">
+                Jurisdiction
+              </div>
+              <div className="text-[10px] text-slate-900 leading-normal">
+                For all disputes arising out of this Service/Work Order, the Jurisdiction shall lie exclusively with the competent court in{' '}
+                <strong>{businessProfile.city || 'Anjar'}</strong>, Dist- <strong>{companyDistrict}</strong>, and State- <strong>{companyState}</strong>.
               </div>
             </div>
+
+            <div className="bg-slate-50/90 border border-slate-400 p-2 text-[9.5px] text-slate-900 space-y-1">
+              <div className="font-medium">
+                • The above Service Order / P.O is issued by mail. Please revert your signed Acknowledged and Acceptance copy on mail.
+              </div>
+              <div className="font-semibold text-slate-950">
+                *** In case of acceptance of the Service Order / P.O, it will be taken for granted that above scope of the work, specifications, and site conditions have been fully examined by you &amp; understood by you totally.***
+              </div>
+              <div className="font-bold pt-0.5 text-slate-950">
+                Thanking You,
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Footer / Signatory */}
+      {!chunk.isLastPage ? (
+        <div className="pt-3 pb-1 border-t border-slate-300 flex justify-between items-center text-[9px] text-slate-600 font-semibold">
+          <span>Terms &amp; Conditions continued on next page</span>
+          <span className="font-bold text-slate-900">Continued on Page {chunk.pageNumber + 1} &rarr;</span>
+        </div>
+      ) : (
+        <div className="pt-4 pb-1">
+          <div className="flex justify-end items-end">
+            <div className="text-right flex flex-col items-end min-w-[220px]">
+              <div className="font-bold uppercase tracking-wide text-[11px] text-slate-950">
+                For, {companyName}
+              </div>
+
+              <div className="my-1 min-h-[36px] flex items-center justify-end">
+                {businessProfile.signatureUrl ? (
+                  <img 
+                    src={businessProfile.signatureUrl} 
+                    alt="Signature" 
+                    className="h-9 max-w-[140px] object-contain mix-blend-multiply"
+                  />
+                ) : (
+                  <div className="h-9">&nbsp;</div>
+                )}
+              </div>
+
+              <div className="space-y-0.5">
+                <div className="border-t border-slate-900 w-44 inline-block mb-1"></div>
+                <div className="font-bold text-[10px] uppercase text-slate-950 tracking-wider">
+                  Authorized Signatory
+                </div>
+                <div className="text-[9px] text-slate-600 font-medium">
+                  ({companyName})
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-1 border-t border-slate-300 flex justify-between text-[9px] text-slate-500 font-medium">
+            <span>Service Order No: {serviceOrderNo}</span>
+            <span>Page {chunk.pageNumber} of {serviceTermsPages.length + 1} (Annexure &amp; Terms)</span>
           </div>
         </div>
-
-        {/* Page 2 of 2 Footer Indicator */}
-        <div className="mt-3 pt-1 border-t border-slate-300 flex justify-between text-[9px] text-slate-500 font-medium">
-          <span>Service Order No: {serviceOrderNo}</span>
-          <span>Page 2 of 2 (Annexure &amp; Terms)</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 
@@ -680,7 +737,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
     );
   }
 
-  // Multi-Page Mode: Page 1 (Service Order) + Page 2 (Terms & Conditions on Letter Pad)
+  // Multi-Page Mode: Page 1 (Service Order) + Terms Pages (Page 2, Page 3, etc.)
   return (
     <div className="multi-page-doc w-full bg-slate-200/70 print:bg-white flex flex-col items-center gap-6 print:gap-0 font-sans text-slate-900">
       
@@ -706,26 +763,28 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 2: TERMS AND CONDITIONS (PRINTED ON LETTER PAD AS REQUESTED)        */}
+      {/* TERMS & CONDITIONS PAGES (PAGE 2, PAGE 3, ETC.)                          */}
       {/* ========================================================================= */}
-      <div 
-        className="a4-page relative w-[794px] min-h-[1123px] max-h-[1123px] bg-white text-slate-900 shadow-xl print:shadow-none flex flex-col justify-between box-border overflow-hidden"
-        style={{
-          width: '794px',
-          height: '1123px',
-          maxHeight: '1123px',
-          paddingTop: `${topPadOffset}px`,
-          paddingBottom: `${bottomPadOffset}px`,
-          paddingLeft: '36px',
-          paddingRight: '36px',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Background Bill Pad Letterhead on Page 2 ("latter pad pr hi") */}
-        {renderPadBackground()}
-        {renderWatermark()}
-        {renderPage2Content()}
-      </div>
+      {serviceTermsPages.map((chunk, pageIdx) => (
+        <div 
+          key={`service-order-terms-page-${chunk.pageNumber}`}
+          className="a4-page relative w-[794px] min-h-[1123px] max-h-[1123px] bg-white text-slate-900 shadow-xl print:shadow-none flex flex-col justify-between box-border overflow-hidden"
+          style={{
+            width: '794px',
+            height: '1123px',
+            maxHeight: '1123px',
+            paddingTop: `${topPadOffset}px`,
+            paddingBottom: `${bottomPadOffset}px`,
+            paddingLeft: '36px',
+            paddingRight: '36px',
+            boxSizing: 'border-box',
+          }}
+        >
+          {renderPadBackground()}
+          {renderWatermark()}
+          {renderTermsPageContent(chunk, pageIdx)}
+        </div>
+      ))}
 
     </div>
   );

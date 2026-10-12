@@ -196,17 +196,17 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
       return profile.quotationTermsAndConditions || '1. Price Validity: This quotation is valid for 30 days from the date of issue.\n2. Payment Terms: 50% advance along with confirmed Purchase Order, balance against proforma before dispatch.\n3. Taxes & Duties: GST applicable as per prevailing statutory rates.\n4. Delivery Schedule: Within 2-3 weeks from receipt of clear PO and technical approval.\n5. Freight & Handling: Extra at actuals unless explicitly included.\n6. Jurisdiction: Subject to jurisdiction of our registered office.';
     }
     if (type === 'PURCHASE_ESTIMATE') {
-      return '1. **Estimate Validity:** This purchase estimate / inquiry is valid for supplier review and commercial finalization.\n2. **Quality & Material Specs:** All proposed goods must meet the stated technical specifications and quality parameters.\n3. **Delivery & Freight:** Delivery schedule and freight terms as per agreed dispatch point.\n4. **Payment Terms:** Subject to verified delivery and commercial PO confirmation.\n5. **Statutory Taxes:** GST rates as prevailing on date of formal purchase order.';
+      return '';
     }
     if (type === 'PURCHASE_BILL') {
-      return profile.purchaseTermsAndConditions || '1. Delivery & Inspection: Materials must strictly comply with PO specifications and site inspection.\n2. Test Certificates: Mill Test Certificates (MTC) and inspection reports must accompany the delivery.\n3. Rejection Policy: Defective or non-compliant materials will be rejected at supplier cost.\n4. Payment Terms: Payment within 30 days of receipt of verified material and original tax invoice.\n5. Delivery Timeline: Strict adherence to agreed delivery schedules is mandatory.';
+      return profile.purchaseTermsAndConditions || '';
     }
     return profile.termsAndConditions || '1. Goods once sold will not be taken back or exchanged.\n2. Interest @ 18% p.a. will be charged if bill is not paid within due date.\n3. Subject to jurisdiction of our registered office.\n4. All disputes are subject to local arbitration.';
   };
 
   // Notes & Terms
   const [notes, setNotes] = useState<string>(editingInvoice?.notes || businessProfile.invoiceNotes);
-  const [terms, setTerms] = useState<string>(editingInvoice?.terms || getDocDefaultTerms(docType, businessProfile));
+  const [terms, setTerms] = useState<string>(editingInvoice?.terms !== undefined ? editingInvoice.terms : getDocDefaultTerms(docType, businessProfile));
 
   // Modals
   const [isHsnModalOpen, setIsHsnModalOpen] = useState(false);

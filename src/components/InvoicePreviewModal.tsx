@@ -38,7 +38,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     return businessProfile.useCustomBillPad !== false ? 'OFFICIAL_PAD' : 'CLASSIC_GST';
   });
   const [termsLayout, setTermsLayout] = useState<'horizontal_table' | 'horizontal_2col' | 'horizontal_3col' | 'single_col'>('horizontal_table');
-  const [termsMode, setTermsMode] = useState<'auto' | 'page_2' | 'single_page'>('auto');
+  const [termsMode, setTermsMode] = useState<'auto' | 'page_2' | 'page_3' | 'single_page'>('auto');
   const [termsPageBreak, setTermsPageBreak] = useState<boolean>(true);
   const [showQuickEditModal, setShowQuickEditModal] = useState<boolean>(false);
   const [customSubject, setCustomSubject] = useState<string>(invoice?.quotationSubject || '');
@@ -111,7 +111,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     rfqNumber: customRefNo || invoice.rfqNumber,
     validUntil: customValidExpiry || invoice.validUntil,
     quotationIntroText: customIntroText || invoice.quotationIntroText,
-    terms: customTerms || invoice.terms,
+    terms: customTerms !== undefined && customTerms !== '' ? customTerms : (invoice.terms ?? ''),
   } : ({} as Invoice);
 
   // Robust State and State Code Resolution for complete & accurate GST printing
@@ -220,29 +220,16 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   const halfTaxRate = primaryTaxRate / 2;
   const utOrSgstLabel = isUT ? 'UGST' : 'SGST';
 
-  const effectiveTerms = (invoice.terms && invoice.terms.trim().length > 0)
-    ? invoice.terms
-    : (isQuotation
-        ? (businessProfile.quotationTermsAndConditions || `1. All manpower required for execution of the work shall be provided by the Contractor as per the agreed scope and schedule.
-2. All necessary tools & tackles such as welding machines, cutting sets, chain blocks, wire ropes, D-shackles, levels, grinding machines and other required equipment shall be arranged by the Contractor.
-3. Consumables such as LPG, Oxygen, welding rods/electrodes, grinding wheels and other required consumables shall be provided by the Contractor, unless otherwise agreed in writing.
-4. Required mobile crane for execution of the work shall be arranged as per the agreed scope and site requirement.
-5. Accommodation, water and electricity facilities required at site shall be provided by the Company/Client.
-6. Any additional work beyond the approved scope of work shall be carried out with mutual consent and shall be charged separately.
-7. Work measurements and quantities shall be jointly verified and approved by the authorized representatives of both parties.
-8. Mobilization shall commence after receipt of the Work Order.
-9. **20% of the total Work Order value shall be paid as mobilization advance along with the Work Order.**
-10. Running Account (RA) bills shall be submitted as per the progress of work and payment shall be released within **7 days from the date of submission/approval of the RA bill.**
-11. GST and other applicable statutory taxes/duties shall be charged extra as applicable.
-12. Any delay or stoppage of work due to non-availability of site, drawings, materials, approvals, electricity, water or other required facilities from the Company/Client's side shall not be the responsibility of the Contractor.
-13. The work shall be executed as per the approved scope, agreed methodology and mutually agreed work schedule.
-14. **Once the Work Order is issued and accepted, it shall not be cancelled. In case the Company/Client cancels the Work Order, the Company/Client shall compensate the Contractor for all mobilization expenses, work executed and other related costs incurred by the Contractor.**
-15. Any dispute arising in connection with the work shall first be resolved through mutual discussion. If the matter remains unresolved, it shall be subject to arbitration as mutually agreed between both parties.
-16. This quotation shall remain valid for the period mentioned in the commercial offer, unless otherwise agreed in writing by both parties.
-17. The job sequence,duration, schedule and methodology of execution shall be submitted during further discussions`)
-        : (businessProfile.termsAndConditions && businessProfile.termsAndConditions.trim().length > 0
-            ? businessProfile.termsAndConditions
-            : '1. Goods once sold will not be taken back or exchanged.\n2. Interest @ 18% p.a. will be charged if bill is not paid within due date.\n3. Subject to jurisdiction of our registered office.\n4. All disputes are subject to local arbitration.'));
+  // Only print what the user has written in terms and conditions - no extra unwanted text
+  const effectiveTerms = useMemo(() => {
+    if (customTerms !== undefined && customTerms.trim() !== '') {
+      return customTerms.trim();
+    }
+    if (invoice?.terms !== undefined && invoice?.terms !== null && invoice.terms.trim() !== '') {
+      return invoice.terms.trim();
+    }
+    return '';
+  }, [customTerms, invoice?.terms]);
 
   const renderMarkdownText = (text: string) => {
     if (!text) return null;
@@ -270,7 +257,67 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   }, [effectiveTerms]);
 
   const isTermsLong = parsedTermsList.length > 3 || effectiveTerms.length > 170;
-  const shouldSplitToPage2 = termsMode === 'page_2' || (termsMode === 'auto' && isTermsLong);
+  const shouldSplitToPage2 = parsedTermsList.length > 0 && termsMode !== 'single_page' && (termsMode === 'page_2' || termsMode === 'page_3' || (termsMode === 'auto' && isTermsLong));
+
+  // Determine exact page allocation (2 Page, 3 Page, or 1 Page)
+  const termsPages = useMemo(() => {
+    if (!shouldSplitToPage2 || parsedTermsList.length === 0) return [];
+
+    // STRICT 2-PAGE MODE: Exactly 2 pages total (Page 1 Bill + Page 2 Terms)
+    if (termsMode === 'page_2') {
+      return [{
+        pageNumber: 2,
+        items: parsedTermsList.map((term, index) => ({ term, index })),
+        isLastPage: true,
+      }];
+    }
+
+    // STRICT 3-PAGE MODE: Exactly 3 pages total (Page 1 Bill + Page 2 Terms Part 1 + Page 3 Terms Part 2)
+    if (termsMode === 'page_3') {
+      if (parsedTermsList.length >= 2) {
+        const mid = Math.ceil(parsedTermsList.length / 2);
+        const chunk1 = parsedTermsList.slice(0, mid).map((term, i) => ({ term, index: i }));
+        const chunk2 = parsedTermsList.slice(mid).map((term, i) => ({ term, index: mid + i }));
+        return [
+          { pageNumber: 2, items: chunk1, isLastPage: false },
+          { pageNumber: 3, items: chunk2, isLastPage: true },
+        ];
+      } else {
+        const sentences = parsedTermsList[0].split(/(?<=[.!?\n])\s+/).filter(Boolean);
+        if (sentences.length >= 2) {
+          const midS = Math.ceil(sentences.length / 2);
+          return [
+            { pageNumber: 2, items: [{ term: sentences.slice(0, midS).join(' '), index: 0 }], isLastPage: false },
+            { pageNumber: 3, items: [{ term: sentences.slice(midS).join(' '), index: 1 }], isLastPage: true },
+          ];
+        }
+        return [{
+          pageNumber: 2,
+          items: [{ term: parsedTermsList[0], index: 0 }],
+          isLastPage: true,
+        }];
+      }
+    }
+
+    // AUTO MODE:
+    // If terms are extensive (> 7 items or > 450 characters), cleanly split across Page 2 and Page 3 (Total 3 pages)
+    // Otherwise fit cleanly on Page 2 (Total 2 pages)
+    if (parsedTermsList.length > 7 || effectiveTerms.length > 450) {
+      const mid = Math.ceil(parsedTermsList.length / 2);
+      const chunk1 = parsedTermsList.slice(0, mid).map((term, i) => ({ term, index: i }));
+      const chunk2 = parsedTermsList.slice(mid).map((term, i) => ({ term, index: mid + i }));
+      return [
+        { pageNumber: 2, items: chunk1, isLastPage: false },
+        { pageNumber: 3, items: chunk2, isLastPage: true },
+      ];
+    } else {
+      return [{
+        pageNumber: 2,
+        items: parsedTermsList.map((term, index) => ({ term, index })),
+        isLastPage: true,
+      }];
+    }
+  }, [shouldSplitToPage2, parsedTermsList, termsMode, effectiveTerms]);
 
   const handlePrint = () => {
     if (printRef.current) {
@@ -763,24 +810,49 @@ Thank you for doing business with us!`;
               </div>
             )}
 
-            {/* Terms on Page 2 Toggle (Matches user request) */}
+            {/* Multi-Page Terms Toggle: 2 Page, 3 Page, Same Page (1 Page) */}
             <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">
               <span className="text-slate-400 text-[11px] font-medium mr-0.5">T&amp;C Sheet:</span>
               <button
                 type="button"
-                onClick={() => setTermsPageBreak(true)}
+                onClick={() => {
+                  setTermsPageBreak(true);
+                  setTermsMode('page_2');
+                }}
                 className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
-                  termsPageBreak ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  termsPageBreak && termsMode !== 'page_3'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
                 }`}
-                title="Print T&C on second page"
+                title="Print on 2 Pages (Page 1 Offer/Bill + Page 2 Terms)"
               >
-                Page 2 (Separate)
+                2 Page
               </button>
               <button
                 type="button"
-                onClick={() => setTermsPageBreak(false)}
+                onClick={() => {
+                  setTermsPageBreak(true);
+                  setTermsMode('page_3');
+                }}
                 className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
-                  !termsPageBreak ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  termsPageBreak && termsMode === 'page_3'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Print on 3 Pages (Page 1 Offer/Bill + Page 2 & 3 Terms - T&C will never cut off)"
+              >
+                3 Page
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsPageBreak(false);
+                  setTermsMode('single_page');
+                }}
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
+                  !termsPageBreak || termsMode === 'single_page'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
                 }`}
                 title="Print inline on single page"
               >
@@ -1049,7 +1121,10 @@ Thank you for doing business with us!`;
               <span className="text-slate-400 text-[11px] font-bold">Terms:</span>
               <button
                 type="button"
-                onClick={() => setTermsMode('auto')}
+                onClick={() => {
+                  setTermsPageBreak(true);
+                  setTermsMode('auto');
+                }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
                   termsMode === 'auto' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
@@ -1059,23 +1134,42 @@ Thank you for doing business with us!`;
               </button>
               <button
                 type="button"
-                onClick={() => setTermsMode('page_2')}
+                onClick={() => {
+                  setTermsPageBreak(true);
+                  setTermsMode('page_2');
+                }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
                   termsMode === 'page_2' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Force print Terms on 2nd Page"
+                title="Print on 2 Pages (Page 1 Bill + Page 2 Terms)"
               >
-                Page 2 (Separate)
+                2 Page
               </button>
               <button
                 type="button"
-                onClick={() => setTermsMode('single_page')}
+                onClick={() => {
+                  setTermsPageBreak(true);
+                  setTermsMode('page_3');
+                }}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                  termsMode === 'page_3' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
+                title="Print on 3 Pages (Page 1 Bill + Page 2 & 3 Terms)"
+              >
+                3 Page
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsPageBreak(false);
+                  setTermsMode('single_page');
+                }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
                   termsMode === 'single_page' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Force fit on 1 Page"
               >
-                1 Page (Single Page)
+                1 Page
               </button>
             </div>
 
@@ -1165,6 +1259,7 @@ Thank you for doing business with us!`;
               contentScale={contentScale}
               verticalAlignment={verticalAlignment}
               termsPageBreak={termsPageBreak}
+              termsMode={termsMode}
               previewZoom={previewZoom}
             />
           )}
@@ -1184,6 +1279,7 @@ Thank you for doing business with us!`;
               verticalAlignment={verticalAlignment}
               termsLayout={termsLayout}
               termsPageBreak={termsPageBreak}
+              termsMode={termsMode}
               cardOpacity={cardOpacity}
             />
           )}
@@ -1796,10 +1892,6 @@ Thank you for doing business with us!`;
                             </div>
                           )}
                         </div>
-                        <div className="text-[7px] text-slate-500 italic mt-1 pt-0.5 border-t border-slate-200 flex justify-between">
-                          <span>* E. &amp; O.E.</span>
-                          <span>Local Jurisdiction</span>
-                        </div>
                       </div>
 
                       {/* Right: AUTHORISED SIGNATORY (3 cols) */}
@@ -1851,10 +1943,6 @@ Thank you for doing business with us!`;
                             </div>
                           )}
                         </div>
-                        <div className="text-[7px] text-slate-500 italic mt-1 pt-0.5 border-t border-slate-200 flex justify-between">
-                          <span>* E. &amp; O.E.</span>
-                          <span>Local Jurisdiction</span>
-                        </div>
                       </div>
 
                       {/* Right: AUTHORISED SIGNATORY (4 cols) */}
@@ -1893,9 +1981,10 @@ Thank you for doing business with us!`;
               </div>
             </div>
 
-            {/* PAGE 2: HORIZONTAL TERMS & CONDITIONS (ANNEXURE) ON OFFICIAL BILL PAD */}
-            {shouldSplitToPage2 && (
+            {/* TERMS & CONDITIONS PAGES (Page 2, Page 3, etc.) ON OFFICIAL BILL PAD */}
+            {shouldSplitToPage2 && termsPages.map((chunk, pageIdx) => (
               <div 
+                key={`terms-page-${chunk.pageNumber}`}
                 className="a4-page relative font-sans text-xs text-slate-900 leading-relaxed h-[1123px] max-h-[1123px] overflow-hidden flex flex-col justify-between shadow-2xl print:shadow-none bg-white rounded-xl print:rounded-none"
                 style={{
                   height: '1123px',
@@ -1952,24 +2041,27 @@ Thank you for doing business with us!`;
                   </div>
                 )}
 
-                {/* Page 2 Content Container (Starts directly from top below red/blue line) */}
-                <div className={`relative z-10 w-full space-y-4 ${
-                  verticalAlignment === 'center' ? 'my-auto flex-1 flex flex-col justify-center' : ''
+                {/* Page Content Container */}
+                <div className={`relative z-10 w-full flex-1 flex flex-col justify-between ${
+                  verticalAlignment === 'center' ? 'my-auto' : ''
                 }`}>
-                  <div>
+                  <div className="space-y-3">
+                    {/* Header Row */}
+                    <div className="bg-slate-100/90 print:bg-transparent px-3 py-1.5 font-black text-[11px] uppercase tracking-wider text-slate-950 border-b border-slate-400 flex items-center justify-between">
+                      <span>TERMS &amp; CONDITIONS {termsPages.length > 1 ? `(Page ${chunk.pageNumber} of ${termsPages.length + 1})` : ''}</span>
+                      {termsPages.length > 1 && (
+                        <span className="text-[9px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded border border-slate-300">
+                          Part {pageIdx + 1} of {termsPages.length}
+                        </span>
+                      )}
+                    </div>
+
                     {/* HORIZONTAL TERMS GRID */}
                     <div>
                       {termsLayout === 'horizontal_table' ? (
-                        /* Full-width Horizontal Grid Table - Clean Terms & Conditions */
                         <div className="border border-slate-400 bg-white/95 print:bg-transparent">
-                          {/* Header Row */}
-                          <div className="bg-slate-100/90 print:bg-transparent px-3 py-1.5 font-black text-[11px] uppercase tracking-wider text-slate-950 border-b border-slate-400">
-                            <span>TERMS &amp; CONDITIONS</span>
-                          </div>
-
-                          {/* Table Row Items */}
                           <div className="divide-y divide-slate-300">
-                            {parsedTermsList.map((term, index) => (
+                            {chunk.items.map(({ term, index }) => (
                               <div 
                                 key={index} 
                                 className="flex items-start px-2.5 py-1 text-[9.5px] leading-tight text-slate-950 hover:bg-slate-50 print:bg-transparent"
@@ -1986,7 +2078,7 @@ Thank you for doing business with us!`;
                         </div>
                       ) : termsLayout === 'horizontal_2col' ? (
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10.5px] leading-snug text-slate-950">
-                          {parsedTermsList.map((term, index) => (
+                          {chunk.items.map(({ term, index }) => (
                             <div 
                               key={index} 
                               className="flex items-start gap-2 bg-slate-50/90 print:bg-transparent p-2 rounded border border-slate-300 shadow-2xs"
@@ -2002,7 +2094,7 @@ Thank you for doing business with us!`;
                         </div>
                       ) : termsLayout === 'horizontal_3col' ? (
                         <div className="grid grid-cols-3 gap-x-3 gap-y-2 text-[9.5px] leading-snug text-slate-950">
-                          {parsedTermsList.map((term, index) => (
+                          {chunk.items.map(({ term, index }) => (
                             <div 
                               key={index} 
                               className="flex items-start gap-1.5 bg-slate-50/90 print:bg-transparent p-1.5 rounded border border-slate-300 shadow-2xs"
@@ -2018,7 +2110,7 @@ Thank you for doing business with us!`;
                         </div>
                       ) : (
                         <div className="space-y-1.5 text-[10.5px] leading-relaxed text-slate-950 max-w-3xl">
-                          {parsedTermsList.map((term, index) => (
+                          {chunk.items.map(({ term, index }) => (
                             <div key={index} className="flex items-start gap-2 bg-slate-50/90 print:bg-transparent p-1.5 rounded border border-slate-200">
                               <span className="font-black text-slate-950 min-w-[22px] font-mono">
                                 {index + 1}.
@@ -2033,32 +2125,39 @@ Thank you for doing business with us!`;
                     </div>
                   </div>
 
-                  {/* Bottom Sign-off on Terms Page */}
-                  <div className="pt-2 flex justify-end items-end">
-                    <div className="text-right flex flex-col items-end">
-                      <div className="font-bold uppercase text-[9.5px] text-slate-950 tracking-wide">
-                        FOR, {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
-                      </div>
-                      <div className="my-0.5 min-h-[26px] flex items-center justify-end">
-                        {businessProfile.signatureUrl && (
-                          <img 
-                            src={businessProfile.signatureUrl} 
-                            alt="Signature" 
-                            className="max-h-7 object-contain mix-blend-multiply" 
-                          />
-                        )}
-                      </div>
-                      <div className="border-t border-slate-700 w-32 pt-0.5 text-center">
-                        <span className="text-[8.5px] font-bold text-slate-950 block uppercase tracking-wider">
-                          Authorised Signatory
-                        </span>
+                  {/* Bottom: Continuation indicator or Signatory block */}
+                  {!chunk.isLastPage ? (
+                    <div className="pt-2 pb-1 border-t border-slate-300 flex justify-between items-center text-[9px] text-slate-600 font-semibold">
+                      <span>Terms &amp; Conditions continued on next page</span>
+                      <span className="font-bold text-slate-900">Continued on Page {chunk.pageNumber + 1} &rarr;</span>
+                    </div>
+                  ) : (
+                    <div className="pt-2 flex justify-end items-end">
+                      <div className="text-right flex flex-col items-end">
+                        <div className="font-bold uppercase text-[9.5px] text-slate-950 tracking-wide">
+                          FOR, {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
+                        </div>
+                        <div className="my-0.5 min-h-[26px] flex items-center justify-end">
+                          {businessProfile.signatureUrl && (
+                            <img 
+                              src={businessProfile.signatureUrl} 
+                              alt="Signature" 
+                              className="max-h-7 object-contain mix-blend-multiply" 
+                            />
+                          )}
+                        </div>
+                        <div className="border-t border-slate-700 w-32 pt-0.5 text-center">
+                          <span className="text-[8.5px] font-bold text-slate-950 block uppercase tracking-wider">
+                            Authorised Signatory
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                 </div>
               </div>
-            )}
+            ))}
           </>
         )}
 
@@ -2860,24 +2959,42 @@ Thank you for doing business with us!`;
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                   <span className="font-bold text-slate-900">Multi-page T&amp;C Overflow:</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setTermsPageBreak(true)}
-                      className={`px-2.5 py-1 rounded-lg font-bold ${
-                        termsPageBreak ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border'
+                      onClick={() => {
+                        setTermsPageBreak(true);
+                        setTermsMode('page_2');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg font-bold text-xs ${
+                        termsMode === 'page_2' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-300'
                       }`}
                     >
-                      ✓ Page 2 (Multi-Page A4)
+                      ✓ 2 Page
                     </button>
                     <button
                       type="button"
-                      onClick={() => setTermsPageBreak(false)}
-                      className={`px-2.5 py-1 rounded-lg font-bold ${
-                        !termsPageBreak ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border'
+                      onClick={() => {
+                        setTermsPageBreak(true);
+                        setTermsMode('page_3');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg font-bold text-xs ${
+                        termsMode === 'page_3' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-300'
                       }`}
                     >
-                      Same Page (1 Page)
+                      ✓ 3 Page
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTermsPageBreak(false);
+                        setTermsMode('single_page');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg font-bold text-xs ${
+                        termsMode === 'single_page' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-300'
+                      }`}
+                    >
+                      1 Page
                     </button>
                   </div>
                 </div>

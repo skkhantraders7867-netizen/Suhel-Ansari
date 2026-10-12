@@ -15,6 +15,7 @@ interface TechnoCommercialOfferTemplateProps {
   verticalAlignment?: 'center' | 'top';
   termsLayout?: 'horizontal_table' | 'horizontal_2col' | 'horizontal_3col' | 'single_col';
   termsPageBreak?: boolean;
+  termsMode?: 'auto' | 'page_2' | 'page_3' | 'single_page';
   cardOpacity?: 'transparent' | 'translucent' | 'opaque';
 }
 
@@ -72,6 +73,7 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
   verticalAlignment = 'top',
   termsLayout = 'single_col',
   termsPageBreak = true,
+  termsMode = 'auto',
   cardOpacity = 'transparent',
 }) => {
   // Top and bottom offsets to fit perfectly inside the official pre-printed Letter Pad (starts right below the blue/red line)
@@ -114,18 +116,84 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
   const introText = invoice.quotationIntroText?.trim() ||
     `Inviting reference to the discussions had with our project team for the subjected project works, here-with we are pleased to submit our"Techno - Commercial Offer"for the same as depicted below.`;
 
-  // Parse terms into an array of clean strings
-  const rawTerms = invoice.terms?.trim() || businessProfile.quotationTermsAndConditions?.trim() || '';
-  let parsedTerms: string[] = [];
+  // Parse terms into an array of clean strings - only print what is written
+  let rawTerms = '';
+  if (invoice.terms !== undefined && invoice.terms !== null) {
+    rawTerms = invoice.terms.trim();
+  } else if (businessProfile.quotationTermsAndConditions) {
+    rawTerms = businessProfile.quotationTermsAndConditions.trim();
+  }
 
+  let parsedTerms: string[] = [];
   if (rawTerms.length > 0) {
     const lines = rawTerms.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
     parsedTerms = lines.map(line => line.replace(/^\d+[\.\)\-]\s*/, '').trim()).filter(t => t.length > 0);
   }
 
-  if (parsedTerms.length === 0) {
+  // Only if invoice was never initialized with terms field at all
+  if (parsedTerms.length === 0 && invoice.terms === undefined && !businessProfile.quotationTermsAndConditions) {
     parsedTerms = DEFAULT_TECHNO_TERMS;
   }
+
+  // Page allocation for terms: strictly 2-page or 3-page matching user button selection
+  const technoTermsPages = React.useMemo(() => {
+    if (!termsPageBreak || parsedTerms.length === 0) return [];
+
+    // STRICT 2-PAGE MODE: Exactly 2 pages total (Page 1 Offer Items + Page 2 Terms)
+    if (termsMode === 'page_2') {
+      return [{
+        pageNumber: 2,
+        items: parsedTerms.map((term, index) => ({ term, index })),
+        isLastPage: true,
+      }];
+    }
+
+    // STRICT 3-PAGE MODE: Exactly 3 pages total (Page 1 Offer Items + Page 2 Terms Part 1 + Page 3 Terms Part 2)
+    if (termsMode === 'page_3') {
+      if (parsedTerms.length >= 2) {
+        const mid = Math.ceil(parsedTerms.length / 2);
+        const chunk1 = parsedTerms.slice(0, mid).map((term, i) => ({ term, index: i }));
+        const chunk2 = parsedTerms.slice(mid).map((term, i) => ({ term, index: mid + i }));
+        return [
+          { pageNumber: 2, items: chunk1, isLastPage: false },
+          { pageNumber: 3, items: chunk2, isLastPage: true },
+        ];
+      } else if (parsedTerms.length === 1) {
+        const sentences = parsedTerms[0].split(/(?<=[.!?\n])\s+/).filter(Boolean);
+        if (sentences.length >= 2) {
+          const midS = Math.ceil(sentences.length / 2);
+          return [
+            { pageNumber: 2, items: [{ term: sentences.slice(0, midS).join(' '), index: 0 }], isLastPage: false },
+            { pageNumber: 3, items: [{ term: sentences.slice(midS).join(' '), index: 1 }], isLastPage: true },
+          ];
+        }
+        return [{
+          pageNumber: 2,
+          items: [{ term: parsedTerms[0], index: 0 }],
+          isLastPage: true,
+        }];
+      }
+    }
+
+    // AUTO MODE:
+    // If terms are large (> 8 items or > 450 characters), split across Page 2 & Page 3 (Total 3 pages)
+    // Otherwise fit cleanly on Page 2 (Total 2 pages)
+    if (parsedTerms.length > 8 || rawTerms.length > 450) {
+      const mid = Math.ceil(parsedTerms.length / 2);
+      const chunk1 = parsedTerms.slice(0, mid).map((term, i) => ({ term, index: i }));
+      const chunk2 = parsedTerms.slice(mid).map((term, i) => ({ term, index: mid + i }));
+      return [
+        { pageNumber: 2, items: chunk1, isLastPage: false },
+        { pageNumber: 3, items: chunk2, isLastPage: true },
+      ];
+    } else {
+      return [{
+        pageNumber: 2,
+        items: parsedTerms.map((term, index) => ({ term, index })),
+        isLastPage: true,
+      }];
+    }
+  }, [termsPageBreak, parsedTerms, termsMode, rawTerms]);
 
   // Items list
   const items = invoice.items || [];
@@ -385,10 +453,11 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 2: TERMS & CONDITIONS (MATCHING USER'S PHOTO EXACTLY)               */}
+      {/* TERMS & CONDITIONS PAGES (Page 2, Page 3, etc.)                          */}
       {/* ========================================================================= */}
-      {termsPageBreak && (
+      {technoTermsPages.map((chunk, pageIdx) => (
         <div 
+          key={`techno-terms-page-${chunk.pageNumber}`}
           className="a4-page relative w-[794px] min-h-[1123px] max-h-[1123px] bg-white text-slate-900 shadow-xl print:shadow-none flex flex-col justify-between box-border overflow-hidden"
           style={{
             width: '794px',
@@ -401,13 +470,13 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
             boxSizing: 'border-box',
           }}
         >
-          {/* Background Bill Pad Letterhead on Page 2 */}
+          {/* Background Bill Pad Letterhead on Page */}
           {renderPadBackground()}
 
           {/* Optional Diagonal Watermark */}
           {renderWatermark()}
 
-          {/* Content Container on Page 2 (Starts right below the header line) */}
+          {/* Content Container on Page */}
           <div 
             className="relative z-10 w-full flex-1 flex flex-col justify-between"
             style={{
@@ -417,13 +486,18 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
           >
             <div>
               {/* Heading */}
-              <div className="font-bold text-[12.5px] uppercase tracking-wide text-slate-950 mb-5">
-                TERMS &amp; CONDITIONS
+              <div className="font-bold text-[12.5px] uppercase tracking-wide text-slate-950 mb-4 pb-1 border-b border-slate-300 flex items-center justify-between">
+                <span>TERMS &amp; CONDITIONS {technoTermsPages.length > 1 ? `(Page ${chunk.pageNumber} of ${technoTermsPages.length + 1})` : ''}</span>
+                {technoTermsPages.length > 1 && (
+                  <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                    Part {pageIdx + 1} of {technoTermsPages.length}
+                  </span>
+                )}
               </div>
 
-              {/* Numbered Terms List with spacing between points matching user's photo */}
-              <div className="space-y-3.5 text-[10.5px] leading-relaxed text-slate-950">
-                {parsedTerms.map((term, index) => (
+              {/* Numbered Terms List */}
+              <div className="space-y-3 text-[10.5px] leading-relaxed text-slate-950">
+                {chunk.items.map(({ term, index }) => (
                   <div key={index} className="flex items-start gap-1.5">
                     <span className="font-bold min-w-[18px] text-slate-950 shrink-0">
                       {index + 1}.
@@ -436,34 +510,41 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
               </div>
             </div>
 
-            {/* Bottom Signatory on Page 2 */}
-            <div className="pt-4 pb-2 flex justify-end items-end">
-              <div className="text-right space-y-6">
-                <div className="font-bold text-[10.5px] text-slate-950 tracking-wide uppercase">
-                  FOR, {companySignatoryName}
-                </div>
-
-                {businessProfile.signatureUrl && (
-                  <div className="flex justify-end -my-3 pointer-events-none">
-                    <img 
-                      src={businessProfile.signatureUrl} 
-                      alt="Signature" 
-                      className="h-9 object-contain select-none mix-blend-multiply" 
-                    />
+            {/* Bottom: Continuation indicator or Signatory on Last Page */}
+            {!chunk.isLastPage ? (
+              <div className="pt-3 pb-1 border-t border-slate-300 flex justify-between items-center text-[9px] text-slate-600 font-semibold">
+                <span>Terms &amp; Conditions continued on next page</span>
+                <span className="font-bold text-slate-900">Continued on Page {chunk.pageNumber + 1} &rarr;</span>
+              </div>
+            ) : (
+              <div className="pt-4 pb-2 flex justify-end items-end">
+                <div className="text-right space-y-6">
+                  <div className="font-bold text-[10.5px] text-slate-950 tracking-wide uppercase">
+                    FOR, {companySignatoryName}
                   </div>
-                )}
 
-                <div className="text-center ml-auto">
-                  <span className="text-[10.5px] font-bold text-slate-950 block">
-                    Authorised Signatury
-                  </span>
+                  {businessProfile.signatureUrl && (
+                    <div className="flex justify-end -my-3 pointer-events-none">
+                      <img 
+                        src={businessProfile.signatureUrl} 
+                        alt="Signature" 
+                        className="h-9 object-contain select-none mix-blend-multiply" 
+                      />
+                    </div>
+                  )}
+
+                  <div className="text-center ml-auto">
+                    <span className="text-[10.5px] font-bold text-slate-950 block">
+                      Authorised Signatury
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
-      )}
+      ))}
 
     </div>
   );
