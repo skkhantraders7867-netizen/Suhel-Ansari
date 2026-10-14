@@ -4,7 +4,8 @@ import {
   CheckCircle2, Clock, AlertTriangle, ArrowUpRight, ArrowDownRight, 
   FileSpreadsheet, Printer, Download, Search, RefreshCw, X, Check,
   Building2, Receipt, ShieldCheck, ChevronRight, CornerDownRight,
-  TrendingUp, TrendingDown, DollarSign
+  TrendingUp, TrendingDown, DollarSign, Eye, ExternalLink, Layers, FileText,
+  Copy, ArrowRight, ChevronDown
 } from 'lucide-react';
 import { 
   Invoice, BusinessProfile, GstFilingRecord, PurchaseBillReturnRecord, 
@@ -21,6 +22,12 @@ interface GstLedgerViewProps {
   onDeleteGstFilingRecord: (id: string) => void;
   onSavePurchaseBillReturn: (record: PurchaseBillReturnRecord) => void;
   onDeletePurchaseBillReturn: (id: string) => void;
+  onViewInvoice?: (invoice: Invoice) => void;
+  onEditInvoice?: (invoice: Invoice) => void;
+  onDeleteInvoice?: (id: string) => void;
+  onDuplicateInvoice?: (invoice: Invoice) => void;
+  onAddNewInvoice?: () => void;
+  onUpdateInvoice?: (invoice: Invoice) => void;
 }
 
 export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
@@ -32,12 +39,18 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
   onDeleteGstFilingRecord,
   onSavePurchaseBillReturn,
   onDeletePurchaseBillReturn,
+  onViewInvoice,
+  onEditInvoice,
+  onDeleteInvoice,
+  onDuplicateInvoice,
+  onAddNewInvoice,
+  onUpdateInvoice,
 }) => {
-  // Navigation tabs within GST Ledger
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'FILING_STATUS' | 'PURCHASE_RETURNS'>('OVERVIEW');
+  // Navigation tabs within GST Ledger: default to INVOICES_LEDGER so created invoices are immediately visible!
+  const [activeTab, setActiveTab] = useState<'INVOICES_LEDGER' | 'OVERVIEW' | 'FILING_STATUS' | 'PURCHASE_RETURNS'>('INVOICES_LEDGER');
 
   // Tracking Interval: Monthly vs Quarterly vs All
-  const [trackingMode, setTrackingMode] = useState<'MONTHLY' | 'QUARTERLY' | 'ALL'>('MONTHLY');
+  const [trackingMode, setTrackingMode] = useState<'MONTHLY' | 'QUARTERLY' | 'ALL'>('ALL');
   
   // Selected Month (Default to current month YYYY-MM)
   const currentYearMonth = new Date().toISOString().substring(0, 7); // e.g. "2026-10"
@@ -47,7 +60,12 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
   const [selectedFY, setSelectedFY] = useState<string>('2026-2027');
   const [selectedQuarter, setSelectedQuarter] = useState<'Q1' | 'Q2' | 'Q3' | 'Q4'>('Q3');
 
-  // Search & Filter in Tables
+  // Search & Filter in Invoices Ledger
+  const [invoiceCategoryFilter, setInvoiceCategoryFilter] = useState<'ALL' | 'SALES' | 'PURCHASE' | 'B2B' | 'B2C'>('ALL');
+  const [invoiceFilingStatusFilter, setInvoiceFilingStatusFilter] = useState<'ALL' | 'FILED' | 'DUE'>('ALL');
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
+
+  // Search & Filter in Return Tables
   const [searchQuery, setSearchQuery] = useState('');
   const [returnReceivedFilter, setReturnReceivedFilter] = useState<'ALL' | 'RECEIVED' | 'NOT_RECEIVED'>('ALL');
   const [returnFilingFilter, setReturnFilingFilter] = useState<'ALL' | 'FILED' | 'PENDING'>('ALL');
@@ -59,43 +77,106 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [editingReturnRecord, setEditingReturnRecord] = useState<PurchaseBillReturnRecord | null>(null);
 
-  // Filter Sales Invoices and Purchase Bills
+  // Quick Modal for marking Invoice GST Filed / Due with ARN & date
+  const [isInvoiceFilingModalOpen, setIsInvoiceFilingModalOpen] = useState(false);
+  const [targetInvoiceForFiling, setTargetInvoiceForFiling] = useState<Invoice | null>(null);
+  const [filingModalStatus, setFilingModalStatus] = useState<'FILED' | 'DUE'>('FILED');
+  const [filingModalDate, setFilingModalDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [filingModalArn, setFilingModalArn] = useState<string>('');
+
+  // Helper to reliably extract GST & taxable amounts from ANY created invoice document
+  const getInvoiceTaxDetails = (inv: Invoice) => {
+    const taxable = Number(inv.taxableTotal) || 
+      inv.items?.reduce((s, it) => {
+        const lineTotal = (Number(it.quantity) || 0) * (Number(it.rate) || 0);
+        const disc = it.discountPercent ? lineTotal * (Number(it.discountPercent) / 100) : 0;
+        return s + (lineTotal - disc);
+      }, 0) || 
+      Number(inv.subTotal) || 0;
+    
+    let cgst = Number(inv.cgstTotal) || 0;
+    let sgst = Number(inv.sgstTotal) || 0;
+    let igst = Number(inv.igstTotal) || 0;
+
+    if (cgst === 0 && sgst === 0 && igst === 0 && inv.items && inv.items.length > 0) {
+      cgst = inv.items.reduce((s, it) => s + (Number(it.cgstAmount) || 0), 0);
+      sgst = inv.items.reduce((s, it) => s + (Number(it.sgstAmount) || 0), 0);
+      igst = inv.items.reduce((s, it) => s + (Number(it.igstAmount) || 0), 0);
+    }
+    
+    const totalGst = Number(inv.taxTotal) || (cgst + sgst + igst);
+    const grandTotal = Number(inv.grandTotal) || (taxable + totalGst);
+    
+    return { taxable, cgst, sgst, igst, totalGst, grandTotal };
+  };
+
+  // Filter Sales Invoices and Purchase Bills:
+  // Sales includes TAX_INVOICE, SERVICE_ORDER, PROFORMA_INVOICE, DEBIT_NOTE, or any sales document
   const salesInvoices = useMemo(() => {
-    return invoices.filter(i => i.documentType === 'TAX_INVOICE');
+    return invoices.filter(i => {
+      if (!i) return false;
+      const t = i.documentType;
+      // Quotations and purchase estimates are quotes/estimates, not final taxable bills
+      if (t === 'QUOTATION' || t === 'PURCHASE_ESTIMATE' || t === 'PURCHASE_BILL') {
+        return false;
+      }
+      return true;
+    });
   }, [invoices]);
 
   const purchaseBills = useMemo(() => {
     return invoices.filter(i => i.documentType === 'PURCHASE_BILL');
   }, [invoices]);
 
+  // Combined all GST invoices
+  const allLedgerInvoices = useMemo(() => {
+    return [...salesInvoices, ...purchaseBills];
+  }, [salesInvoices, purchaseBills]);
+
+  // Robust date parser: supports YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, ISO strings
+  const parseDateParts = (dateStr?: string) => {
+    if (!dateStr) return null;
+    const clean = dateStr.trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+      const parts = clean.split('-');
+      return { y: parseInt(parts[0], 10), m: parseInt(parts[1], 10) };
+    }
+    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(clean)) {
+      const parts = clean.split(/[\/\-]/);
+      return { y: parseInt(parts[2], 10), m: parseInt(parts[1], 10) };
+    }
+    const d = new Date(clean);
+    if (!isNaN(d.getTime())) {
+      return { y: d.getFullYear(), m: d.getMonth() + 1 };
+    }
+    return null;
+  };
+
   // Determine date boundary or filter based on trackingMode
-  const isDateInSelectedPeriod = (dateStr: string): boolean => {
-    if (!dateStr) return false;
+  const isDateInSelectedPeriod = (dateStr?: string): boolean => {
+    if (!dateStr) return true; // Fail-safe: don't exclude invoices with empty date
     if (trackingMode === 'ALL') return true;
 
+    const parts = parseDateParts(dateStr);
+    if (!parts) return true;
+
     if (trackingMode === 'MONTHLY') {
-      return dateStr.startsWith(selectedMonth);
+      const [selY, selM] = selectedMonth.split('-').map(Number);
+      return parts.y === selY && parts.m === selM;
     }
 
     if (trackingMode === 'QUARTERLY') {
-      // Parse FY
       const startYear = parseInt(selectedFY.split('-')[0], 10);
       const endYear = parseInt(selectedFY.split('-')[1], 10);
-      const date = new Date(dateStr);
-      const y = date.getFullYear();
-      const m = date.getMonth() + 1; // 1-12
+      const { y, m } = parts;
 
       if (selectedQuarter === 'Q1') {
-        // Apr, May, Jun of startYear
         return y === startYear && (m >= 4 && m <= 6);
       } else if (selectedQuarter === 'Q2') {
-        // Jul, Aug, Sep of startYear
         return y === startYear && (m >= 7 && m <= 9);
       } else if (selectedQuarter === 'Q3') {
-        // Oct, Nov, Dec of startYear
         return y === startYear && (m >= 10 && m <= 12);
       } else if (selectedQuarter === 'Q4') {
-        // Jan, Feb, Mar of endYear
         return y === endYear && (m >= 1 && m <= 3);
       }
     }
@@ -104,7 +185,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
 
   // Period label string
   const currentPeriodLabel = useMemo(() => {
-    if (trackingMode === 'ALL') return 'All Time (Complete Period)';
+    if (trackingMode === 'ALL') return 'All Time (Complete GST History)';
     if (trackingMode === 'MONTHLY') {
       const [year, month] = selectedMonth.split('-');
       const d = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
@@ -135,17 +216,17 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
   }, [purchaseBills, trackingMode, selectedMonth, selectedFY, selectedQuarter]);
 
   // Output Tax (Sales GST)
-  const salesCgst = useMemo(() => periodSalesInvoices.reduce((s, i) => s + (i.cgstTotal || 0), 0), [periodSalesInvoices]);
-  const salesSgst = useMemo(() => periodSalesInvoices.reduce((s, i) => s + (i.sgstTotal || 0), 0), [periodSalesInvoices]);
-  const salesIgst = useMemo(() => periodSalesInvoices.reduce((s, i) => s + (i.igstTotal || 0), 0), [periodSalesInvoices]);
-  const salesTaxable = useMemo(() => periodSalesInvoices.reduce((s, i) => s + (i.taxableTotal || 0), 0), [periodSalesInvoices]);
+  const salesCgst = useMemo(() => periodSalesInvoices.reduce((s, i) => s + getInvoiceTaxDetails(i).cgst, 0), [periodSalesInvoices]);
+  const salesSgst = useMemo(() => periodSalesInvoices.reduce((s, i) => s + getInvoiceTaxDetails(i).sgst, 0), [periodSalesInvoices]);
+  const salesIgst = useMemo(() => periodSalesInvoices.reduce((s, i) => s + getInvoiceTaxDetails(i).igst, 0), [periodSalesInvoices]);
+  const salesTaxable = useMemo(() => periodSalesInvoices.reduce((s, i) => s + getInvoiceTaxDetails(i).taxable, 0), [periodSalesInvoices]);
   const totalOutputGst = salesCgst + salesSgst + salesIgst;
 
   // Input Tax (Purchase GST / ITC)
-  const purchaseCgst = useMemo(() => periodPurchaseBills.reduce((s, i) => s + (i.cgstTotal || 0), 0), [periodPurchaseBills]);
-  const purchaseSgst = useMemo(() => periodPurchaseBills.reduce((s, i) => s + (i.sgstTotal || 0), 0), [periodPurchaseBills]);
-  const purchaseIgst = useMemo(() => periodPurchaseBills.reduce((s, i) => s + (i.igstTotal || 0), 0), [periodPurchaseBills]);
-  const purchaseTaxable = useMemo(() => periodPurchaseBills.reduce((s, i) => s + (i.taxableTotal || 0), 0), [periodPurchaseBills]);
+  const purchaseCgst = useMemo(() => periodPurchaseBills.reduce((s, i) => s + getInvoiceTaxDetails(i).cgst, 0), [periodPurchaseBills]);
+  const purchaseSgst = useMemo(() => periodPurchaseBills.reduce((s, i) => s + getInvoiceTaxDetails(i).sgst, 0), [periodPurchaseBills]);
+  const purchaseIgst = useMemo(() => periodPurchaseBills.reduce((s, i) => s + getInvoiceTaxDetails(i).igst, 0), [periodPurchaseBills]);
+  const purchaseTaxable = useMemo(() => periodPurchaseBills.reduce((s, i) => s + getInvoiceTaxDetails(i).taxable, 0), [periodPurchaseBills]);
   const totalInputGst = purchaseCgst + purchaseSgst + purchaseIgst;
 
   // Net GST Payable = Output GST - Input GST
@@ -300,7 +381,141 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
     });
   };
 
-  // CSV Exporter for GST Ledger
+  // Toggle for showing all invoices or period-filtered in Invoices Ledger
+  const [showAllPeriodsInvoices, setShowAllPeriodsInvoices] = useState(true);
+
+  // Filtered invoices for the Invoices Ledger tab
+  const filteredInvoicesLedger = useMemo(() => {
+    return invoices.filter(inv => {
+      if (!inv) return false;
+
+      // Period filter unless user toggled show all periods
+      if (!showAllPeriodsInvoices && !isDateInSelectedPeriod(inv.date)) {
+        return false;
+      }
+
+      // Category filter
+      if (invoiceCategoryFilter === 'SALES') {
+        if (inv.documentType === 'PURCHASE_BILL') return false;
+      } else if (invoiceCategoryFilter === 'PURCHASE') {
+        if (inv.documentType !== 'PURCHASE_BILL') return false;
+      } else if (invoiceCategoryFilter === 'B2B') {
+        if (!inv.partyGstin || inv.partyGstin.trim().length < 5) return false;
+      } else if (invoiceCategoryFilter === 'B2C') {
+        if (inv.partyGstin && inv.partyGstin.trim().length >= 5) return false;
+      }
+
+      // Search query filter (Invoice No, Party Name, GSTIN, Phone)
+      if (invoiceSearchQuery.trim()) {
+        const q = invoiceSearchQuery.toLowerCase().trim();
+        const numMatch = inv.invoiceNumber?.toLowerCase().includes(q);
+        const nameMatch = inv.partyName?.toLowerCase().includes(q) || inv.billingAddress?.name?.toLowerCase().includes(q);
+        const gstinMatch = inv.partyGstin?.toLowerCase().includes(q);
+        const phoneMatch = inv.partyPhone?.toLowerCase().includes(q);
+        if (!numMatch && !nameMatch && !gstinMatch && !phoneMatch) return false;
+      }
+
+      // Filing status filter (ALL / FILED / DUE)
+      if (invoiceFilingStatusFilter === 'FILED') {
+        if (inv.gstFilingStatus !== 'FILED') return false;
+      } else if (invoiceFilingStatusFilter === 'DUE') {
+        if (inv.gstFilingStatus === 'FILED') return false;
+      }
+
+      return true;
+    });
+  }, [invoices, showAllPeriodsInvoices, isDateInSelectedPeriod, invoiceCategoryFilter, invoiceFilingStatusFilter, invoiceSearchQuery]);
+
+  // Totals for filtered invoices in Invoices Ledger
+  const invoicesLedgerTotals = useMemo(() => {
+    let actualTaxable = 0;
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
+    let totalTax = 0;
+    let totalGrand = 0;
+
+    for (const inv of filteredInvoicesLedger) {
+      const details = getInvoiceTaxDetails(inv);
+      actualTaxable += details.taxable;
+      totalCgst += details.cgst;
+      totalSgst += details.sgst;
+      totalIgst += details.igst;
+      totalTax += details.totalGst;
+      totalGrand += details.grandTotal;
+    }
+
+    return { actualTaxable, totalCgst, totalSgst, totalIgst, totalTax, totalGrand };
+  }, [filteredInvoicesLedger]);
+
+  // Counts for Category Tabs
+  const b2bCount = useMemo(() => invoices.filter(i => i.partyGstin && i.partyGstin.trim().length >= 5).length, [invoices]);
+  const b2cCount = useMemo(() => invoices.filter(i => !i.partyGstin || i.partyGstin.trim().length < 5).length, [invoices]);
+
+  // Counts & Tax Totals for GST Filing Status (Filed vs Due)
+  const filedCount = useMemo(() => invoices.filter(i => i.gstFilingStatus === 'FILED').length, [invoices]);
+  const dueCount = useMemo(() => invoices.filter(i => i.gstFilingStatus !== 'FILED').length, [invoices]);
+
+  const filedGstTotal = useMemo(() => {
+    return invoices
+      .filter(i => i.gstFilingStatus === 'FILED')
+      .reduce((sum, i) => sum + getInvoiceTaxDetails(i).totalGst, 0);
+  }, [invoices]);
+
+  const dueGstTotal = useMemo(() => {
+    return invoices
+      .filter(i => i.gstFilingStatus !== 'FILED')
+      .reduce((sum, i) => sum + getInvoiceTaxDetails(i).totalGst, 0);
+  }, [invoices]);
+
+  // Handler to set invoice GST filing status directly or from modal
+  const handleSetInvoiceFiling = (invoice: Invoice, status: 'FILED' | 'DUE', filingDate?: string, arn?: string) => {
+    if (!onUpdateInvoice) return;
+    const updated: Invoice = {
+      ...invoice,
+      gstFilingStatus: status,
+      gstFilingDate: status === 'FILED' ? (filingDate || invoice.gstFilingDate || new Date().toISOString().split('T')[0]) : undefined,
+      gstFilingArn: status === 'FILED' ? (arn !== undefined ? arn : (invoice.gstFilingArn || '')) : undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    onUpdateInvoice(updated);
+  };
+
+  // CSV Exporter for GST Invoices Ledger Table
+  const handleExportInvoicesCsv = () => {
+    const headers = [
+      'Invoice No', 'Date', 'Due Date', 'Document Type', 'Party / Company Name', 
+      'Party GSTIN', 'State / Place of Supply', 'Taxable Value (Actual Value)', 
+      'CGST Amount', 'SGST Amount', 'IGST Amount', 'Total GST Tax Value', 
+      'Invoice Total Value', 'Payment Status', 'GST Filing Status', 'Filing Date', 'Filing ARN'
+    ];
+    const rows = filteredInvoicesLedger.map(inv => {
+      const tax = getInvoiceTaxDetails(inv);
+      return [
+        `"${inv.invoiceNumber}"`,
+        inv.date,
+        inv.dueDate || '',
+        `"${inv.documentType}"`,
+        `"${inv.partyName || ''}"`,
+        `"${inv.partyGstin || ''}"`,
+        `"${inv.placeOfSupply || inv.billingAddress?.state || ''}"`,
+        tax.taxable.toFixed(2),
+        tax.cgst.toFixed(2),
+        tax.sgst.toFixed(2),
+        tax.igst.toFixed(2),
+        tax.totalGst.toFixed(2),
+        tax.grandTotal.toFixed(2),
+        inv.paymentStatus || 'UNPAID',
+        inv.gstFilingStatus === 'FILED' ? 'FILED' : 'DUE',
+        inv.gstFilingDate || '',
+        `"${inv.gstFilingArn || ''}"`
+      ];
+    });
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    downloadCSV(csvContent, `GST_Invoices_Ledger_${businessProfile.gstin || 'SR_GROUP'}.csv`);
+  };
+
+  // CSV Exporter for GST Ledger Returns
   const handleExportCsv = () => {
     const headers = [
       'Record Type', 'Period', 'Bill Number', 'Party Name', 'GSTIN', 
@@ -569,10 +784,25 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
       </div>
 
       {/* 3. Section Navigation Tabs */}
-      <div className="flex border-b border-slate-200 gap-2">
+      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto pb-0.5">
+        <button
+          onClick={() => setActiveTab('INVOICES_LEDGER')}
+          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            activeTab === 'INVOICES_LEDGER'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>GST Invoices Ledger (All Invoices)</span>
+          <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">
+            {invoices.length}
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab('OVERVIEW')}
-          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
             activeTab === 'OVERVIEW'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -584,7 +814,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
 
         <button
           onClick={() => setActiveTab('FILING_STATUS')}
-          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
             activeTab === 'FILING_STATUS'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -593,7 +823,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
           <CheckCircle2 className="w-4 h-4" />
           <span>GST Filing Status (Filed / Pending)</span>
           {gstFilingRecords.length > 0 && (
-            <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full font-bold">
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold">
               {gstFilingRecords.length}
             </span>
           )}
@@ -601,7 +831,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
 
         <button
           onClick={() => setActiveTab('PURCHASE_RETURNS')}
-          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+          className={`pb-3 px-4 text-xs font-black transition-all border-b-2 flex items-center gap-2 cursor-pointer whitespace-nowrap ${
             activeTab === 'PURCHASE_RETURNS'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -616,6 +846,603 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
           )}
         </button>
       </div>
+
+      {/* --- TAB 0: GST INVOICES LEDGER (ALL CREATED & FUTURE INVOICES) --- */}
+      {activeTab === 'INVOICES_LEDGER' && (
+        <div className="space-y-6">
+          {/* Summary KPI Cards for Invoices Ledger */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[11px] font-black uppercase tracking-wider">Total Documents</span>
+                <Layers className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black text-slate-900">{filteredInvoicesLedger.length}</span>
+                <span className="text-xs font-bold text-slate-500">of {invoices.length} total</span>
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-2 flex items-center justify-between">
+                <span>Sales: <strong className="text-blue-700">{salesInvoices.length}</strong></span>
+                <span>Purchases: <strong className="text-emerald-700">{purchaseBills.length}</strong></span>
+                <span>B2B: <strong className="text-purple-700">{b2bCount}</strong></span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[11px] font-black uppercase tracking-wider">1. Actual Taxable Value</span>
+                <DollarSign className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="mt-2 text-2xl font-black text-slate-900">
+                {formatIndianCurrency(invoicesLedgerTotals.actualTaxable)}
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-2">
+                Subtotal before GST taxes
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[11px] font-black uppercase tracking-wider">2. Total Tax Value (GST)</span>
+                <Calculator className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="mt-2 text-2xl font-black text-blue-700">
+                {formatIndianCurrency(invoicesLedgerTotals.totalTax)}
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-2 flex items-center justify-between">
+                <span>CGST: <strong className="text-slate-800">{formatIndianCurrency(invoicesLedgerTotals.totalCgst)}</strong></span>
+                <span>SGST: <strong className="text-slate-800">{formatIndianCurrency(invoicesLedgerTotals.totalSgst)}</strong></span>
+                {invoicesLedgerTotals.totalIgst > 0 && (
+                  <span>IGST: <strong className="text-slate-800">{formatIndianCurrency(invoicesLedgerTotals.totalIgst)}</strong></span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[11px] font-black uppercase tracking-wider">3. Grand Total (Net)</span>
+                <Receipt className="w-4 h-4 text-purple-600" />
+              </div>
+              <div className="mt-2 text-2xl font-black text-slate-900">
+                {formatIndianCurrency(invoicesLedgerTotals.totalGrand)}
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-2">
+                Net value of all filtered bills
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[11px] font-black uppercase tracking-wider">4. GST Filing (Filed / Due)</span>
+                <FileCheck2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <div>
+                  <span className="text-xl font-black text-emerald-700">{filedCount}</span>
+                  <span className="text-[10px] font-bold text-emerald-800 ml-1 bg-emerald-100 px-1.5 py-0.5 rounded">Filed</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-amber-700">{dueCount}</span>
+                  <span className="text-[10px] font-bold text-amber-800 ml-1 bg-amber-100 px-1.5 py-0.5 rounded">Due</span>
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-2 flex items-center justify-between">
+                <span className="text-emerald-700 font-bold">Tax: {formatIndianCurrency(filedGstTotal)}</span>
+                <span className="text-amber-700 font-bold">Due: {formatIndianCurrency(dueGstTotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Invoices Table Card */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            {/* Header & Controls */}
+            <div className="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/70">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  GST Invoices Ledger
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Showing Invoice No., Company Name, Actual Value, Tax Value, and GST Filing Status (Filed / Due) with edit option.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  onClick={handleExportInvoicesCsv}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+                {onAddNewInvoice && (
+                  <button
+                    onClick={onAddNewInvoice}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    + Create New Invoice
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="p-4 bg-slate-50/50 border-b border-slate-200 space-y-3">
+              {/* Category Pills & Search */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                  <button
+                    onClick={() => setInvoiceCategoryFilter('ALL')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      invoiceCategoryFilter === 'ALL'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    All Invoices ({invoices.length})
+                  </button>
+                  <button
+                    onClick={() => setInvoiceCategoryFilter('SALES')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      invoiceCategoryFilter === 'SALES'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    Sales Invoices ({salesInvoices.length})
+                  </button>
+                  <button
+                    onClick={() => setInvoiceCategoryFilter('PURCHASE')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      invoiceCategoryFilter === 'PURCHASE'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    Purchase Bills ({purchaseBills.length})
+                  </button>
+                  <button
+                    onClick={() => setInvoiceCategoryFilter('B2B')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      invoiceCategoryFilter === 'B2B'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    B2B Registered ({b2bCount})
+                  </button>
+                  <button
+                    onClick={() => setInvoiceCategoryFilter('B2C')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      invoiceCategoryFilter === 'B2C'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    B2C Consumer ({b2cCount})
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-64">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search invoice no, party, GSTIN..."
+                      value={invoiceSearchQuery}
+                      onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 bg-white rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden focus:border-blue-500"
+                    />
+                    {invoiceSearchQuery && (
+                      <button
+                        onClick={() => setInvoiceSearchQuery('')}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-white px-3 py-2 rounded-xl border border-slate-200 cursor-pointer select-none whitespace-nowrap hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      checked={showAllPeriodsInvoices}
+                      onChange={(e) => setShowAllPeriodsInvoices(e.target.checked)}
+                      className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+                    />
+                    <span>All Periods</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Sub-bar: Filing Status (Filed / Due) Filter Pills */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/60">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                  <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1 mr-1">
+                    <Filter className="w-3 h-3 text-slate-400" />
+                    GST Filing:
+                  </span>
+
+                  <button
+                    onClick={() => setInvoiceFilingStatusFilter('ALL')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      invoiceFilingStatusFilter === 'ALL'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <span>All Status</span>
+                    <span className="text-[10px] bg-slate-700 text-white px-1.5 py-0.2 rounded-full font-bold">
+                      {invoices.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setInvoiceFilingStatusFilter('FILED')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      invoiceFilingStatusFilter === 'FILED'
+                        ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/30'
+                        : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>✓ Filed</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      invoiceFilingStatusFilter === 'FILED' ? 'bg-emerald-800 text-white' : 'bg-emerald-200 text-emerald-900'
+                    }`}>
+                      {filedCount}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setInvoiceFilingStatusFilter('DUE')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      invoiceFilingStatusFilter === 'DUE'
+                        ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-500/30'
+                        : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>⏳ Due</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      invoiceFilingStatusFilter === 'DUE' ? 'bg-amber-800 text-white' : 'bg-amber-200 text-amber-900'
+                    }`}>
+                      {dueCount}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="text-[11px] text-slate-500 font-semibold">
+                  Showing <strong className="text-slate-900">{filteredInvoicesLedger.length}</strong> invoice{filteredInvoicesLedger.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+
+            {/* Invoices Table */}
+            {filteredInvoicesLedger.length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <Receipt className="w-12 h-12 text-slate-300 mx-auto" />
+                <h4 className="text-sm font-bold text-slate-700">No Invoices Found in GST Ledger</h4>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  {invoiceSearchQuery 
+                    ? `No invoice matched "${invoiceSearchQuery}". Try clearing the search.`
+                    : 'No invoices have been recorded matching this filter. Create an invoice to see it appear here.'}
+                </p>
+                {onAddNewInvoice && (
+                  <button
+                    onClick={onAddNewInvoice}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create First Invoice
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100/80 text-slate-700 uppercase font-extrabold text-[11px] border-b border-slate-200">
+                      <th className="py-3.5 px-4 w-44">1. Invoice No.</th>
+                      <th className="py-3.5 px-4 min-w-[220px]">2. Company Name</th>
+                      <th className="py-3.5 px-4 text-right min-w-[240px]">3. Actual Value & Tax Value</th>
+                      <th className="py-3.5 px-4 text-center min-w-[170px]">4. GST Filing (Filed / Due)</th>
+                      <th className="py-3.5 px-4 text-center w-28">GST Rates</th>
+                      <th className="py-3.5 px-4 text-center w-48">Actions (Edit / View)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {filteredInvoicesLedger.map((inv) => {
+                      const taxDetails = getInvoiceTaxDetails(inv);
+                      const isPurchase = inv.documentType === 'PURCHASE_BILL';
+                      const isQuotation = inv.documentType === 'QUOTATION';
+                      const isB2B = Boolean(inv.partyGstin && inv.partyGstin.trim().length >= 5);
+
+                      // Extract distinct tax rates from invoice items
+                      const rates = Array.from(new Set(
+                        (inv.items || [])
+                          .map(it => Number(it.taxRate ?? it.gstRate ?? 18))
+                          .filter(r => !isNaN(r))
+                      ));
+
+                      return (
+                        <tr key={inv.id} className="hover:bg-blue-50/30 transition-colors">
+                          {/* Column 1: Invoice No. */}
+                          <td className="py-3.5 px-4 align-top">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono font-black text-slate-900 text-sm">
+                                  {inv.invoiceNumber}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-1">
+                                <span className={`inline-block text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                  isPurchase 
+                                    ? 'bg-amber-100 text-amber-900' 
+                                    : isQuotation
+                                    ? 'bg-purple-100 text-purple-900'
+                                    : 'bg-blue-100 text-blue-900'
+                                }`}>
+                                  {isPurchase ? 'PURCHASE' : (inv.documentType?.replace(/_/g, ' ') || 'TAX INVOICE')}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                <span>{inv.date}</span>
+                                {inv.dueDate && (
+                                  <span className="text-slate-400"> • Due: {inv.dueDate}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Column 2: Company Name */}
+                          <td className="py-3.5 px-4 align-top">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span className="font-black text-slate-900 text-sm">
+                                  {inv.partyName || inv.billingAddress?.name || 'Cash Customer'}
+                                </span>
+                              </div>
+
+                              <div>
+                                {isB2B ? (
+                                  <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                    GSTIN: {inv.partyGstin}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                    B2C • Unregistered / Consumer
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="text-[11px] text-slate-500">
+                                {inv.placeOfSupply ? (
+                                  <span>Place of Supply: <strong className="text-slate-700">{inv.placeOfSupply}</strong></span>
+                                ) : inv.billingAddress?.state ? (
+                                  <span>State: <strong className="text-slate-700">{inv.billingAddress.state}</strong></span>
+                                ) : (
+                                  <span className="text-slate-400">State: Same as Business</span>
+                                )}
+                                {inv.partyPhone && (
+                                  <span className="text-slate-400"> • Ph: {inv.partyPhone}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Column 3: Invoice Actual Value and Tax Value */}
+                          <td className="py-3.5 px-4 align-top text-right">
+                            <div className="space-y-1">
+                              {/* Actual / Taxable Value */}
+                              <div className="flex items-center justify-end gap-2 text-xs">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase">Actual (Taxable):</span>
+                                <span className="font-black text-slate-900 text-sm">
+                                  {formatIndianCurrency(taxDetails.taxable)}
+                                </span>
+                              </div>
+
+                              {/* Tax Value with Breakdown */}
+                              <div className="flex items-center justify-end gap-2 text-xs">
+                                <span className="text-[11px] font-bold text-blue-600 uppercase">Tax Value:</span>
+                                <span className="font-black text-blue-700 text-sm">
+                                  {formatIndianCurrency(taxDetails.totalGst)}
+                                </span>
+                              </div>
+
+                              {/* CGST / SGST or IGST breakdown */}
+                              <div className="text-[10px] font-semibold text-slate-500">
+                                {taxDetails.igst > 0 ? (
+                                  <span>IGST: {formatIndianCurrency(taxDetails.igst)}</span>
+                                ) : (
+                                  <span>
+                                    CGST: {formatIndianCurrency(taxDetails.cgst)} + SGST: {formatIndianCurrency(taxDetails.sgst)}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Invoice Grand Total */}
+                              <div className="pt-1 border-t border-slate-200/80 flex items-center justify-end gap-2">
+                                <span className="text-[11px] font-extrabold text-slate-700">Total Value:</span>
+                                <span className="text-base font-black text-slate-900">
+                                  {formatIndianCurrency(taxDetails.grandTotal)}
+                                </span>
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                  inv.paymentStatus === 'PAID'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : inv.paymentStatus === 'PARTIAL'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}>
+                                  {inv.paymentStatus || 'UNPAID'}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Column 4: GST Filing Status (Filed / Due) - Requested by User */}
+                          <td className="py-3.5 px-4 align-top text-center">
+                            <div className="flex flex-col items-center gap-1.5">
+                              {/* Interactive Filing Status Dropdown */}
+                              <div className="relative inline-flex items-center">
+                                <select
+                                  value={inv.gstFilingStatus === 'FILED' ? 'FILED' : 'DUE'}
+                                  onChange={(e) => {
+                                    const val = e.target.value as 'FILED' | 'DUE';
+                                    if (val === 'FILED') {
+                                      handleSetInvoiceFiling(
+                                        inv,
+                                        'FILED',
+                                        inv.gstFilingDate || new Date().toISOString().split('T')[0],
+                                        inv.gstFilingArn || ''
+                                      );
+                                    } else {
+                                      handleSetInvoiceFiling(inv, 'DUE');
+                                    }
+                                  }}
+                                  className={`text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer appearance-none pr-7 transition-all shadow-2xs ${
+                                    inv.gstFilingStatus === 'FILED'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 ring-1 ring-emerald-400/30'
+                                      : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 ring-1 ring-amber-400/30'
+                                  }`}
+                                  title="Change GST Filing Status: Filed or Due"
+                                >
+                                  <option value="DUE">⏳ Due</option>
+                                  <option value="FILED">✓ Filed</option>
+                                </select>
+                                <ChevronDown className={`w-3.5 h-3.5 absolute right-2 pointer-events-none ${
+                                  inv.gstFilingStatus === 'FILED' ? 'text-emerald-700' : 'text-amber-800'
+                                }`} />
+                              </div>
+
+                              {/* Filing details / ARN / Date */}
+                              {inv.gstFilingStatus === 'FILED' ? (
+                                <div className="text-[10px] text-center space-y-0.5">
+                                  <div className="text-emerald-700 font-bold flex items-center justify-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    <span>Filed: {inv.gstFilingDate || inv.date}</span>
+                                  </div>
+                                  {inv.gstFilingArn && (
+                                    <div className="font-mono text-slate-500 font-medium">
+                                      ARN: {inv.gstFilingArn}
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setTargetInvoiceForFiling(inv);
+                                      setFilingModalStatus('FILED');
+                                      setFilingModalDate(inv.gstFilingDate || new Date().toISOString().split('T')[0]);
+                                      setFilingModalArn(inv.gstFilingArn || '');
+                                      setIsInvoiceFilingModalOpen(true);
+                                    }}
+                                    className="text-blue-600 hover:underline font-bold text-[10px] cursor-pointer block mx-auto"
+                                  >
+                                    {inv.gstFilingArn ? 'Edit ARN' : '+ Add ARN'}
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-[10px] text-center space-y-0.5">
+                                  <span className="text-amber-700 font-bold block">
+                                    Return Due
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setTargetInvoiceForFiling(inv);
+                                      setFilingModalStatus('FILED');
+                                      setFilingModalDate(new Date().toISOString().split('T')[0]);
+                                      setFilingModalArn('');
+                                      setIsInvoiceFilingModalOpen(true);
+                                    }}
+                                    className="text-blue-600 hover:underline font-bold text-[10px] cursor-pointer block mx-auto"
+                                  >
+                                    + Mark with ARN
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Column 5: GST Rates */}
+                          <td className="py-3.5 px-4 align-top text-center">
+                            <div className="space-y-1">
+                              <span className="inline-block text-[11px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-800">
+                                {rates.length > 0 ? rates.map(r => `${r}%`).join(', ') : '18%'}
+                              </span>
+                              <div className="text-[10px] text-slate-400 font-semibold">
+                                {taxDetails.igst > 0 ? 'Inter-state' : 'Intra-state'}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {inv.items?.length || 0} line item{(inv.items?.length || 0) !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Column 6: Actions (Edit, View PDF, Duplicate, Delete) */}
+                          <td className="py-3.5 px-4 align-top text-center">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                              {/* Edit Option (Requested: "aur edit ka bhi option ho") */}
+                              {onEditInvoice && (
+                                <button
+                                  onClick={() => onEditInvoice(inv)}
+                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-black text-xs rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-2xs border border-blue-200"
+                                  title="Edit Invoice"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 text-blue-700" />
+                                  <span>Edit</span>
+                                </button>
+                              )}
+
+                              {/* View / Print PDF */}
+                              {onViewInvoice && (
+                                <button
+                                  onClick={() => onViewInvoice(inv)}
+                                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-200"
+                                  title="View / Print PDF"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-slate-600" />
+                                  <span>PDF</span>
+                                </button>
+                              )}
+
+                              {/* Duplicate */}
+                              {onDuplicateInvoice && (
+                                <button
+                                  onClick={() => onDuplicateInvoice(inv)}
+                                  className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors cursor-pointer"
+                                  title="Duplicate Invoice"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
+                              {/* Delete */}
+                              {onDeleteInvoice && (
+                                <button
+                                  onClick={() => onDeleteInvoice(inv.id)}
+                                  className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors cursor-pointer"
+                                  title="Delete Invoice"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* --- TAB 1: OVERVIEW & TAX LEDGER --- */}
       {activeTab === 'OVERVIEW' && (
@@ -800,6 +1627,26 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
                   {currentPeriodFilingRecord ? 'Edit Filing Status' : '+ Enter Filing Status'}
                 </button>
               </div>
+            </div>
+
+            {/* Quick Link to GST Invoices Ledger */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 font-black text-xs text-blue-950">
+                  <Layers className="w-4 h-4 text-blue-600" />
+                  <span>GST Invoices in this Period ({periodSalesInvoices.length + periodPurchaseBills.length} Invoices)</span>
+                </div>
+                <p className="text-[11px] text-blue-800/80">
+                  View, edit, and manage all bills with Invoice No., Company Name, Actual Value & Tax Value.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveTab('INVOICES_LEDGER')}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap self-start sm:self-center"
+              >
+                <span>Open Invoices Ledger</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
@@ -1699,6 +2546,136 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Invoice GST Filing Status Modal */}
+      {isInvoiceFilingModalOpen && targetInvoiceForFiling && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-black text-slate-900">
+                  GST Filing Status
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsInvoiceFilingModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-bold">Invoice Number:</span>
+                <span className="font-mono font-black text-slate-900">{targetInvoiceForFiling.invoiceNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-bold">Party / Customer:</span>
+                <span className="font-black text-slate-900">{targetInvoiceForFiling.partyName || 'Cash Customer'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-bold">Invoice Date:</span>
+                <span className="font-semibold text-slate-700">{targetInvoiceForFiling.date}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-200">
+                <span className="text-slate-500 font-bold">GST Tax Amount:</span>
+                <span className="font-black text-blue-700">{formatIndianCurrency(getInvoiceTaxDetails(targetInvoiceForFiling).totalGst)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  Select Filing Status *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFilingModalStatus('FILED')}
+                    className={`p-3 rounded-2xl border text-xs font-black flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                      filingModalStatus === 'FILED'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20 shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>✓ Filed</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilingModalStatus('DUE')}
+                    className={`p-3 rounded-2xl border text-xs font-black flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                      filingModalStatus === 'DUE'
+                        ? 'bg-amber-50 border-amber-500 text-amber-800 ring-2 ring-amber-500/20 shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    <span>⏳ Due</span>
+                  </button>
+                </div>
+              </div>
+
+              {filingModalStatus === 'FILED' && (
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Filing Date
+                    </label>
+                    <input
+                      type="date"
+                      value={filingModalDate}
+                      onChange={(e) => setFilingModalDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold focus:outline-hidden focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      ARN Number / Reference (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. AA0703260123456"
+                      value={filingModalArn}
+                      onChange={(e) => setFilingModalArn(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-mono font-bold focus:outline-hidden focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsInvoiceFilingModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSetInvoiceFiling(
+                    targetInvoiceForFiling, 
+                    filingModalStatus, 
+                    filingModalStatus === 'FILED' ? filingModalDate : undefined,
+                    filingModalStatus === 'FILED' ? filingModalArn : undefined
+                  );
+                  setIsInvoiceFilingModalOpen(false);
+                }}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>Save Status</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

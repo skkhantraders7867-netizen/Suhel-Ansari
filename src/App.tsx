@@ -172,24 +172,26 @@ export default function App() {
   // Auto-save changes to local storage & Supabase Cloud Backend
   useEffect(() => {
     if (isSwitchingAccountRef.current) return;
+    const fullData: UserAccountData = {
+      businessProfile,
+      invoices,
+      parties,
+      items,
+      expenses,
+      bankAccounts,
+      cashTransactions,
+      ewayBills,
+      staffMembers,
+      attendanceRecords,
+      attendanceCompanies,
+      paymentVouchers,
+      gstFilingRecords,
+      purchaseBillReturns,
+    };
+    // Always save to localStorage (isolated per user or guest)
+    saveUserAccountData(currentUser, fullData);
     if (currentUser) {
-      const fullData: UserAccountData = {
-        businessProfile,
-        invoices,
-        parties,
-        items,
-        expenses,
-        bankAccounts,
-        cashTransactions,
-        ewayBills,
-        staffMembers,
-        attendanceRecords,
-        attendanceCompanies,
-        paymentVouchers,
-        gstFilingRecords,
-        purchaseBillReturns,
-      };
-      // Save locally & debounced push to Supabase table
+      // Debounced push to Supabase table
       pushUserAccountDataToSupabase(currentUser, fullData);
     }
   }, [currentUser, businessProfile, invoices, parties, items, expenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers, gstFilingRecords, purchaseBillReturns]);
@@ -328,6 +330,10 @@ export default function App() {
     setInitialDocTypeForCreate(inv.documentType);
     setPreselectedPartyIdForCreate(inv.partyId);
     setCurrentView('CREATE_INVOICE');
+  };
+
+  const handleUpdateInvoice = (updatedInv: Invoice) => {
+    setInvoices(prev => prev.map(inv => inv.id === updatedInv.id ? updatedInv : inv));
   };
 
   const handleSaveInvoice = (savedInv: Invoice, openPreview = true) => {
@@ -1644,6 +1650,16 @@ export default function App() {
                   onDeleteGstFilingRecord={handleDeleteGstFilingRecord}
                   onSavePurchaseBillReturn={handleSavePurchaseBillReturn}
                   onDeletePurchaseBillReturn={handleDeletePurchaseBillReturn}
+                  onViewInvoice={(inv) => setPreviewInvoice(inv)}
+                  onEditInvoice={handleEditInvoice}
+                  onDeleteInvoice={handleDeleteInvoice}
+                  onDuplicateInvoice={handleDuplicateInvoice}
+                  onUpdateInvoice={handleUpdateInvoice}
+                  onAddNewInvoice={() => {
+                    setEditingInvoice(null);
+                    setInitialDocTypeForCreate('TAX_INVOICE');
+                    setCurrentView('CREATE_INVOICE');
+                  }}
                 />
               )}
 

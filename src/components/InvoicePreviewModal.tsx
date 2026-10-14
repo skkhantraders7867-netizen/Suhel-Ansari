@@ -1808,8 +1808,8 @@ Thank you for doing business with us!`;
                         {businessProfile.signatureUrl ? (
                           <img 
                             src={businessProfile.signatureUrl} 
-                            alt="Signature" 
-                            className="max-h-7 object-contain mix-blend-multiply" 
+                            alt="Signature & Stamp" 
+                            className="max-h-12 object-contain mix-blend-multiply" 
                           />
                         ) : (
                           <div className="h-6"></div>
@@ -1905,8 +1905,8 @@ Thank you for doing business with us!`;
                           {businessProfile.signatureUrl ? (
                             <img 
                               src={businessProfile.signatureUrl} 
-                              alt="Signature" 
-                              className="max-h-7 object-contain mix-blend-multiply" 
+                              alt="Signature & Stamp" 
+                              className="max-h-12 object-contain mix-blend-multiply" 
                             />
                           ) : (
                             <div className="h-6"></div>
@@ -1956,8 +1956,8 @@ Thank you for doing business with us!`;
                           {businessProfile.signatureUrl ? (
                             <img 
                               src={businessProfile.signatureUrl} 
-                              alt="Signature" 
-                              className="max-h-7 object-contain mix-blend-multiply" 
+                              alt="Signature & Stamp" 
+                              className="max-h-12 object-contain mix-blend-multiply" 
                             />
                           ) : (
                             <div className="h-6"></div>
@@ -2136,8 +2136,8 @@ Thank you for doing business with us!`;
                           {businessProfile.signatureUrl && (
                             <img 
                               src={businessProfile.signatureUrl} 
-                              alt="Signature" 
-                              className="max-h-7 object-contain mix-blend-multiply" 
+                              alt="Signature & Stamp" 
+                              className="max-h-12 object-contain mix-blend-multiply" 
                             />
                           )}
                         </div>
@@ -2493,8 +2493,8 @@ Thank you for doing business with us!`;
                   {businessProfile.signatureUrl && (
                     <img 
                       src={businessProfile.signatureUrl} 
-                      alt="Signature" 
-                      className="max-h-8 object-contain mix-blend-multiply my-1" 
+                      alt="Signature & Stamp" 
+                      className="max-h-12 object-contain mix-blend-multiply my-1" 
                     />
                   )}
                   <div className="border-t border-slate-600 pt-1 w-48 text-center">

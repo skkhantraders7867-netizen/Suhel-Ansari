@@ -279,6 +279,10 @@ export interface Invoice {
   originalInvoiceNumber?: string;
   originalInvoiceDate?: string;
   reasonForNote?: string;
+  // GST Return Filing Status ('FILED' | 'DUE')
+  gstFilingStatus?: 'FILED' | 'DUE';
+  gstFilingDate?: string;
+  gstFilingArn?: string;
   // Quotation Specific Fields
   quotationStatus?: 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED';
   validUntil?: string;

@@ -98,28 +98,17 @@ export function clearAllUserData(user: AuthUser): UserAccountData {
  * Automatically cleans any legacy mock records (e.g. Apex Digital, demo invoices).
  */
 export function loadUserAccountData(user: AuthUser | null): UserAccountData {
-  if (!user || !user.email) {
-    return {
-      businessProfile: INITIAL_BUSINESS_PROFILE,
-      invoices: [],
-      parties: [],
-      items: [],
-      expenses: [],
-      bankAccounts: [],
-      cashTransactions: [],
-      ewayBills: [],
-      staffMembers: [],
-      attendanceRecords: [],
-      attendanceCompanies: [],
-    };
-  }
-
-  const key = getUserStorageKey(user.email);
+  const emailOrGuest = user?.email || 'guest';
+  const key = getUserStorageKey(emailOrGuest);
   try {
     const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const profile = parsed.businessProfile || { ...INITIAL_BUSINESS_PROFILE, name: user.businessName || 'SR Group', email: user.email };
+      const profile = parsed.businessProfile || { 
+        ...INITIAL_BUSINESS_PROFILE, 
+        name: user?.businessName || 'SR Group', 
+        email: user?.email || 'skkhantraders7867@gmail.com' 
+      };
       if (!profile.logoUrl) {
         profile.logoUrl = 'https://lh3.googleusercontent.com/d/16BUJ9mO_ZLvGvhuxxLRwnvlWxeiemQX8';
       }
@@ -171,21 +160,40 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
     console.error('Error reading user storage:', e);
   }
 
-  // For any new user account, return and save completely fresh blank account data!
-  const fresh = createFreshUserData(user);
-  saveUserAccountData(user, fresh);
-  return fresh;
+  // If no stored data, return clean slate
+  if (user) {
+    const fresh = createFreshUserData(user);
+    saveUserAccountData(user, fresh);
+    return fresh;
+  }
+
+  return {
+    businessProfile: INITIAL_BUSINESS_PROFILE,
+    invoices: [],
+    parties: [],
+    items: [],
+    expenses: [],
+    bankAccounts: [],
+    cashTransactions: [],
+    ewayBills: [],
+    staffMembers: [],
+    attendanceRecords: [],
+    attendanceCompanies: [],
+    paymentVouchers: [],
+    gstFilingRecords: [],
+    purchaseBillReturns: [],
+  };
 }
 
 /**
- * Saves isolated data for a specific user
+ * Saves isolated data for a specific user or guest
  */
-export function saveUserAccountData(user: AuthUser, data: UserAccountData): void {
-  if (!user || !user.email) return;
-  const key = getUserStorageKey(user.email);
+export function saveUserAccountData(user: AuthUser | null, data: UserAccountData): void {
+  const emailOrGuest = user?.email || 'guest';
+  const key = getUserStorageKey(emailOrGuest);
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
-    console.error('Error saving user data for', user.email, e);
+    console.error('Error saving user data for', emailOrGuest, e);
   }
 }

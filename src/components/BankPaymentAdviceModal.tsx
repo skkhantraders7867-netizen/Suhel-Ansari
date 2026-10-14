@@ -157,7 +157,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Official Letter Pad format with Emp ID, Account Holder Name, Account Number, Net Salary &amp; Mohar/Signatures
+                Official Letter Pad format with Emp ID, Account Holder Name, Account Number, Net Salary &amp; Stamp/Signatures
               </p>
             </div>
           </div>
@@ -658,7 +658,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                   </div>
                 </div>
 
-                {/* Bottom Mohar & Authorized Signatory Section (Clean, lined-up without bank receiving box) */}
+                {/* Bottom Stamp & Authorized Signatory Section (Clean, lined-up without bank receiving box) */}
                 <div className="pt-2 mt-auto">
                   <div className="flex justify-end">
                     <div className="w-60 text-right space-y-1">
@@ -666,7 +666,7 @@ export const BankPaymentAdviceModal: React.FC<BankPaymentAdviceModalProps> = ({
                         For <strong>{businessProfile.tradeName || businessProfile.name || 'Suhel Engineering'}</strong>
                       </div>
 
-                      {/* Generous Rubber Stamp / Mohar Area */}
+                      {/* Generous Rubber Stamp Area */}
                       <div className="h-12 flex items-center justify-center border border-dashed border-slate-400 rounded-lg text-[9px] text-slate-400 font-serif italic my-0.5 bg-slate-50/60">
                         [ Company Rubber Stamp &amp; Seal ]
                       </div>

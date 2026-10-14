@@ -32,6 +32,7 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
     billPadHeaderOffset: businessProfile.billPadHeaderOffset ?? 160,
     billPadFooterOffset: businessProfile.billPadFooterOffset ?? 90,
     useCustomBillPad: businessProfile.useCustomBillPad ?? true,
+    signatureUrl: businessProfile.signatureUrl || '',
   });
   const [activeTab, setActiveTab] = useState<'GENERAL' | 'BANK_UPI' | 'BILL_PAD' | 'INVOICE_TERMS' | 'DATA_BACKUP'>('BILL_PAD');
 
@@ -497,6 +498,80 @@ export const BusinessSettingsModal: React.FC<BusinessSettingsModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Authorized Signatory Stamp & Signature */}
+              <div className="mt-6 pt-6 border-t border-slate-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+                    Authorized Signatory Stamp &amp; Signature
+                  </h3>
+                </div>
+                <p className="text-slate-600 text-[11px]">
+                  Upload your official company rubber stamp and digital signature image. This automatically displays on the right side under "Authorized Signatory" on all generated invoice PDFs.
+                </p>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Signature &amp; Stamp Image URL (Google Drive / Direct Link)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://drive.google.com/file/d/... or direct image URL"
+                    value={profile.signatureUrl || ''}
+                    onChange={(e) => {
+                      let url = e.target.value.trim();
+                      const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                      if (driveMatch && driveMatch[1]) {
+                        url = `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+                      }
+                      setProfile({ ...profile, signatureUrl: url });
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono"
+                  />
+                </div>
+
+                {/* Upload Local Signature Image */}
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Or Upload Signature &amp; Stamp Image from Device</label>
+                  <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50 rounded-xl cursor-pointer transition-colors text-slate-600 hover:text-indigo-700">
+                    <Upload className="w-4 h-4" />
+                    <span className="font-bold text-xs">Choose Signature / Stamp Image File (.png, .jpg)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (evt) => {
+                            if (evt.target?.result) {
+                              setProfile({ ...profile, signatureUrl: evt.target.result as string });
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Signature Preview */}
+                {profile.signatureUrl && (
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Signature &amp; Stamp Preview</label>
+                    <div className="border border-slate-300 rounded-xl overflow-hidden h-28 bg-slate-100 flex items-center justify-center p-2">
+                      <img 
+                        src={profile.signatureUrl} 
+                        alt="Signature & Stamp Preview" 
+                        className="max-h-24 object-contain mix-blend-multiply shadow-xs rounded"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
