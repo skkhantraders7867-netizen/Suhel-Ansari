@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { 
   X, Printer, Share2, Copy, Check, Eye, FileText, Edit3,
   Receipt, Truck, Smartphone, Download, ArrowLeft, Building2, MapPin, Phone, Mail, Loader2,
-  Sparkles, Sliders, Image as ImageIcon
+  Sparkles, Sliders, Image as ImageIcon, FileSignature
 } from 'lucide-react';
 import { Invoice, BusinessProfile } from '../types';
 import { GST_STATES } from '../data/mockData';
@@ -62,6 +62,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [includeSignature, setIncludeSignature] = useState<boolean>(true);
   const printRef = useRef<HTMLDivElement>(null);
 
   // Dynamic HSN / SAC column state: Auto-detect if user entered HSN in any item
@@ -487,6 +488,22 @@ Thank you for doing business with us!`;
             <option value="NONE">No Watermark</option>
           </select>
 
+          {/* With / Without Stamp & Mohar Toggle */}
+          <button
+            type="button"
+            onClick={() => setIncludeSignature(prev => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none ${
+              includeSignature 
+                ? 'bg-emerald-700 hover:bg-emerald-600 text-white border-emerald-500 shadow-xs' 
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-600'
+            }`}
+            title="Toggle between with stamp & signature and without stamp & signature"
+          >
+            <FileSignature className="w-4 h-4 text-amber-300" />
+            <span className="hidden sm:inline">{includeSignature ? '✓ With Stamp & Mohar' : '✕ Without Stamp & Mohar'}</span>
+            <span className="sm:hidden">{includeSignature ? 'With Stamp' : 'No Stamp'}</span>
+          </button>
+
           <button
             onClick={handleWhatsAppShare}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
@@ -696,6 +713,38 @@ Thank you for doing business with us!`;
               />
               <span className="font-bold text-amber-300 text-[11px]">Letter Pad BG</span>
             </label>
+
+            {/* Stamp & Mohar Toggle */}
+            <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">
+              <span className="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
+                <FileSignature className="w-3.5 h-3.5 text-amber-300" />
+                <span>Stamp / Mohar:</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIncludeSignature(true)}
+                className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                  includeSignature
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white bg-slate-800'
+                }`}
+                title="With digital stamp & signature"
+              >
+                ✓ With Stamp
+              </button>
+              <button
+                type="button"
+                onClick={() => setIncludeSignature(false)}
+                className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                  !includeSignature
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white bg-slate-800'
+                }`}
+                title="Without stamp & signature"
+              >
+                ✕ Without Stamp
+              </button>
+            </div>
 
             {/* Pad Card Transparency / Watermark Visibility Controls */}
             <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
@@ -919,6 +968,38 @@ Thank you for doing business with us!`;
               />
               <span className="font-semibold text-slate-200">Pad Background</span>
             </label>
+
+            {/* Stamp & Mohar Toggle */}
+            <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">
+              <span className="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
+                <FileSignature className="w-3.5 h-3.5 text-amber-300" />
+                <span>Stamp / Mohar:</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIncludeSignature(true)}
+                className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                  includeSignature
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white bg-slate-800'
+                }`}
+                title="With digital stamp & signature"
+              >
+                ✓ With Stamp
+              </button>
+              <button
+                type="button"
+                onClick={() => setIncludeSignature(false)}
+                className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                  !includeSignature
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white bg-slate-800'
+                }`}
+                title="Without stamp & signature"
+              >
+                ✕ Without Stamp
+              </button>
+            </div>
 
             {/* HSN / SAC Column Print Toggle */}
             <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
@@ -1261,6 +1342,7 @@ Thank you for doing business with us!`;
               termsPageBreak={termsPageBreak}
               termsMode={termsMode}
               previewZoom={previewZoom}
+              includeSignature={includeSignature}
             />
           )}
 
@@ -1281,6 +1363,7 @@ Thank you for doing business with us!`;
               termsPageBreak={termsPageBreak}
               termsMode={termsMode}
               cardOpacity={cardOpacity}
+              includeSignature={includeSignature}
             />
           )}
 
@@ -1799,25 +1882,25 @@ Thank you for doing business with us!`;
 
                     {/* Right: AUTHORISED SIGNATORY (5 cols) */}
                     <div className="col-span-5 p-2 flex flex-col justify-between items-center text-center overflow-hidden">
-                      <div className="font-bold text-slate-950 uppercase text-[8.5px] tracking-wide truncate w-full">
+                      <div className="font-bold text-slate-950 uppercase text-[9px] tracking-wide text-center w-full px-1">
                         FOR, {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
                       </div>
                       
                       {/* Signature Space / Digital Signature */}
-                      <div className="my-1 py-0.5 text-center min-h-[30px] flex items-center justify-center">
-                        {businessProfile.signatureUrl ? (
+                      <div className="my-1.5 py-0.5 text-center min-h-[85px] flex items-center justify-center w-full">
+                        {includeSignature && businessProfile.signatureUrl ? (
                           <img 
                             src={businessProfile.signatureUrl} 
                             alt="Signature & Stamp" 
-                            className="max-h-12 object-contain mix-blend-multiply" 
+                            className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
                           />
                         ) : (
-                          <div className="h-6"></div>
+                          <div className="h-20"></div>
                         )}
                       </div>
 
-                      <div className="border-t border-slate-600 w-32 pt-0.5 text-center">
-                        <span className="text-[8px] font-bold text-slate-950 block uppercase tracking-wider">Authorised Signatory</span>
+                      <div className="border-t-2 border-slate-700 w-40 pt-1 text-center mx-auto">
+                        <span className="text-[8.5px] font-bold text-slate-950 block uppercase tracking-wider">Authorised Signatory</span>
                       </div>
                     </div>
                   </div>
@@ -1872,49 +1955,49 @@ Thank you for doing business with us!`;
                         </div>
                       </div>
 
-                      {/* Middle: TERMS & CONDITIONS (4 cols) */}
-                      <div className="col-span-4 p-2 border-r border-slate-900 flex flex-col justify-between overflow-hidden">
+                      {/* Middle: TERMS & CONDITIONS (3 cols) */}
+                      <div className="col-span-3 p-2 border-r border-slate-900 flex flex-col justify-between overflow-hidden">
                         <div>
-                          <div className="font-black text-slate-950 uppercase tracking-wider mb-1 text-[9px] border-b border-slate-900 pb-0.5">
+                          <div className="font-black text-slate-950 uppercase tracking-wider mb-1 text-[8.5px] border-b border-slate-900 pb-0.5">
                             TERMS &amp; CONDITIONS:
                           </div>
-                          <div className="space-y-0.5 text-[7.5px] text-slate-900 leading-tight font-medium pr-1">
+                          <div className="space-y-0.5 text-[7px] text-slate-900 leading-tight font-medium pr-0.5">
                             {parsedTermsList.map((term, index) => (
-                              <div key={index} className="flex items-start gap-1">
-                                <span className="font-bold font-mono text-[7px] text-slate-950">{index + 1}.</span>
-                                <span className="leading-snug">{term}</span>
+                              <div key={index} className="flex items-start gap-0.5">
+                                <span className="font-bold font-mono text-[6.5px] text-slate-950 shrink-0">{index + 1}.</span>
+                                <span className="leading-tight">{term}</span>
                               </div>
                             ))}
                           </div>
                           {invoice.notes && (
-                            <div className="mt-1 pt-0.5 border-t border-slate-200 text-[7px] text-slate-700">
+                            <div className="mt-1 pt-0.5 border-t border-slate-200 text-[6.5px] text-slate-700 truncate">
                               <strong className="text-slate-900">Note: </strong>{invoice.notes}
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Right: AUTHORISED SIGNATORY (3 cols) */}
-                      <div className="col-span-3 p-2 flex flex-col justify-between items-center text-center overflow-hidden">
-                        <div className="font-bold text-slate-950 uppercase text-[8.5px] tracking-wide truncate w-full">
+                      {/* Right: AUTHORISED SIGNATORY (4 cols) */}
+                      <div className="col-span-4 p-2 flex flex-col justify-between items-center text-center overflow-hidden">
+                        <div className="font-bold text-slate-950 uppercase text-[9px] tracking-wide text-center w-full px-1">
                           FOR, {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
                         </div>
                         
                         {/* Signature Space / Digital Signature */}
-                        <div className="my-1 py-0.5 text-center min-h-[30px] flex items-center justify-center">
-                          {businessProfile.signatureUrl ? (
+                        <div className="my-1.5 py-0.5 text-center min-h-[85px] flex items-center justify-center w-full">
+                          {includeSignature && businessProfile.signatureUrl ? (
                             <img 
                               src={businessProfile.signatureUrl} 
                               alt="Signature & Stamp" 
-                              className="max-h-12 object-contain mix-blend-multiply" 
+                              className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
                             />
                           ) : (
-                            <div className="h-6"></div>
+                            <div className="h-20"></div>
                           )}
                         </div>
 
-                        <div className="border-t border-slate-600 w-28 pt-0.5 text-center">
-                          <span className="text-[8px] font-bold text-slate-950 block uppercase tracking-wider">Authorised Signatory</span>
+                        <div className="border-t-2 border-slate-700 w-36 sm:w-40 pt-1 text-center mx-auto">
+                          <span className="text-[8.5px] font-bold text-slate-950 block uppercase tracking-wider">Authorised Signatory</span>
                         </div>
                       </div>
 
@@ -1947,25 +2030,25 @@ Thank you for doing business with us!`;
 
                       {/* Right: AUTHORISED SIGNATORY (4 cols) */}
                       <div className="col-span-4 p-2 flex flex-col justify-between items-center text-center overflow-hidden">
-                        <div className="font-bold text-slate-950 uppercase text-[8.5px] tracking-wide truncate w-full">
+                        <div className="font-bold text-slate-950 uppercase text-[9px] tracking-wide text-center w-full px-1">
                           FOR, {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
                         </div>
                         
                         {/* Signature Space / Digital Signature */}
-                        <div className="my-1 py-0.5 text-center min-h-[30px] flex items-center justify-center">
-                          {businessProfile.signatureUrl ? (
+                        <div className="my-1.5 py-0.5 text-center min-h-[85px] flex items-center justify-center w-full">
+                          {includeSignature && businessProfile.signatureUrl ? (
                             <img 
                               src={businessProfile.signatureUrl} 
                               alt="Signature & Stamp" 
-                              className="max-h-12 object-contain mix-blend-multiply" 
+                              className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
                             />
                           ) : (
-                            <div className="h-6"></div>
+                            <div className="h-20"></div>
                           )}
                         </div>
 
-                        <div className="border-t border-slate-600 w-32 pt-0.5 text-center">
-                          <span className="text-[8px] font-bold text-slate-950 block uppercase tracking-wider">Authorised Signatory</span>
+                        <div className="border-t-2 border-slate-700 w-40 pt-1 text-center mx-auto">
+                          <span className="text-[8.5px] font-bold text-slate-950 block uppercase tracking-wider">Authorised Signatory</span>
                         </div>
                       </div>
                     </div>
@@ -2128,20 +2211,22 @@ Thank you for doing business with us!`;
                     </div>
                   ) : (
                     <div className="pt-2 flex justify-end items-end">
-                      <div className="text-right flex flex-col items-end">
-                        <div className="font-bold uppercase text-[9.5px] text-slate-950 tracking-wide">
+                      <div className="flex flex-col items-center text-center min-w-[200px]">
+                        <div className="font-bold uppercase text-[9.5px] text-slate-950 tracking-wide text-center w-full">
                           FOR, {businessProfile.name || businessProfile.tradeName || 'SR GROUP'}
                         </div>
-                        <div className="my-0.5 min-h-[26px] flex items-center justify-end">
-                          {businessProfile.signatureUrl && (
+                        <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+                          {includeSignature && businessProfile.signatureUrl ? (
                             <img 
                               src={businessProfile.signatureUrl} 
                               alt="Signature & Stamp" 
-                              className="max-h-12 object-contain mix-blend-multiply" 
+                              className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
                             />
+                          ) : (
+                            <div className="h-20"></div>
                           )}
                         </div>
-                        <div className="border-t border-slate-700 w-32 pt-0.5 text-center">
+                        <div className="border-t-2 border-slate-700 w-44 pt-1 text-center mx-auto">
                           <span className="text-[8.5px] font-bold text-slate-950 block uppercase tracking-wider">
                             Authorised Signatory
                           </span>
@@ -2486,19 +2571,25 @@ Thank you for doing business with us!`;
                     </div>
                   )}
                 </div>
-                <div className="text-right flex flex-col justify-between items-end min-h-[90px]">
-                  <div>
-                    <span className="text-slate-600 block">For <strong>{businessProfile.name || businessProfile.tradeName || 'SR GROUP'}</strong></span>
+                <div className="flex flex-col items-center justify-between min-h-[115px] text-center w-52 ml-auto">
+                  <div className="text-center w-full">
+                    <span className="text-slate-700 font-bold text-[10px] uppercase block">
+                      For <strong>{businessProfile.name || businessProfile.tradeName || 'SR GROUP'}</strong>
+                    </span>
                   </div>
-                  {businessProfile.signatureUrl && (
-                    <img 
-                      src={businessProfile.signatureUrl} 
-                      alt="Signature & Stamp" 
-                      className="max-h-12 object-contain mix-blend-multiply my-1" 
-                    />
-                  )}
-                  <div className="border-t border-slate-600 pt-1 w-48 text-center">
-                    <span className="font-bold text-slate-950 block text-[9.5px] uppercase">Authorized Signatory</span>
+                  <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+                    {includeSignature && businessProfile.signatureUrl ? (
+                      <img 
+                        src={businessProfile.signatureUrl} 
+                        alt="Signature & Stamp" 
+                        className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
+                      />
+                    ) : (
+                      <div className="h-20"></div>
+                    )}
+                  </div>
+                  <div className="border-t-2 border-slate-700 pt-1 w-48 text-center mx-auto">
+                    <span className="font-bold text-slate-950 block text-[9.5px] uppercase tracking-wider">Authorized Signatory</span>
                   </div>
                 </div>
               </div>
@@ -2675,6 +2766,31 @@ Thank you for doing business with us!`;
                 </div>
               )}
 
+              {/* Authorized Signatory Block */}
+              <div className="flex justify-end pt-6">
+                <div className="flex flex-col items-center text-center w-52">
+                  <div className="text-center w-full">
+                    <span className="text-slate-700 font-bold text-[10px] uppercase block">
+                      For <strong>{businessProfile.name || businessProfile.tradeName || 'SR GROUP'}</strong>
+                    </span>
+                  </div>
+                  <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+                    {includeSignature && businessProfile.signatureUrl ? (
+                      <img 
+                        src={businessProfile.signatureUrl} 
+                        alt="Signature & Stamp" 
+                        className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
+                      />
+                    ) : (
+                      <div className="h-20"></div>
+                    )}
+                  </div>
+                  <div className="border-t-2 border-slate-700 pt-1 w-48 text-center mx-auto">
+                    <span className="font-bold text-slate-950 block text-[9.5px] uppercase tracking-wider">Authorized Signatory</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -2826,12 +2942,25 @@ Thank you for doing business with us!`;
                 </table>
               </div>
 
-              <div className="grid grid-cols-2 pt-12 gap-8 text-xs border-t border-slate-800 mt-8">
-                <div className="text-center border-t border-slate-400 pt-2">
-                  <span className="font-bold text-slate-800">Receiver's Signature & Stamp</span>
+              <div className="grid grid-cols-2 pt-8 gap-8 text-xs border-t border-slate-800 mt-8">
+                <div className="text-center border-t-2 border-slate-700 pt-2 flex flex-col justify-end min-h-[100px]">
+                  <span className="font-bold text-slate-800">Receiver's Signature &amp; Stamp</span>
                 </div>
-                <div className="text-center border-t border-slate-400 pt-2">
-                  <span className="font-bold text-slate-800">Authorized Signatory ({businessProfile.name || businessProfile.tradeName || 'SR GROUP'})</span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="min-h-[75px] flex items-center justify-center w-full">
+                    {includeSignature && businessProfile.signatureUrl ? (
+                      <img 
+                        src={businessProfile.signatureUrl} 
+                        alt="Signature & Stamp" 
+                        className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none" 
+                      />
+                    ) : (
+                      <div className="h-16"></div>
+                    )}
+                  </div>
+                  <div className="border-t-2 border-slate-700 pt-2 w-52 text-center mx-auto">
+                    <span className="font-bold text-slate-800 block">Authorized Signatory ({businessProfile.name || businessProfile.tradeName || 'SR GROUP'})</span>
+                  </div>
                 </div>
               </div>
             </div>

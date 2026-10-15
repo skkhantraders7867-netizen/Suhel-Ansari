@@ -110,14 +110,17 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
     return { taxable, cgst, sgst, igst, totalGst, grandTotal };
   };
 
-  // Filter Sales Invoices and Purchase Bills:
-  // Sales includes TAX_INVOICE, SERVICE_ORDER, PROFORMA_INVOICE, DEBIT_NOTE, or any sales document
+  // Filter Sales Invoices (strictly excludes QUOTATION, PURCHASE_BILL, PURCHASE_ESTIMATE, and SERVICE_ORDER)
   const salesInvoices = useMemo(() => {
     return invoices.filter(i => {
       if (!i) return false;
       const t = i.documentType;
-      // Quotations and purchase estimates are quotes/estimates, not final taxable bills
-      if (t === 'QUOTATION' || t === 'PURCHASE_ESTIMATE' || t === 'PURCHASE_BILL') {
+      if (
+        t === 'QUOTATION' ||
+        t === 'PURCHASE_ESTIMATE' ||
+        t === 'PURCHASE_BILL' ||
+        t === 'SERVICE_ORDER'
+      ) {
         return false;
       }
       return true;
@@ -128,10 +131,27 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
     return invoices.filter(i => i.documentType === 'PURCHASE_BILL');
   }, [invoices]);
 
+  // GST Tax Invoices: strictly invoices only (No quotation, No purchase, No service order)
+  const gstTaxInvoices = useMemo(() => {
+    return invoices.filter(i => {
+      if (!i) return false;
+      const t = i.documentType;
+      if (
+        t === 'QUOTATION' ||
+        t === 'PURCHASE_ESTIMATE' ||
+        t === 'PURCHASE_BILL' ||
+        t === 'SERVICE_ORDER'
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [invoices]);
+
   // Combined all GST invoices
   const allLedgerInvoices = useMemo(() => {
-    return [...salesInvoices, ...purchaseBills];
-  }, [salesInvoices, purchaseBills]);
+    return gstTaxInvoices;
+  }, [gstTaxInvoices]);
 
   // Robust date parser: supports YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, ISO strings
   const parseDateParts = (dateStr?: string) => {
@@ -384,9 +404,9 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
   // Toggle for showing all invoices or period-filtered in Invoices Ledger
   const [showAllPeriodsInvoices, setShowAllPeriodsInvoices] = useState(true);
 
-  // Filtered invoices for the Invoices Ledger tab
+  // Filtered invoices for the Invoices Ledger tab (Strictly Invoices only: No Quotation, No Purchase, No Service Order)
   const filteredInvoicesLedger = useMemo(() => {
-    return invoices.filter(inv => {
+    return gstTaxInvoices.filter(inv => {
       if (!inv) return false;
 
       // Period filter unless user toggled show all periods
@@ -394,12 +414,8 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
         return false;
       }
 
-      // Category filter
-      if (invoiceCategoryFilter === 'SALES') {
-        if (inv.documentType === 'PURCHASE_BILL') return false;
-      } else if (invoiceCategoryFilter === 'PURCHASE') {
-        if (inv.documentType !== 'PURCHASE_BILL') return false;
-      } else if (invoiceCategoryFilter === 'B2B') {
+      // Category filter (All, B2B Registered, B2C Consumer)
+      if (invoiceCategoryFilter === 'B2B') {
         if (!inv.partyGstin || inv.partyGstin.trim().length < 5) return false;
       } else if (invoiceCategoryFilter === 'B2C') {
         if (inv.partyGstin && inv.partyGstin.trim().length >= 5) return false;
@@ -424,7 +440,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
 
       return true;
     });
-  }, [invoices, showAllPeriodsInvoices, isDateInSelectedPeriod, invoiceCategoryFilter, invoiceFilingStatusFilter, invoiceSearchQuery]);
+  }, [gstTaxInvoices, showAllPeriodsInvoices, isDateInSelectedPeriod, invoiceCategoryFilter, invoiceFilingStatusFilter, invoiceSearchQuery]);
 
   // Totals for filtered invoices in Invoices Ledger
   const invoicesLedgerTotals = useMemo(() => {
@@ -448,25 +464,25 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
     return { actualTaxable, totalCgst, totalSgst, totalIgst, totalTax, totalGrand };
   }, [filteredInvoicesLedger]);
 
-  // Counts for Category Tabs
-  const b2bCount = useMemo(() => invoices.filter(i => i.partyGstin && i.partyGstin.trim().length >= 5).length, [invoices]);
-  const b2cCount = useMemo(() => invoices.filter(i => !i.partyGstin || i.partyGstin.trim().length < 5).length, [invoices]);
+  // Counts for Category Tabs (Strictly from GST Invoices only)
+  const b2bCount = useMemo(() => gstTaxInvoices.filter(i => i.partyGstin && i.partyGstin.trim().length >= 5).length, [gstTaxInvoices]);
+  const b2cCount = useMemo(() => gstTaxInvoices.filter(i => !i.partyGstin || i.partyGstin.trim().length < 5).length, [gstTaxInvoices]);
 
   // Counts & Tax Totals for GST Filing Status (Filed vs Due)
-  const filedCount = useMemo(() => invoices.filter(i => i.gstFilingStatus === 'FILED').length, [invoices]);
-  const dueCount = useMemo(() => invoices.filter(i => i.gstFilingStatus !== 'FILED').length, [invoices]);
+  const filedCount = useMemo(() => gstTaxInvoices.filter(i => i.gstFilingStatus === 'FILED').length, [gstTaxInvoices]);
+  const dueCount = useMemo(() => gstTaxInvoices.filter(i => i.gstFilingStatus !== 'FILED').length, [gstTaxInvoices]);
 
   const filedGstTotal = useMemo(() => {
-    return invoices
+    return gstTaxInvoices
       .filter(i => i.gstFilingStatus === 'FILED')
       .reduce((sum, i) => sum + getInvoiceTaxDetails(i).totalGst, 0);
-  }, [invoices]);
+  }, [gstTaxInvoices]);
 
   const dueGstTotal = useMemo(() => {
-    return invoices
+    return gstTaxInvoices
       .filter(i => i.gstFilingStatus !== 'FILED')
       .reduce((sum, i) => sum + getInvoiceTaxDetails(i).totalGst, 0);
-  }, [invoices]);
+  }, [gstTaxInvoices]);
 
   // Handler to set invoice GST filing status directly or from modal
   const handleSetInvoiceFiling = (invoice: Invoice, status: 'FILED' | 'DUE', filingDate?: string, arn?: string) => {
@@ -854,17 +870,17 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[11px] font-black uppercase tracking-wider">Total Documents</span>
+                <span className="text-[11px] font-black uppercase tracking-wider">Total Invoices</span>
                 <Layers className="w-4 h-4 text-blue-600" />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-black text-slate-900">{filteredInvoicesLedger.length}</span>
-                <span className="text-xs font-bold text-slate-500">of {invoices.length} total</span>
+                <span className="text-xs font-bold text-slate-500">of {gstTaxInvoices.length} total</span>
               </div>
               <div className="mt-2 text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-2 flex items-center justify-between">
-                <span>Sales: <strong className="text-blue-700">{salesInvoices.length}</strong></span>
-                <span>Purchases: <strong className="text-emerald-700">{purchaseBills.length}</strong></span>
+                <span>Invoices: <strong className="text-blue-700">{gstTaxInvoices.length}</strong></span>
                 <span>B2B: <strong className="text-purple-700">{b2bCount}</strong></span>
+                <span>B2C: <strong className="text-emerald-700">{b2cCount}</strong></span>
               </div>
             </div>
 
@@ -980,27 +996,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
                         : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
-                    All Invoices ({invoices.length})
-                  </button>
-                  <button
-                    onClick={() => setInvoiceCategoryFilter('SALES')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      invoiceCategoryFilter === 'SALES'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                    }`}
-                  >
-                    Sales Invoices ({salesInvoices.length})
-                  </button>
-                  <button
-                    onClick={() => setInvoiceCategoryFilter('PURCHASE')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      invoiceCategoryFilter === 'PURCHASE'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                    }`}
-                  >
-                    Purchase Bills ({purchaseBills.length})
+                    All Invoices ({gstTaxInvoices.length})
                   </button>
                   <button
                     onClick={() => setInvoiceCategoryFilter('B2B')}

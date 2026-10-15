@@ -563,11 +563,22 @@ Thank you for your payment!`;
                   <p className="text-[10px] text-slate-400">Computer generated valid acknowledgment receipt</p>
                 </div>
 
-                <div className="text-right space-y-12">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                <div className="flex flex-col items-center text-center min-w-[180px]">
+                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">
                     For {businessProfile.name}
                   </span>
-                  <div className="border-t border-slate-400 pt-1 text-[11px] font-bold text-slate-800">
+                  <div className="my-1 min-h-[55px] flex items-center justify-center w-full">
+                    {businessProfile.signatureUrl ? (
+                      <img 
+                        src={businessProfile.signatureUrl} 
+                        alt="Signature & Stamp" 
+                        className="max-h-16 max-w-[150px] object-contain mix-blend-multiply mx-auto select-none" 
+                      />
+                    ) : (
+                      <div className="h-10"></div>
+                    )}
+                  </div>
+                  <div className="border-t border-slate-700 pt-1 text-[11px] font-bold text-slate-800 w-36 text-center">
                     Authorized Signatory
                   </div>
                 </div>

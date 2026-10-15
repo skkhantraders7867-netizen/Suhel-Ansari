@@ -17,6 +17,7 @@ export interface ServiceOrderTemplateProps {
   termsPageBreak?: boolean;
   termsMode?: 'auto' | 'page_2' | 'page_3' | 'single_page';
   previewZoom?: number;
+  includeSignature?: boolean;
 }
 
 // 8 Comprehensive PO / Service Order clauses
@@ -65,6 +66,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
   cardOpacity = 'transparent',
   termsPageBreak = true,
   termsMode = 'auto',
+  includeSignature = true,
 }) => {
   const topPadOffset = headerOffset !== undefined ? headerOffset : (showPadBg ? (businessProfile.billPadHeaderOffset ?? 148) : 32);
   const bottomPadOffset = footerOffset !== undefined ? footerOffset : (showPadBg ? (businessProfile.billPadFooterOffset ?? 125) : 32);
@@ -536,25 +538,25 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
           </div>
 
           {/* Right: Company Authorized Signatory (from Company & GST Details) */}
-          <div className="text-right flex flex-col items-end min-w-[220px]">
-            <div className="font-bold uppercase tracking-wide text-[11px] text-slate-950">
+          <div className="flex flex-col items-center min-w-[220px] text-center">
+            <div className="font-bold uppercase tracking-wide text-[11px] text-slate-950 text-center w-full">
               For, {companyName}
             </div>
 
-            <div className="my-1 min-h-[36px] flex items-center justify-end">
-              {businessProfile.signatureUrl ? (
+            <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+              {includeSignature && businessProfile.signatureUrl ? (
                 <img 
                   src={businessProfile.signatureUrl} 
-                  alt="Signature" 
-                  className="h-9 max-w-[140px] object-contain mix-blend-multiply"
+                  alt="Signature & Stamp" 
+                  className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none"
                 />
               ) : (
-                <div className="h-9">&nbsp;</div>
+                <div className="h-20">&nbsp;</div>
               )}
             </div>
 
-            <div className="space-y-0.5">
-              <div className="border-t border-slate-900 w-44 inline-block mb-1"></div>
+            <div className="space-y-0.5 text-center">
+              <div className="border-t-2 border-slate-900 w-44 inline-block mb-1 mx-auto"></div>
               <div className="font-bold text-[10px] uppercase text-slate-950 tracking-wider">
                 Authorized Signatory
               </div>
@@ -677,25 +679,25 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
       ) : (
         <div className="pt-4 pb-1">
           <div className="flex justify-end items-end">
-            <div className="text-right flex flex-col items-end min-w-[220px]">
-              <div className="font-bold uppercase tracking-wide text-[11px] text-slate-950">
+            <div className="flex flex-col items-center min-w-[220px] text-center">
+              <div className="font-bold uppercase tracking-wide text-[11px] text-slate-950 text-center w-full">
                 For, {companyName}
               </div>
 
-              <div className="my-1 min-h-[36px] flex items-center justify-end">
-                {businessProfile.signatureUrl ? (
+              <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+                {includeSignature && businessProfile.signatureUrl ? (
                   <img 
                     src={businessProfile.signatureUrl} 
-                    alt="Signature" 
-                    className="h-9 max-w-[140px] object-contain mix-blend-multiply"
+                    alt="Signature & Stamp" 
+                    className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none"
                   />
                 ) : (
-                  <div className="h-9">&nbsp;</div>
+                  <div className="h-20">&nbsp;</div>
                 )}
               </div>
 
-              <div className="space-y-0.5">
-                <div className="border-t border-slate-900 w-44 inline-block mb-1"></div>
+              <div className="space-y-0.5 text-center">
+                <div className="border-t-2 border-slate-900 w-44 inline-block mb-1 mx-auto"></div>
                 <div className="font-bold text-[10px] uppercase text-slate-950 tracking-wider">
                   Authorized Signatory
                 </div>

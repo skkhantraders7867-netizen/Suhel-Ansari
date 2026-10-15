@@ -583,9 +583,20 @@ export const PaymentReceivedVoucherModal: React.FC<PaymentReceivedVoucherModalPr
                   </div>
                 </div>
 
-                <div className="text-right space-y-8">
+                <div className="flex flex-col items-center text-center min-w-[180px]">
                   <div className="text-[10.5px] text-slate-700">For <strong>{businessProfile.name}</strong></div>
-                  <div className="border-t border-slate-400 pt-1 text-[9.5px] font-bold uppercase text-slate-600">
+                  <div className="my-1 min-h-[55px] flex items-center justify-center w-full">
+                    {businessProfile.signatureUrl ? (
+                      <img 
+                        src={businessProfile.signatureUrl} 
+                        alt="Signature & Stamp" 
+                        className="max-h-16 max-w-[150px] object-contain mix-blend-multiply mx-auto select-none" 
+                      />
+                    ) : (
+                      <div className="h-10"></div>
+                    )}
+                  </div>
+                  <div className="border-t border-slate-700 pt-1 text-[9.5px] font-bold uppercase text-slate-900 w-36 text-center">
                     Authorized Signatory
                   </div>
                 </div>

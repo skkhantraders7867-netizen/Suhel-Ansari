@@ -17,6 +17,7 @@ interface TechnoCommercialOfferTemplateProps {
   termsPageBreak?: boolean;
   termsMode?: 'auto' | 'page_2' | 'page_3' | 'single_page';
   cardOpacity?: 'transparent' | 'translucent' | 'opaque';
+  includeSignature?: boolean;
 }
 
 // Default standard industrial terms matching exact techno-commercial offer
@@ -75,6 +76,7 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
   termsPageBreak = true,
   termsMode = 'auto',
   cardOpacity = 'transparent',
+  includeSignature = true,
 }) => {
   // Top and bottom offsets to fit perfectly inside the official pre-printed Letter Pad (starts right below the blue/red line)
   const topPadOffset = headerOffset !== undefined ? headerOffset : (businessProfile.billPadHeaderOffset ?? 148);
@@ -426,24 +428,26 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
 
           {/* 7. PAGE 1 BOTTOM RIGHT SIGNATORY BLOCK */}
           <div className="pt-6 pb-2 flex justify-end items-end">
-            <div className="text-right space-y-6">
-              <div className="font-bold text-[11px] text-slate-950 tracking-wide uppercase">
+            <div className="flex flex-col items-center text-center min-w-[200px]">
+              <div className="font-bold text-[11px] text-slate-950 tracking-wide uppercase text-center w-full">
                 FOR, {companySignatoryName}
               </div>
 
-              {businessProfile.signatureUrl && (
-                <div className="flex justify-end -my-3 pointer-events-none">
+              <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+                {includeSignature && businessProfile.signatureUrl ? (
                   <img 
                     src={businessProfile.signatureUrl} 
-                    alt="Signature" 
-                    className="h-10 object-contain select-none mix-blend-multiply"
+                    alt="Signature & Stamp" 
+                    className="max-h-24 max-w-[190px] object-contain mix-blend-multiply mx-auto select-none"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="h-20"></div>
+                )}
+              </div>
 
-              <div className="text-center ml-auto">
-                <span className="text-[11px] font-bold text-slate-950 block">
-                  Authorised Signatury
+              <div className="border-t-2 border-slate-700 w-44 pt-1 text-center mx-auto">
+                <span className="text-[11px] font-bold text-slate-950 block uppercase tracking-wider">
+                  Authorised Signatory
                 </span>
               </div>
             </div>
@@ -513,24 +517,26 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
               </div>
             ) : (
               <div className="pt-4 pb-2 flex justify-end items-end">
-                <div className="text-right space-y-6">
-                  <div className="font-bold text-[10.5px] text-slate-950 tracking-wide uppercase">
+                <div className="flex flex-col items-center text-center min-w-[200px]">
+                  <div className="font-bold text-[10.5px] text-slate-950 tracking-wide uppercase text-center w-full">
                     FOR, {companySignatoryName}
                   </div>
 
-                  {businessProfile.signatureUrl && (
-                    <div className="flex justify-end -my-3 pointer-events-none">
+                  <div className="my-1.5 min-h-[85px] flex items-center justify-center w-full">
+                    {includeSignature && businessProfile.signatureUrl ? (
                       <img 
                         src={businessProfile.signatureUrl} 
-                        alt="Signature" 
-                        className="h-9 object-contain select-none mix-blend-multiply" 
+                        alt="Signature & Stamp" 
+                        className="max-h-24 max-w-[190px] object-contain select-none mix-blend-multiply mx-auto" 
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="h-20"></div>
+                    )}
+                  </div>
 
-                  <div className="text-center ml-auto">
-                    <span className="text-[10.5px] font-bold text-slate-950 block">
-                      Authorised Signatury
+                  <div className="border-t-2 border-slate-700 w-44 pt-1 text-center mx-auto">
+                    <span className="text-[10.5px] font-bold text-slate-950 block uppercase tracking-wider">
+                      Authorised Signatory
                     </span>
                   </div>
                 </div>
