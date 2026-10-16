@@ -1642,7 +1642,10 @@ export default function App() {
 
               {currentView === 'GST_LEDGER' && (
                 <GstLedgerView 
-                  invoices={invoices}
+                  invoices={invoices.filter(i => {
+                    const dt = i.documentType;
+                    return dt !== 'QUOTATION' && dt !== 'PURCHASE_ESTIMATE' && dt !== 'PURCHASE_BILL' && dt !== 'SERVICE_ORDER';
+                  })}
                   businessProfile={businessProfile}
                   gstFilingRecords={gstFilingRecords}
                   purchaseBillReturns={purchaseBillReturns}

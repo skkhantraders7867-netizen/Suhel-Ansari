@@ -375,20 +375,17 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
                     <th className="border border-black py-1.5 px-1 text-center w-[8%]">
                       SL NO.
                     </th>
-                    <th className="border border-black py-1.5 px-2 text-center w-[48%]">
+                    <th className="border border-black py-1.5 px-2 text-center w-[58%]">
                       ITEM DISCRIPTION
                     </th>
-                    <th className="border border-black py-1.5 px-1 text-center w-[8%]">
+                    <th className="border border-black py-1.5 px-1 text-center w-[10%]">
                       UOM
                     </th>
-                    <th className="border border-black py-1.5 px-1 text-center w-[8%]">
+                    <th className="border border-black py-1.5 px-1 text-center w-[10%]">
                       QTY
                     </th>
-                    <th className="border border-black py-1.5 px-1 text-center w-[13%]">
+                    <th className="border border-black py-1.5 px-1 text-center w-[14%]">
                       RATE
-                    </th>
-                    <th className="border border-black py-1.5 px-1 text-center w-[15%]">
-                      REMARKS
                     </th>
                   </tr>
                 </thead>
@@ -398,11 +395,17 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
                       <td className="border border-black py-0.5 px-1 text-center font-medium bg-transparent">
                         {index + 1}
                       </td>
-                      <td className="border border-black py-0.5 px-2 text-left font-medium bg-transparent">
-                        <div>{item.name}</div>
+                      <td className="border border-black py-1 px-2 text-left font-medium bg-transparent align-top">
+                        <div className="font-semibold text-slate-950">{item.name}</div>
                         {item.description && (
                           <div className="text-[9px] text-slate-700 font-normal mt-0.5 whitespace-pre-line">
                             {item.description}
+                          </div>
+                        )}
+                        {(item.remarks || (index === 0 && invoice.notes)) && (
+                          <div className="text-[9.5px] text-slate-950 font-normal mt-1 leading-snug">
+                            <span className="font-bold text-slate-950">Remark : </span>
+                            <span>{item.remarks || invoice.notes}</span>
                           </div>
                         )}
                       </td>
@@ -414,9 +417,6 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
                       </td>
                       <td className="border border-black py-0.5 px-1 text-center font-medium font-mono bg-transparent">
                         {item.rate > 0 ? (item.rate % 1 === 0 ? item.rate.toString() : formatIndianCurrency(item.rate)) : ''}
-                      </td>
-                      <td className="border border-black py-0.5 px-1 text-center font-medium text-[9.5px] bg-transparent">
-                        {item.remarks || ''}
                       </td>
                     </tr>
                   ))}

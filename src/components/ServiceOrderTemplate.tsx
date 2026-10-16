@@ -434,11 +434,17 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
                     <td className="border border-black py-0.5 px-1 text-center font-medium bg-transparent">
                       {index + 1}
                     </td>
-                    <td className="border border-black py-0.5 px-2 text-left font-medium bg-transparent">
-                      <div className="font-semibold">{item.name}</div>
+                    <td className="border border-black py-1 px-2 text-left font-medium bg-transparent align-top">
+                      <div className="font-semibold text-slate-950">{item.name}</div>
                       {item.description && (
                         <div className="text-[9px] text-slate-700 font-normal mt-0.5 whitespace-pre-line">
                           {item.description}
+                        </div>
+                      )}
+                      {(item.remarks || (index === 0 && invoice.notes)) && (
+                        <div className="text-[9.5px] text-slate-950 font-normal mt-1 leading-snug">
+                          <span className="font-bold text-slate-950">Remark : </span>
+                          <span>{item.remarks || invoice.notes}</span>
                         </div>
                       )}
                     </td>
@@ -532,9 +538,14 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
       <div className="pt-4 pb-1">
         <div className="flex justify-between items-end">
           {/* Left: Optional Acceptance Note */}
-          <div className="text-left text-[9px] text-slate-500 max-w-[280px]">
-            <div className="font-semibold text-slate-700">Contractor / Vendor Acceptance:</div>
+          <div className="text-left text-[9px] text-slate-600 max-w-[280px]">
+            <div className="font-semibold text-slate-800">Contractor / Vendor Acceptance:</div>
             <div>Subject to terms &amp; conditions of this service order.</div>
+            {invoice.notes && (
+              <div className="mt-1 text-[9.5px] text-slate-900 font-medium">
+                <span className="font-bold">Remark: </span>{invoice.notes}
+              </div>
+            )}
           </div>
 
           {/* Right: Company Authorized Signatory (from Company & GST Details) */}

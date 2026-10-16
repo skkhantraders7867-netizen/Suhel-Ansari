@@ -1712,9 +1712,14 @@ Thank you for doing business with us!`;
                         return (
                           <tr key={item.id || idx} className="h-6">
                             <td className="py-0.5 px-0.5 text-center font-mono border-r border-slate-900 text-slate-800 text-[9px] overflow-hidden">{idx + 1}</td>
-                            <td className="py-0.5 px-1.5 border-r border-slate-900 text-left overflow-hidden">
+                            <td className="py-0.5 px-1.5 border-r border-slate-900 text-left overflow-hidden align-top">
                               <span className="font-bold text-slate-950 uppercase text-[9px] block truncate leading-tight text-left">{item.name}</span>
-                              {item.description && <span className="text-[8px] text-slate-600 block leading-tight truncate text-left">{item.description}</span>}
+                              {item.description && <span className="text-[8px] text-slate-600 block leading-tight text-left">{item.description}</span>}
+                              {(item.remarks || ((isQuotation || invoice.documentType === 'SERVICE_ORDER') && idx === 0 && invoice.notes)) && (
+                                <span className="text-[8px] text-slate-900 block leading-tight text-left mt-0.5">
+                                  <strong className="font-bold text-slate-950">Remark: </strong>{item.remarks || invoice.notes}
+                                </span>
+                              )}
                             </td>
                             {showHsnColumn && (
                               <td className="py-0.5 px-0.5 text-center font-mono border-r border-slate-900 text-slate-900 text-[9px] overflow-hidden">
@@ -1970,8 +1975,8 @@ Thank you for doing business with us!`;
                             ))}
                           </div>
                           {invoice.notes && (
-                            <div className="mt-1 pt-0.5 border-t border-slate-200 text-[6.5px] text-slate-700 truncate">
-                              <strong className="text-slate-900">Note: </strong>{invoice.notes}
+                            <div className="mt-1 text-[7px] text-slate-900 leading-snug">
+                              <span className="font-bold text-slate-950 uppercase tracking-wide">Remark: </span>{invoice.notes}
                             </div>
                           )}
                         </div>
@@ -2021,8 +2026,9 @@ Thank you for doing business with us!`;
                             ))}
                           </div>
                           {invoice.notes && (
-                            <div className="mt-1 pt-0.5 border-t border-slate-200 text-[7px] text-slate-700">
-                              <strong className="text-slate-900">Note: </strong>{invoice.notes}
+                            <div className="mt-1 text-[7.5px] text-slate-900 leading-snug">
+                              <span className="font-bold text-slate-950 uppercase tracking-wide">Remark: </span>
+                              <span>{invoice.notes}</span>
                             </div>
                           )}
                         </div>

@@ -1138,8 +1138,8 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                       </button>
                     </div>
 
-                    {/* Item Remarks for Quotations */}
-                    {docType === 'QUOTATION' && (
+                    {/* Item Remarks for Quotations & Service Orders */}
+                    {(docType === 'QUOTATION' || docType === 'SERVICE_ORDER') && (
                       <div className="col-span-12 pt-2 border-t border-slate-200/80 flex items-center gap-2">
                         <label className="text-[11px] font-semibold text-slate-600 whitespace-nowrap">Remarks:</label>
                         <input

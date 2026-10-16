@@ -812,7 +812,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
           <Layers className="w-4 h-4" />
           <span>GST Invoices Ledger (All Invoices)</span>
           <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">
-            {invoices.length}
+            {gstTaxInvoices.length}
           </span>
         </button>
 
@@ -1070,7 +1070,7 @@ export const GstLedgerView: React.FC<GstLedgerViewProps> = ({
                   >
                     <span>All Status</span>
                     <span className="text-[10px] bg-slate-700 text-white px-1.5 py-0.2 rounded-full font-bold">
-                      {invoices.length}
+                      {gstTaxInvoices.length}
                     </span>
                   </button>
 
