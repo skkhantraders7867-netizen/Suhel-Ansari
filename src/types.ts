@@ -32,6 +32,7 @@ export type ViewMode =
   | 'GST_LEDGER'
   | 'INVENTORY' 
   | 'EXPENSES'
+  | 'SITE_EXPENSES'
   | 'EWAY_BILLS'
   | 'BARCODE_STUDIO'
   | 'CASH_BANK'
@@ -331,6 +332,30 @@ export interface Expense {
   igstAmount?: number;
   invoiceNumber?: string;
   notes?: string;
+  createdAt: string;
+}
+
+export type SiteExpenseCategory = 
+  | 'Site Travelling Expenses'
+  | 'Labour Accommodation & Food Expenses'
+  | 'Site Refreshment Expenses'
+  | 'Vehicle & Fuel Expenses'
+  | 'Site Office Expenses'
+  | 'Miscellaneous Site Expenses'
+  | 'Site Overheads';
+
+export interface SiteExpense {
+  id: string;
+  title: string;
+  category: SiteExpenseCategory;
+  siteName: string;
+  amount: number;
+  date: string;
+  paidTo?: string;
+  paymentMode: PaymentMode;
+  receiptNumber?: string;
+  notes?: string;
+  approvedBy?: string;
   createdAt: string;
 }
 

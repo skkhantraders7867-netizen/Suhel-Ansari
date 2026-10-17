@@ -2,7 +2,7 @@ import {
   Invoice, Party, Item, BusinessProfile, Expense, 
   BankAccount, CashTransaction, EWayBillRecord, AuthUser,
   StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher,
-  GstFilingRecord, PurchaseBillReturnRecord
+  GstFilingRecord, PurchaseBillReturnRecord, SiteExpense
 } from '../types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -35,6 +35,7 @@ export interface UserAccountData {
   attendanceCompanies?: AttendanceCompany[];
   gstFilingRecords?: GstFilingRecord[];
   purchaseBillReturns?: PurchaseBillReturnRecord[];
+  siteExpenses?: SiteExpense[];
 }
 
 const STORAGE_PREFIX = 'vyapar_user_data_';
@@ -154,6 +155,7 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
         attendanceCompanies: Array.isArray(parsed.attendanceCompanies) ? parsed.attendanceCompanies : [],
         gstFilingRecords: Array.isArray(parsed.gstFilingRecords) ? parsed.gstFilingRecords : [],
         purchaseBillReturns: Array.isArray(parsed.purchaseBillReturns) ? parsed.purchaseBillReturns : [],
+        siteExpenses: Array.isArray(parsed.siteExpenses) ? parsed.siteExpenses : [],
       };
     }
   } catch (e) {
@@ -173,6 +175,7 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
     parties: [],
     items: [],
     expenses: [],
+    siteExpenses: [],
     bankAccounts: [],
     cashTransactions: [],
     ewayBills: [],

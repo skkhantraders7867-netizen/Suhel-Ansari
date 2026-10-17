@@ -3,7 +3,7 @@ import {
   Invoice, Party, Item, BusinessProfile, ViewMode, DocumentType, PaymentMode,
   Expense, BankAccount, CashTransaction, EWayBillRecord, AuthUser,
   StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher,
-  GstFilingRecord, PurchaseBillReturnRecord
+  GstFilingRecord, PurchaseBillReturnRecord, SiteExpense
 } from './types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -13,7 +13,8 @@ import {
   INITIAL_EXPENSES,
   INITIAL_BANK_ACCOUNTS,
   INITIAL_CASH_TRANSACTIONS,
-  INITIAL_EWAY_BILLS
+  INITIAL_EWAY_BILLS,
+  INITIAL_SITE_EXPENSES
 } from './data/mockData';
 import {
   INITIAL_STAFF_MEMBERS,
@@ -41,6 +42,7 @@ import { PurchaseEstimatesView } from './components/PurchaseEstimatesView';
 import { InvoiceBuilder } from './components/InvoiceBuilder';
 import { PosBillingView } from './components/PosBillingView';
 import { ExpenseTrackerView } from './components/ExpenseTrackerView';
+import { SiteExpensesView } from './components/SiteExpensesView';
 import { EwayBillsView } from './components/EwayBillsView';
 import { CashBankView } from './components/CashBankView';
 import { BarcodeStudioView } from './components/BarcodeStudioView';
@@ -77,6 +79,11 @@ export default function App() {
   const [items, setItems] = useState<Item[]>(initialUserData.items);
   const [invoices, setInvoices] = useState<Invoice[]>(initialUserData.invoices);
   const [expenses, setExpenses] = useState<Expense[]>(initialUserData.expenses);
+  const [siteExpenses, setSiteExpenses] = useState<SiteExpense[]>(() => {
+    return Array.isArray(initialUserData.siteExpenses) && initialUserData.siteExpenses.length > 0
+      ? initialUserData.siteExpenses
+      : INITIAL_SITE_EXPENSES;
+  });
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(initialUserData.bankAccounts);
   const [cashTransactions, setCashTransactions] = useState<CashTransaction[]>(initialUserData.cashTransactions);
   const [ewayBills, setEwayBills] = useState<EWayBillRecord[]>(initialUserData.ewayBills);
@@ -119,6 +126,7 @@ export default function App() {
     setItems([...loaded.items]);
     setInvoices([...loaded.invoices]);
     setExpenses([...loaded.expenses]);
+    setSiteExpenses(Array.isArray(loaded.siteExpenses) && loaded.siteExpenses.length > 0 ? [...loaded.siteExpenses] : INITIAL_SITE_EXPENSES);
     setBankAccounts([...loaded.bankAccounts]);
     setCashTransactions([...loaded.cashTransactions]);
     setEwayBills([...loaded.ewayBills]);
@@ -178,6 +186,7 @@ export default function App() {
       parties,
       items,
       expenses,
+      siteExpenses,
       bankAccounts,
       cashTransactions,
       ewayBills,
@@ -194,7 +203,7 @@ export default function App() {
       // Debounced push to Supabase table
       pushUserAccountDataToSupabase(currentUser, fullData);
     }
-  }, [currentUser, businessProfile, invoices, parties, items, expenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers, gstFilingRecords, purchaseBillReturns]);
+  }, [currentUser, businessProfile, invoices, parties, items, expenses, siteExpenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers, gstFilingRecords, purchaseBillReturns]);
 
   // Asynchronously sync from Supabase when user logs in or switches
   useEffect(() => {
@@ -668,6 +677,49 @@ export default function App() {
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       },
     });
+  };
+
+  // --- SITE EXPENSES ACTIONS ---
+  const handleAddSiteExpense = (expData: Omit<SiteExpense, 'id' | 'createdAt'>) => {
+    const newExp: SiteExpense = {
+      ...expData,
+      id: `site-exp-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setSiteExpenses(prev => [newExp, ...prev]);
+
+    // Also link cash out if payment mode is cash
+    if (expData.paymentMode === 'CASH') {
+      const newCashTx: CashTransaction = {
+        id: `ctx-${Date.now()}`,
+        date: expData.date,
+        type: 'OUTFLOW',
+        category: 'EXPENSE',
+        amount: expData.amount,
+        description: `Site Expense: [${expData.category}] ${expData.title} (${expData.siteName})`,
+        partyName: expData.paidTo || expData.siteName,
+        createdAt: new Date().toISOString(),
+      };
+      setCashTransactions(prev => [newCashTx, ...prev]);
+    }
+  };
+
+  const handleDeleteSiteExpense = (id: string) => {
+    const exp = siteExpenses.find(e => e.id === id);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Site Expense',
+      message: `Are you sure you want to delete this site expense "${exp?.title || exp?.category}" of ₹${exp?.amount || ''}?`,
+      confirmLabel: 'Delete Now',
+      onConfirm: () => {
+        setSiteExpenses(prev => prev.filter(e => e.id !== id));
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  const handleUpdateSiteExpense = (updatedExp: SiteExpense) => {
+    setSiteExpenses(prev => prev.map(e => e.id === updatedExp.id ? updatedExp : e));
   };
 
   // --- E-WAY BILL ACTIONS ---
@@ -1557,6 +1609,16 @@ export default function App() {
                   items={items}
                   onAddExpense={handleAddExpense}
                   onDeleteExpense={handleDeleteExpense}
+                />
+              )}
+
+              {currentView === 'SITE_EXPENSES' && (
+                <SiteExpensesView 
+                  siteExpenses={siteExpenses}
+                  businessProfile={businessProfile}
+                  onAddSiteExpense={handleAddSiteExpense}
+                  onUpdateSiteExpense={handleUpdateSiteExpense}
+                  onDeleteSiteExpense={handleDeleteSiteExpense}
                 />
               )}
 

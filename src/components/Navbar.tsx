@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isPage1 = ['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'POS', 'CREATE_INVOICE'].includes(currentView);
   const isPage2 = ['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS'].includes(currentView);
   const isPage3 = ['INVENTORY', 'BARCODE_STUDIO'].includes(currentView);
-  const isPage4 = ['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView);
+  const isPage4 = ['EXPENSES', 'SITE_EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView);
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs no-print">

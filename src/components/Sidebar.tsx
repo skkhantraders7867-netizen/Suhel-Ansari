@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, 
   Users, Package, FileSpreadsheet, Settings, Plus, Sparkles,
   Receipt, Truck, Wallet, QrCode, Layers, ShieldCheck,
-  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale, FileCheck2
+  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale, FileCheck2, HardHat
 } from 'lucide-react';
 import { ViewMode, AuthUser } from '../types';
 
@@ -141,6 +141,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: 'Expenses & P&L (ITC)',
           icon: Receipt,
           tag: 'P&L',
+        },
+        {
+          id: 'SITE_EXPENSES' as ViewMode,
+          label: 'Site Expenses',
+          icon: HardHat,
+          tag: '7 Categories',
         },
         {
           id: 'CASH_BANK' as ViewMode,
