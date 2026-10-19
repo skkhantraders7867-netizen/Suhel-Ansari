@@ -1500,6 +1500,8 @@ export default function App() {
                   invoices={invoices}
                   parties={parties}
                   items={items}
+                  expenses={expenses}
+                  siteExpenses={siteExpenses}
                   businessProfile={businessProfile}
                   paymentVouchers={paymentVouchers}
                   onCreateInvoice={handleOpenCreateInvoice}
