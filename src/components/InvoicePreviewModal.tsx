@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Invoice, BusinessProfile } from '../types';
 import { GST_STATES } from '../data/mockData';
-import { formatIndianCurrency, numberToIndianWords, generateUpiUrl, getDocumentTypeName, isUnionTerritory } from '../utils/gstCalculations';
+import { formatIndianCurrency, numberToIndianWords, generateUpiUrl, getDocumentTypeName, isUnionTerritory, formatDateToDMY } from '../utils/gstCalculations';
 import { downloadElementAsPdf, printElementSafely } from '../utils/pdfExport';
 
 import { TechnoCommercialOfferTemplate } from './TechnoCommercialOfferTemplate';
@@ -1509,7 +1509,7 @@ Thank you for doing business with us!`;
                         if (effectiveInvoice.date) {
                           metaRows.push({
                             label: 'QUOTATION DATE.',
-                            val: effectiveInvoice.date,
+                            val: formatDateToDMY(effectiveInvoice.date),
                             isMono: false,
                             isBold: false,
                           });
@@ -1525,7 +1525,7 @@ Thank you for doing business with us!`;
                         if (effectiveInvoice.validUntil?.trim() || effectiveInvoice.validityDays) {
                           metaRows.push({
                             label: 'VALIDITY TILL.',
-                            val: effectiveInvoice.validUntil || `${effectiveInvoice.validityDays} Days`,
+                            val: effectiveInvoice.validUntil ? formatDateToDMY(effectiveInvoice.validUntil) : `${effectiveInvoice.validityDays} Days`,
                             isMono: false,
                             isBold: false,
                           });
@@ -1548,7 +1548,7 @@ Thank you for doing business with us!`;
                         if (effectiveInvoice.date) {
                           metaRows.push({
                             label: effectiveInvoice.documentType === 'PURCHASE_ESTIMATE' ? 'ESTIMATE DATE.' : effectiveInvoice.documentType === 'SERVICE_ORDER' ? 'ORDER DATE.' : 'INVOICE DATE.',
-                            val: effectiveInvoice.date,
+                            val: formatDateToDMY(effectiveInvoice.date),
                             isMono: false,
                             isBold: false,
                           });
@@ -1566,7 +1566,7 @@ Thank you for doing business with us!`;
                         if (effectiveInvoice.serviceDate && effectiveInvoice.serviceDate.trim() !== '' && effectiveInvoice.documentType !== 'SERVICE_ORDER') {
                           metaRows.push({
                             label: 'SARVICE DATE.',
-                            val: effectiveInvoice.serviceDate.trim(),
+                            val: formatDateToDMY(effectiveInvoice.serviceDate.trim()),
                             isMono: false,
                             isBold: false,
                           });
@@ -1787,36 +1787,36 @@ Thank you for doing business with us!`;
                 <div className={`w-full border border-slate-900 border-t-0 text-[9px] ${contentCardBg}`}>
                   {/* Row 1 (UPAR): Tax Value in Words & TOTAL TAX VALUE - Only show when GST is applicable */}
                   {!isNonGstBill && (
-                    <div className="grid grid-cols-12 bg-[#dce6f1]/25 border-b border-slate-900">
-                      <div className="col-span-7 p-1 px-2 border-r border-slate-900 flex items-center overflow-hidden">
-                        <span className="font-bold text-slate-950 mr-1 shrink-0">Tax Value (In words) : </span>
-                        <span className="font-semibold text-slate-950 leading-tight truncate">
+                    <div className="grid grid-cols-12 bg-[#dce6f1]/25 border-b border-slate-900 min-h-[22px]">
+                      <div className="col-span-7 p-1 px-2 border-r border-slate-900 flex flex-wrap items-center">
+                        <span className="font-bold text-slate-950 mr-1 shrink-0 text-[8.5px]">Tax Value (In words) : </span>
+                        <span className="font-semibold text-slate-950 leading-tight text-[8.5px] break-words">
                           {numberToIndianWords(effectiveTotalTax)}
                         </span>
                       </div>
-                      <div className="col-span-2 p-1 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] truncate bg-[#dce6f1]/60">
+                      <div className="col-span-2 p-1 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] bg-[#dce6f1]/60">
                         TOTAL TAX VALUE
                       </div>
-                      <div className="col-span-3 p-1 px-1 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter overflow-hidden text-[9.5px] bg-[#dce6f1]/60">
+                      <div className="col-span-3 p-1 px-1 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter text-[9.5px] bg-[#dce6f1]/60">
                         {formatIndianCurrency(effectiveTotalTax, true)}
                       </div>
                     </div>
                   )}
 
                   {/* Row 2 (NICHE): Invoice / Quotation / Bill Value in Words & TOTAL VALUE */}
-                  <div className="grid grid-cols-12 bg-[#dce6f1]/40">
-                    <div className="col-span-7 p-1 px-2 border-r border-slate-900 flex items-center overflow-hidden">
-                      <span className="font-bold text-slate-950 mr-1 shrink-0">
+                  <div className="grid grid-cols-12 bg-[#dce6f1]/40 min-h-[22px]">
+                    <div className="col-span-7 p-1 px-2 border-r border-slate-900 flex flex-wrap items-center">
+                      <span className="font-bold text-slate-950 mr-1 shrink-0 text-[8.5px]">
                         {isQuotation ? 'Quotation Value (In words) : ' : isPurchaseBill ? 'Bill Value (In words) : ' : 'Invoice Value (In words) : '}
                       </span>
-                      <span className="font-black text-slate-950 leading-tight truncate">
+                      <span className="font-black text-slate-950 leading-tight text-[8.5px] break-words">
                         {numberToIndianWords(invoice.grandTotal)}
                       </span>
                     </div>
-                    <div className="col-span-2 p-1 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] truncate bg-[#dce6f1]/85">
+                    <div className="col-span-2 p-1 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] bg-[#dce6f1]/85">
                       {isQuotation ? 'TOTAL QUOTATION VALUE' : isPurchaseBill ? 'TOTAL BILL VALUE' : 'TOTAL INVOICE VALUE'}
                     </div>
-                    <div className="col-span-3 p-1 px-1 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter overflow-hidden text-[9.5px] bg-[#dce6f1]/85">
+                    <div className="col-span-3 p-1 px-1 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter text-[9.5px] bg-[#dce6f1]/85">
                       {formatIndianCurrency(invoice.grandTotal, true)}
                     </div>
                   </div>
@@ -2326,7 +2326,7 @@ Thank you for doing business with us!`;
                     </div>
                     <div>
                       <span className="text-slate-500 text-[10px] uppercase font-bold block">Invoice Date</span>
-                      <span className="font-semibold text-slate-900">{invoice.date}</span>
+                      <span className="font-semibold text-slate-900">{formatDateToDMY(invoice.date)}</span>
                     </div>
                   </div>
 
@@ -2337,7 +2337,7 @@ Thank you for doing business with us!`;
                     </div>
                     <div>
                       <span className="text-slate-500 text-[10px] uppercase font-bold block">Due Date</span>
-                      <span className="font-semibold text-slate-900">{invoice.dueDate || invoice.date}</span>
+                      <span className="font-semibold text-slate-900">{formatDateToDMY(invoice.dueDate || invoice.date)}</span>
                     </div>
                   </div>
 
@@ -2352,7 +2352,7 @@ Thank you for doing business with us!`;
                       {invoice.serviceDate && (
                         <div>
                           <span className="text-slate-500 text-[10px] uppercase font-bold block">Service Date</span>
-                          <span className="font-semibold text-xs text-slate-900">{invoice.serviceDate}</span>
+                          <span className="font-semibold text-xs text-slate-900">{formatDateToDMY(invoice.serviceDate)}</span>
                         </div>
                       )}
                     </div>
@@ -2650,7 +2650,7 @@ Thank you for doing business with us!`;
                     {getDocumentTypeName(invoice.documentType)}
                   </span>
                   <div className="text-xl font-black font-mono text-slate-900 mt-1">{invoice.invoiceNumber}</div>
-                  <div className="text-slate-500 text-xs">Date: {invoice.date}</div>
+                  <div className="text-slate-500 text-xs">Date: {formatDateToDMY(invoice.date)}</div>
                 </div>
               </div>
 
@@ -2668,12 +2668,12 @@ Thank you for doing business with us!`;
                 <div className="space-y-1 text-right">
                   <div className="text-slate-500">Place of Supply: <strong className="text-slate-800">{invoice.placeOfSupply}</strong></div>
                   <div className="text-slate-500">Payment Status: <strong className="text-emerald-700 uppercase">{invoice.paymentStatus}</strong></div>
-                  <div className="text-slate-500">Due Date: <strong className="text-slate-800">{invoice.dueDate || invoice.date}</strong></div>
+                  <div className="text-slate-500">Due Date: <strong className="text-slate-800">{formatDateToDMY(invoice.dueDate || invoice.date)}</strong></div>
                   {invoice.serviceNumber && (
                     <div className="text-slate-500">Service No: <strong className="font-mono text-slate-800">{invoice.serviceNumber}</strong></div>
                   )}
                   {invoice.serviceDate && (
-                    <div className="text-slate-500">Service Date: <strong className="text-slate-800">{invoice.serviceDate}</strong></div>
+                    <div className="text-slate-500">Service Date: <strong className="text-slate-800">{formatDateToDMY(invoice.serviceDate)}</strong></div>
                   )}
                   {invoice.transport?.ewayBillNumber && (
                     <div className="text-slate-500">E-Way Bill: <strong className="font-mono text-slate-800">{invoice.transport.ewayBillNumber}</strong></div>
@@ -2814,7 +2814,7 @@ Thank you for doing business with us!`;
               <div className="text-[10px] space-y-0.5 border-b border-dashed border-slate-400 pb-2">
                 <div className="flex justify-between">
                   <span>Bill No: {invoice.invoiceNumber}</span>
-                  <span>Date: {invoice.date}</span>
+                  <span>Date: {formatDateToDMY(invoice.date)}</span>
                 </div>
                 <div>Customer: <strong>{invoice.partyName}</strong></div>
                 {invoice.partyGstin && <div>Cust GSTIN: {invoice.partyGstin}</div>}
@@ -2905,7 +2905,7 @@ Thank you for doing business with us!`;
                 </div>
                 <div className="space-y-1">
                   <div>Challan No: <strong className="font-mono text-sm text-slate-900">{invoice.invoiceNumber}</strong></div>
-                  <div>Date of Dispatch: <strong>{invoice.date}</strong></div>
+                  <div>Date of Dispatch: <strong>{formatDateToDMY(invoice.date)}</strong></div>
                   <div>Transporter: <strong>{invoice.transport?.transporterName || 'Self / Local Carrier'}</strong></div>
                   <div>Vehicle Number: <strong className="font-mono">{invoice.transport?.vehicleNumber || 'N/A'}</strong></div>
                   <div>E-Way Bill: <strong className="font-mono">{invoice.transport?.ewayBillNumber || 'N/A'}</strong></div>

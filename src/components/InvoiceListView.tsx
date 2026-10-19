@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { 
-  Search, Filter, Plus, Printer, Share2, Eye, Edit3,
-  Trash2, Copy, ArrowRight, Download, FileText, CheckCircle2, AlertCircle, RefreshCw
+  Search, Plus, Printer, Edit3,
+  Trash2, Copy, ArrowRight, Download, FileText
 } from 'lucide-react';
-import { Invoice, DocumentType, PaymentStatus } from '../types';
+import { Invoice, DocumentType } from '../types';
 import { formatIndianCurrency, getDocumentTypeName, downloadCSV } from '../utils/gstCalculations';
 
 interface InvoiceListViewProps {
@@ -76,26 +76,26 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 pb-12 text-slate-100">
       
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      {/* Top Header Banner matching reference image */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Invoices &amp; Tax Bills</h1>
-          <p className="text-xs text-slate-500">Manage GST tax invoices, service work orders, debit notes, credit notes &amp; bills</p>
+          <h1 className="text-xl font-black text-white font-heading tracking-tight">Invoices &amp; Tax Bills</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Manage GST tax invoices, service work orders, debit notes, credit notes &amp; bills</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#09122e] hover:bg-[#0f1d44] text-slate-200 hover:text-white font-semibold text-xs rounded-xl border border-[#172654] transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4" /> Export CSV / Excel
+            <Download className="w-4 h-4 text-cyan-400" /> Export CSV / Excel
           </button>
 
           <button
             onClick={() => onCreateInvoice('TAX_INVOICE')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 transition-all cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" /> + Create New Bill
           </button>
@@ -103,7 +103,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+      <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           
           {/* Search Box */}
@@ -114,7 +114,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
               placeholder="Search by Bill No, Customer, GSTIN, Phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+              className="w-full pl-10 pr-4 py-2 bg-[#09122e] border border-[#1b2b5d] rounded-xl text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/50 outline-none transition-all"
             />
           </div>
 
@@ -123,7 +123,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
             <select
               value={docFilter}
               onChange={(e) => setDocFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white"
+              className="w-full px-3 py-2 bg-[#09122e] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 focus:border-cyan-500/70 outline-none cursor-pointer"
             >
               <option value="ALL">All Invoices &amp; Bills</option>
               <option value="TAX_INVOICE">Tax Invoices</option>
@@ -140,7 +140,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white"
+              className="w-full px-3 py-2 bg-[#09122e] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 focus:border-cyan-500/70 outline-none cursor-pointer"
             >
               <option value="ALL">All Payment Statuses</option>
               <option value="PAID">Paid</option>
@@ -153,13 +153,13 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
       </div>
 
       {/* Invoices List Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
-                <th className="py-3 px-4">Invoice # & Date</th>
-                <th className="py-3 px-4">Customer Name & GSTIN</th>
+              <tr className="bg-[#09122e] border-b border-[#14234b] font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+                <th className="py-3 px-4">Invoice # &amp; Date</th>
+                <th className="py-3 px-4">Customer Name &amp; GSTIN</th>
                 <th className="py-3 px-3">Type</th>
                 <th className="py-3 px-3 text-right">Taxable</th>
                 <th className="py-3 px-3 text-right">GST Total</th>
@@ -168,31 +168,31 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                 <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#101b3d]">
               {filteredInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2 opacity-60" />
-                    <p className="font-semibold text-slate-600">No invoices or bills found</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Try adjusting your search terms or create a new invoice</p>
+                    <FileText className="w-10 h-10 mx-auto text-slate-500 mb-2 opacity-50" />
+                    <p className="font-semibold text-slate-300">No invoices or bills found</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Try adjusting your search terms or create a new invoice</p>
                   </td>
                 </tr>
               ) : (
                 filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={inv.id} className="hover:bg-[#0c183d]/60 transition-colors">
                     
                     {/* Bill No & Date */}
                     <td className="py-3.5 px-4 font-medium">
-                      <div className="font-mono font-bold text-slate-900">{inv.invoiceNumber}</div>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
+                      <div className="font-mono font-bold text-white text-xs">{inv.invoiceNumber}</div>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap font-mono mt-0.5">
                         <span>{inv.date}</span>
                         {inv.serviceNumber && (
-                          <span className="text-[10px] bg-slate-100 text-slate-700 font-mono px-1.5 py-0.2 rounded border border-slate-200">
+                          <span className="text-[10px] bg-cyan-950/70 text-cyan-300 font-mono px-1.5 py-0.2 rounded border border-cyan-500/30">
                             Srv: {inv.serviceNumber}
                           </span>
                         )}
                         {inv.originalInvoiceNumber && (
-                          <span className="text-[10px] bg-amber-50 text-amber-800 font-mono px-1.5 py-0.2 rounded border border-amber-200">
+                          <span className="text-[10px] bg-amber-950/70 text-amber-300 font-mono px-1.5 py-0.2 rounded border border-amber-500/30">
                             Ref: {inv.originalInvoiceNumber}
                           </span>
                         )}
@@ -201,69 +201,69 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
 
                     {/* Customer */}
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900">{inv.partyName}</div>
+                      <div className="font-bold text-white uppercase">{inv.partyName}</div>
                       {inv.partyGstin ? (
-                        <div className="font-mono text-[11px] text-blue-700">{inv.partyGstin}</div>
+                        <div className="font-mono text-[11px] text-cyan-400">{inv.partyGstin}</div>
                       ) : (
-                        <div className="text-[11px] text-slate-400">Unregistered B2C</div>
+                        <div className="text-[11px] text-slate-500">Unregistered B2C</div>
                       )}
                     </td>
 
                     {/* Type */}
-                    <td className="py-3.5 px-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                        inv.documentType === 'TAX_INVOICE' ? 'bg-blue-100 text-blue-800' :
-                        inv.documentType === 'DEBIT_NOTE' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                        inv.documentType === 'CREDIT_NOTE' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                        inv.documentType === 'QUOTATION' ? 'bg-amber-100 text-amber-800' :
-                        inv.documentType === 'DELIVERY_CHALLAN' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'
+                    <td className="py-3.5 px-3 whitespace-nowrap">
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                        inv.documentType === 'TAX_INVOICE' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                        inv.documentType === 'DEBIT_NOTE' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
+                        inv.documentType === 'CREDIT_NOTE' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                        inv.documentType === 'QUOTATION' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        inv.documentType === 'DELIVERY_CHALLAN' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-700/30 text-slate-300 border border-slate-600/30'
                       }`}>
                         {getDocumentTypeName(inv.documentType)}
                       </span>
                     </td>
 
                     {/* Taxable */}
-                    <td className="py-3.5 px-3 text-right font-mono text-slate-700">
-                      {formatIndianCurrency(inv.taxableTotal, false)}
+                    <td className="py-3.5 px-3 text-right font-mono text-slate-300">
+                      ₹ {formatIndianCurrency(inv.taxableTotal, false)}
                     </td>
 
                     {/* GST Total */}
-                    <td className="py-3.5 px-3 text-right font-mono text-slate-600 text-[11px]">
-                      <div>{formatIndianCurrency(inv.cgstTotal + inv.sgstTotal + inv.igstTotal, false)}</div>
-                      <span className="text-[9px] text-slate-400">({inv.isInterState ? 'IGST' : 'CGST+SGST'})</span>
+                    <td className="py-3.5 px-3 text-right font-mono text-slate-400 text-[11px]">
+                      <div>₹ {formatIndianCurrency(inv.cgstTotal + inv.sgstTotal + inv.igstTotal, false)}</div>
+                      <span className="text-[9px] text-slate-500">({inv.isInterState ? 'IGST' : 'CGST+SGST'})</span>
                     </td>
 
                     {/* Grand Total */}
                     <td className="py-3.5 px-4 text-right">
-                      <div className="font-mono font-bold text-slate-900 text-sm">
-                        {formatIndianCurrency(inv.grandTotal)}
+                      <div className="font-mono font-black text-white text-xs">
+                        ₹ {formatIndianCurrency(inv.grandTotal)}
                       </div>
                       {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
-                        <div className="text-[10px] text-purple-700 font-medium">
-                          TDS {inv.tdsRate || 1}%: -{formatIndianCurrency(inv.tdsAmount || 0)}
+                        <div className="text-[10px] text-purple-400 font-medium font-mono">
+                          TDS {inv.tdsRate || 1}%: -₹ {formatIndianCurrency(inv.tdsAmount || 0)}
                         </div>
                       )}
                       {inv.balanceDue > 0 && (
-                        <div className="text-[10px] text-rose-600 font-medium">Due: {formatIndianCurrency(inv.balanceDue)}</div>
+                        <div className="text-[10px] text-rose-400 font-semibold font-mono">Due: ₹ {formatIndianCurrency(inv.balanceDue)}</div>
                       )}
                     </td>
 
                     {/* Status */}
-                    <td className="py-3.5 px-3 text-center">
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
-                        inv.paymentStatus === 'PAID' ? 'bg-emerald-100 text-emerald-800' :
-                        inv.paymentStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                      <span className={`text-[9.5px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        inv.paymentStatus === 'PAID' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        inv.paymentStatus === 'PARTIAL' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                       }`}>
                         {inv.paymentStatus}
                       </span>
                     </td>
 
                     {/* Action Buttons */}
-                    <td className="py-3.5 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => onViewInvoice(inv)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-cyan-400 hover:text-white hover:bg-cyan-500/20 rounded-lg transition-colors cursor-pointer"
                           title="Print / View Bill"
                         >
                           <Printer className="w-4 h-4" />
@@ -271,7 +271,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
 
                         <button
                           onClick={() => onEditInvoice(inv)}
-                          className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                          className="p-1.5 text-amber-400 hover:text-white hover:bg-amber-500/20 rounded-lg transition-colors cursor-pointer"
                           title="Edit Invoice (Modify details)"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -280,7 +280,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                         {inv.balanceDue > 0 && (
                           <button
                             onClick={() => onRecordPayment(inv)}
-                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors font-bold text-xs"
+                            className="px-2 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white border border-emerald-500/30 rounded-lg transition-colors font-bold text-xs cursor-pointer"
                             title="Collect Payment"
                           >
                             ₹ Pay
@@ -290,7 +290,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                         {inv.documentType === 'QUOTATION' && (
                           <button
                             onClick={() => onConvertToTaxInvoice(inv)}
-                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            className="p-1.5 text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded-lg transition-colors cursor-pointer"
                             title="Convert to Tax Invoice in 1-Click"
                           >
                             <ArrowRight className="w-4 h-4" />
@@ -299,7 +299,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
 
                         <button
                           onClick={() => onDuplicateInvoice(inv)}
-                          className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700/30 rounded-lg transition-colors cursor-pointer"
                           title="Duplicate Invoice"
                         >
                           <Copy className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
 
                         <button
                           onClick={() => onDeleteInvoice(inv.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

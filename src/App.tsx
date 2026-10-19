@@ -705,17 +705,7 @@ export default function App() {
   };
 
   const handleDeleteSiteExpense = (id: string) => {
-    const exp = siteExpenses.find(e => e.id === id);
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Delete Site Expense',
-      message: `Are you sure you want to delete this site expense "${exp?.title || exp?.category}" of ₹${exp?.amount || ''}?`,
-      confirmLabel: 'Delete Now',
-      onConfirm: () => {
-        setSiteExpenses(prev => prev.filter(e => e.id !== id));
-        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-      },
-    });
+    setSiteExpenses(prev => prev.filter(e => e.id !== id));
   };
 
   const handleUpdateSiteExpense = (updatedExp: SiteExpense) => {
@@ -1250,7 +1240,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#040817] flex flex-col font-sans text-slate-100 antialiased selection:bg-cyan-500 selection:text-slate-950">
       
       {/* Top Navigation */}
       <Navbar 
@@ -1267,7 +1257,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-[1750px] w-full mx-auto px-3 sm:px-5 lg:px-6 py-5">
         
         {/* Full-width views (Invoice Builder, POS) */}
         {currentView === 'CREATE_INVOICE' ? (
@@ -1301,7 +1291,7 @@ export default function App() {
           />
         ) : (
           /* Standard Layout: Sidebar + Active Tab View */
-          <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex flex-col md:flex-row gap-5">
             
             {/* Sidebar */}
             <Sidebar 
@@ -1316,192 +1306,194 @@ export default function App() {
             {/* View Viewports */}
             <div className="flex-1 min-w-0 space-y-4">
               
-              {/* Page Section Indicator & Quick Sub-tabs */}
-              <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                    {['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) ? '1' :
-                     ['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS', 'GST_LEDGER'].includes(currentView) ? '2' :
-                     ['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) ? '3' :
-                     ['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) ? '4' : '5'}
-                  </span>
-                  <div>
-                    <h2 className="font-extrabold text-sm text-slate-900 font-heading">
-                      {['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) && 'Page 1: Billing & Sales Center'}
-                      {['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS', 'GST_LEDGER'].includes(currentView) && 'Page 2: Parties, Customers & Ledger'}
-                      {['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) && 'Page 3: Stock Catalog & Barcodes'}
-                      {['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) && 'Page 4: Accounts, Banking & Tax Compliance'}
-                      {currentView === 'ATTENDANCE' && 'Page 5: Staff Attendance & Auto-Salary Register'}
-                    </h2>
+              {/* Page Section Indicator & Quick Sub-tabs (Only for sub-pages, Dashboard shows its full header) */}
+              {currentView !== 'DASHBOARD' && (
+                <div className="bg-[#070e24]/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black text-xs flex items-center justify-center shadow-[0_0_10px_rgba(6,182,212,0.4)]">
+                      {['INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) ? '1' :
+                       ['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS', 'GST_LEDGER'].includes(currentView) ? '2' :
+                       ['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) ? '3' :
+                       ['EXPENSES', 'SITE_EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) ? '4' : '5'}
+                    </span>
+                    <div>
+                      <h2 className="font-extrabold text-sm text-white font-heading">
+                        {['INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) && 'Page 1: Billing & Sales Center'}
+                        {['PARTIES', 'OPENING_BALANCES', 'PAYMENT_VOUCHERS', 'GST_LEDGER'].includes(currentView) && 'Page 2: Parties, Customers & Ledger'}
+                        {['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) && 'Page 3: Stock Catalog & Barcodes'}
+                        {['EXPENSES', 'SITE_EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) && 'Page 4: Accounts, Banking & Tax Compliance'}
+                        {currentView === 'ATTENDANCE' && 'Page 5: Staff Attendance & Auto-Salary Register'}
+                      </h2>
+                    </div>
+                  </div>
+
+                  {/* Sub-view Quick Tabs for active page */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+                    {/* Page 1 Sub-tabs */}
+                    {['INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) && (
+                      <>
+                        <button
+                          onClick={() => setCurrentView('DASHBOARD')}
+                          className="px-3 py-1 rounded-xl text-xs font-bold transition-all bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654] cursor-pointer"
+                        >
+                          Dashboard
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('INVOICES')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            currentView === 'INVOICES' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          <span>Invoices</span>
+                          {unpaidCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">
+                              {unpaidCount}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('QUOTATIONS')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            currentView === 'QUOTATIONS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          <span>Quotations &amp; Estimates</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-blue-500/20 text-cyan-300 border border-cyan-500/30">
+                            {invoices.filter(i => i.documentType === 'QUOTATION').length}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('SERVICE_ORDERS')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            currentView === 'SERVICE_ORDERS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          <span>Service Order</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            {invoices.filter(i => i.documentType === 'SERVICE_ORDER').length}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('PURCHASE_ESTIMATES')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            currentView === 'PURCHASE_ESTIMATES' ? 'bg-amber-500 text-slate-950 font-black shadow-[0_0_12px_rgba(245,158,11,0.4)]' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          <span>Purchase Estimates</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {invoices.filter(i => i.documentType === 'PURCHASE_ESTIMATE').length}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('POS')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'POS' ? 'bg-amber-500 text-slate-950' : 'bg-[#09122e] text-amber-300 hover:bg-[#0f1d44] border border-amber-500/30'
+                          }`}
+                        >
+                          POS Counter
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('LETTERHEAD_STUDIO')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'LETTERHEAD_STUDIO' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          Letterhead
+                        </button>
+                      </>
+                    )}
+
+                    {/* Page 5 Sub-tabs */}
+                    {currentView === 'ATTENDANCE' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-xl">
+                          {staffMembers.length} Workers Enrolled
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Page 2 Sub-tabs */}
+                    {currentView === 'PARTIES' && (
+                      <span className="text-xs font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-xl">
+                        {parties.length} Total Parties (Customers & Suppliers)
+                      </span>
+                    )}
+
+                    {/* Page 3 Sub-tabs */}
+                    {['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) && (
+                      <>
+                        <button
+                          onClick={() => setCurrentView('INVENTORY')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            currentView === 'INVENTORY' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          <span>Products & Stock</span>
+                          {lowStockCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-300 border border-rose-500/40">
+                              {lowStockCount}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('BARCODE_STUDIO')}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'BARCODE_STUDIO' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          Barcode Studio
+                        </button>
+                      </>
+                    )}
+
+                    {/* Page 4 Sub-tabs */}
+                    {['EXPENSES', 'SITE_EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) && (
+                      <>
+                        <button
+                          onClick={() => setCurrentView('EXPENSES')}
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'EXPENSES' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          Expenses & P&L
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('SITE_EXPENSES')}
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'SITE_EXPENSES' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          Site Expenses
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('CASH_BANK')}
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'CASH_BANK' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          Cash Galla & Banks
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('EWAY_BILLS')}
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'EWAY_BILLS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          E-Way Bills
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('REPORTS')}
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            currentView === 'REPORTS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
+                          }`}
+                        >
+                          GST Returns
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
-
-                {/* Sub-view Quick Tabs for active page */}
-                <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
-                  {/* Page 1 Sub-tabs */}
-                  {['DASHBOARD', 'INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) && (
-                    <>
-                      <button
-                        onClick={() => setCurrentView('DASHBOARD')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'DASHBOARD' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        Dashboard
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('INVOICES')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                          currentView === 'INVOICES' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span>Invoices</span>
-                        {unpaidCount > 0 && (
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${currentView === 'INVOICES' ? 'bg-blue-800 text-white' : 'bg-amber-100 text-amber-900'}`}>
-                            {unpaidCount}
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('QUOTATIONS')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                          currentView === 'QUOTATIONS' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span>Quotations &amp; Estimates</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          currentView === 'QUOTATIONS' ? 'bg-blue-800 text-white' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {invoices.filter(i => i.documentType === 'QUOTATION').length}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('SERVICE_ORDERS')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                          currentView === 'SERVICE_ORDERS' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span>Service Order &amp; Estimate</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          currentView === 'SERVICE_ORDERS' ? 'bg-blue-800 text-white' : 'bg-indigo-100 text-indigo-800'
-                        }`}>
-                          {invoices.filter(i => i.documentType === 'SERVICE_ORDER').length}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('PURCHASE_ESTIMATES')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                          currentView === 'PURCHASE_ESTIMATES' ? 'bg-amber-500 text-slate-950 font-black shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span>Purchase Estimates</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          currentView === 'PURCHASE_ESTIMATES' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-900'
-                        }`}>
-                          {invoices.filter(i => i.documentType === 'PURCHASE_ESTIMATE').length}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('POS')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'POS' ? 'bg-amber-500 text-slate-950' : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
-                        }`}
-                      >
-                        POS Counter
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('LETTERHEAD_STUDIO')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'LETTERHEAD_STUDIO' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        Letterhead
-                      </button>
-                    </>
-                  )}
-
-                  {/* Page 5 Sub-tabs */}
-                  {currentView === 'ATTENDANCE' && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
-                        {staffMembers.length} Workers Enrolled
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Page 2 Sub-tabs */}
-                  {currentView === 'PARTIES' && (
-                    <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
-                      {parties.length} Total Parties (Customers & Suppliers)
-                    </span>
-                  )}
-
-                  {/* Page 3 Sub-tabs */}
-                  {['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) && (
-                    <>
-                      <button
-                        onClick={() => setCurrentView('INVENTORY')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                          currentView === 'INVENTORY' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span>Products & Stock</span>
-                        {lowStockCount > 0 && (
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${currentView === 'INVENTORY' ? 'bg-blue-800 text-white' : 'bg-rose-100 text-rose-800'}`}>
-                            {lowStockCount}
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('BARCODE_STUDIO')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'BARCODE_STUDIO' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        Barcode Studio
-                      </button>
-                    </>
-                  )}
-
-                  {/* Page 4 Sub-tabs */}
-                  {['EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) && (
-                    <>
-                      <button
-                        onClick={() => setCurrentView('EXPENSES')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'EXPENSES' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        Expenses & P&L
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('CASH_BANK')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'CASH_BANK' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        Cash Galla & Banks
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('EWAY_BILLS')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'EWAY_BILLS' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        E-Way Bills
-                      </button>
-                      <button
-                        onClick={() => setCurrentView('REPORTS')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                          currentView === 'REPORTS' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        GST Returns
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+              )}
               
               {currentView === 'DASHBOARD' && (
                 <DashboardView 

@@ -25,25 +25,27 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
       <div 
-        className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-[#070e24] rounded-3xl p-6 shadow-[0_0_50px_rgba(0,0,0,0.9)] border border-[#14234b] space-y-5 animate-in zoom-in-95 duration-150 text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-4">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-            isDestructive ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+            isDestructive 
+              ? 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.3)]' 
+              : 'bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
           }`}>
             {isDestructive ? <Trash2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
           </div>
           <div className="space-y-1 min-w-0 flex-1">
-            <h3 className="text-lg font-black text-slate-900">{title}</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">{message}</p>
+            <h3 className="text-lg font-black text-white font-heading">{title}</h3>
+            <p className="text-sm text-slate-300 leading-relaxed">{message}</p>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-[#0f1d44] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -53,7 +55,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors min-h-[44px]"
+            className="px-5 py-2.5 text-sm font-bold text-slate-300 hover:text-white bg-[#09122e] hover:bg-[#0f1d44] border border-[#172654] rounded-xl transition-colors min-h-[44px] cursor-pointer"
           >
             {cancelLabel}
           </button>
@@ -62,10 +64,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             onClick={() => {
               onConfirm();
             }}
-            className={`px-5 py-2.5 text-sm font-bold text-white rounded-xl shadow-md transition-all flex items-center gap-2 min-h-[44px] ${
+            className={`px-5 py-2.5 text-sm font-bold text-white rounded-xl shadow-md transition-all flex items-center gap-2 min-h-[44px] cursor-pointer active:scale-95 ${
               isDestructive 
-                ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/25 active:scale-98' 
-                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/25 active:scale-98'
+                ? 'bg-rose-600 hover:bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]' 
+                : 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40'
             }`}
           >
             {isDestructive && <Trash2 className="w-4 h-4" />}

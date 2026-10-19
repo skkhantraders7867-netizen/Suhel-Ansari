@@ -1,6 +1,6 @@
 import React from 'react';
 import { Invoice, BusinessProfile } from '../types';
-import { formatIndianCurrency } from '../utils/gstCalculations';
+import { formatIndianCurrency, formatDateToDMY } from '../utils/gstCalculations';
 
 interface TechnoCommercialOfferTemplateProps {
   invoice: Invoice;
@@ -99,7 +99,7 @@ export const TechnoCommercialOfferTemplate: React.FC<TechnoCommercialOfferTempla
 
   // Reference details
   const refNo = (invoice.rfqNumber || invoice.invoiceNumber || 'SRG/2026-27/Q-304').trim();
-  const dateStr = invoice.date || '10-09-2026';
+  const dateStr = formatDateToDMY(invoice.date) || '10-09-2026';
   const validExpiry = (invoice.validUntil || (invoice.validityDays ? `${invoice.validityDays} Days` : '')).trim();
 
   // Subject line (exact format from user's image)

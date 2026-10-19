@@ -249,23 +249,23 @@ Thank you for your prompt response!`;
     <div className="space-y-6">
       
       {/* Top Header & Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Party &amp; Ledger Directory</h1>
-          <p className="text-xs text-slate-500">Manage customers, vendors, opening balances, ledgers, and payment receipts</p>
+          <h1 className="text-xl font-black text-white font-heading tracking-tight">Party &amp; Ledger Directory</h1>
+          <p className="text-xs text-slate-400">Manage customers, vendors, opening balances, ledgers, and payment receipts</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           {/* Toggle Type */}
-          <div className="flex p-1 bg-slate-100 rounded-xl">
+          <div className="flex p-1 bg-[#09122e] rounded-xl border border-[#172654]">
             <button
               onClick={() => {
                 setActiveType('CUSTOMER');
                 const firstCust = parties.find(p => p.type === 'CUSTOMER');
                 if (firstCust) setSelectedParty(firstCust);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeType === 'CUSTOMER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeType === 'CUSTOMER' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'text-slate-400 hover:text-white'
               }`}
             >
               Customers ({parties.filter(p => p.type === 'CUSTOMER').length})
@@ -276,8 +276,8 @@ Thank you for your prompt response!`;
                 const firstSupp = parties.find(p => p.type === 'SUPPLIER');
                 if (firstSupp) setSelectedParty(firstSupp);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeType === 'SUPPLIER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeType === 'SUPPLIER' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'text-slate-400 hover:text-white'
               }`}
             >
               Suppliers ({parties.filter(p => p.type === 'SUPPLIER').length})
@@ -286,7 +286,7 @@ Thank you for your prompt response!`;
 
           <button
             onClick={handleOpenAddParty}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 transition-all cursor-pointer active:scale-95"
           >
             <UserPlus className="w-4 h-4" /> Add {activeType === 'CUSTOMER' ? 'Customer' : 'Supplier'}
           </button>
@@ -294,12 +294,12 @@ Thank you for your prompt response!`;
       </div>
 
       {/* Main Grid: Left List (5 cols), Right Details (7 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         
         {/* Left: Party List (5 Cols) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="lg:col-span-5 bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden">
           {/* Search Box */}
-          <div className="p-3.5 border-b border-slate-100 bg-slate-50/50">
+          <div className="p-3.5 border-b border-[#14234b] bg-[#09122e]/60">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
@@ -307,13 +307,13 @@ Thank you for your prompt response!`;
                 placeholder={`Search ${activeType.toLowerCase()}s by name, phone, GSTIN...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                className="w-full pl-9 pr-4 py-2 bg-[#09122e] border border-[#1b2b5d] rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
           </div>
 
           {/* List Items */}
-          <div className="divide-y divide-slate-100 max-h-[620px] overflow-y-auto">
+          <div className="divide-y divide-[#101b3d] max-h-[620px] overflow-y-auto">
             {filteredParties.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
                 No {activeType.toLowerCase()}s found.
@@ -326,19 +326,19 @@ Thank you for your prompt response!`;
                     key={p.id}
                     onClick={() => setSelectedParty(p)}
                     className={`p-4 cursor-pointer transition-all flex items-center justify-between gap-3 group ${
-                      isSelected ? 'bg-blue-50/80 border-l-4 border-blue-600' : 'hover:bg-slate-50'
+                      isSelected ? 'bg-[#0c183d] border-l-4 border-cyan-400' : 'hover:bg-[#0c183d]/50'
                     }`}
                   >
-                    <div className="space-y-0.5 flex-1">
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                        <span>{p.name}</span>
+                    <div className="space-y-0.5 flex-1 min-w-0">
+                      <div className="font-bold text-white text-xs flex items-center gap-1.5 truncate">
+                        <span className="truncate">{p.name}</span>
                         {p.gstin && (
-                          <span className="font-mono text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-sm font-semibold">
+                          <span className="font-mono text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.2 rounded-sm font-semibold shrink-0">
                             GST
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500">{p.phone} • {p.city || p.state}</div>
+                      <div className="text-[11px] text-slate-400 truncate">{p.phone} • {p.city || p.state}</div>
                     </div>
 
                     <div className="text-right flex items-center gap-2">
@@ -379,19 +379,19 @@ Thank you for your prompt response!`;
           {selectedParty ? (
             <>
               {/* Party Profile Banner */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-100">
+              <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl p-5 border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-[#14234b]">
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">{selectedParty.name}</h2>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
-                      <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {selectedParty.phone}</span>
-                      {selectedParty.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {selectedParty.email}</span>}
+                    <h2 className="text-lg font-black text-white font-heading">{selectedParty.name}</h2>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
+                      <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-cyan-400" /> {selectedParty.phone}</span>
+                      {selectedParty.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-cyan-400" /> {selectedParty.email}</span>}
                       {(selectedParty.city || selectedParty.state) && (
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {[selectedParty.city, selectedParty.state].filter(Boolean).join(', ')}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-rose-400" /> {[selectedParty.city, selectedParty.state].filter(Boolean).join(', ')}</span>
                       )}
                     </div>
                     {selectedParty.gstin && (
-                      <div className="font-mono text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-2">
+                      <div className="font-mono text-xs font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded-md inline-block mt-2">
                         GSTIN: {selectedParty.gstin}
                       </div>
                     )}
@@ -399,14 +399,14 @@ Thank you for your prompt response!`;
 
                   {/* Balance Highlight Box & Edit / Delete Party Button */}
                   <div className="flex items-center gap-2.5">
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-right min-w-[160px]">
-                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Current Outstanding</span>
+                    <div className="bg-[#09122e] p-3.5 rounded-xl border border-[#172654] text-right min-w-[160px]">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Current Outstanding</span>
                       <div className={`font-mono text-xl font-black ${
-                        selectedParty.currentBalance > 0 ? 'text-rose-700' : selectedParty.currentBalance < 0 ? 'text-emerald-700' : 'text-slate-800'
+                        selectedParty.currentBalance > 0 ? 'text-rose-400' : selectedParty.currentBalance < 0 ? 'text-emerald-400' : 'text-slate-300'
                       }`}>
-                        {formatIndianCurrency(Math.abs(selectedParty.currentBalance))}
+                        ₹ {formatIndianCurrency(Math.abs(selectedParty.currentBalance))}
                       </div>
-                      <span className="text-[10px] text-slate-500 block">
+                      <span className="text-[10px] text-slate-400 block">
                         {selectedParty.currentBalance > 0 ? 'Receivable (Pending)' : selectedParty.currentBalance < 0 ? 'Advance Paid' : 'Zero Balance'}
                       </span>
                     </div>
@@ -415,11 +415,11 @@ Thank you for your prompt response!`;
                     <button
                       type="button"
                       onClick={() => handleOpenEditParty(selectedParty)}
-                      className="w-10 h-10 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-110 shrink-0"
+                      className="w-10 h-10 rounded-full bg-blue-600/20 hover:bg-blue-600 text-cyan-400 hover:text-white border border-blue-500/40 hover:border-blue-500 flex items-center justify-center transition-all shadow-[0_0_12px_rgba(6,182,212,0.3)] cursor-pointer hover:scale-110 shrink-0"
                       title={`Edit Party "${selectedParty.name}"`}
                       aria-label="Edit Party"
                     >
-                      <Edit2 className="w-5 h-5" />
+                      <Edit2 className="w-4 h-4" />
                     </button>
 
                     {/* Red Circular Delete Party Button */}
@@ -428,22 +428,22 @@ Thank you for your prompt response!`;
                       onClick={() => {
                         onDeleteParty(selectedParty.id);
                       }}
-                      className="w-10 h-10 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-110 shrink-0"
+                      className="w-10 h-10 rounded-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/40 hover:border-rose-500 flex items-center justify-center transition-all shadow-[0_0_12px_rgba(244,63,94,0.3)] cursor-pointer hover:scale-110 shrink-0"
                       title={`Delete Party "${selectedParty.name}"`}
                       aria-label="Delete Party"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Opening Balance Quick Settings Card */}
-                <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-xs space-y-2">
+                <div className="p-3 bg-[#09122e] rounded-xl border border-[#172654] text-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-amber-950 flex items-center gap-1">
+                    <span className="font-bold text-amber-300 flex items-center gap-1">
                       <span>⚖️ Opening Balance Configuration</span>
                       {isQuickSaved && (
-                        <span className="text-emerald-700 font-bold text-[10.5px] bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-emerald-300 font-bold text-[10.5px] bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Check className="w-3 h-3" /> Saved!
                         </span>
                       )}
@@ -451,14 +451,14 @@ Thank you for your prompt response!`;
                     {!isEditingOpeningBalance ? (
                       <button
                         onClick={() => setIsEditingOpeningBalance(true)}
-                        className="text-amber-800 hover:text-amber-950 font-bold text-[11px] underline"
+                        className="text-cyan-400 hover:text-cyan-300 font-bold text-[11px] underline cursor-pointer"
                       >
                         ✏️ Edit Opening Balance
                       </button>
                     ) : (
                       <button
                         onClick={() => setIsEditingOpeningBalance(false)}
-                        className="text-slate-500 hover:text-slate-700 text-[11px]"
+                        className="text-slate-400 hover:text-white text-[11px] cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -466,23 +466,23 @@ Thank you for your prompt response!`;
                   </div>
 
                   {!isEditingOpeningBalance ? (
-                    <div className="flex flex-wrap items-center gap-4 text-slate-700 text-[11.5px]">
+                    <div className="flex flex-wrap items-center gap-4 text-slate-300 text-[11.5px]">
                       <div>
-                        <span className="text-slate-500">Opening Amount: </span>
-                        <strong className="font-mono text-slate-950">
-                          {formatIndianCurrency(Math.abs(selectedParty.openingBalance || 0))}
+                        <span className="text-slate-400">Opening Amount: </span>
+                        <strong className="font-mono text-white">
+                          ₹ {formatIndianCurrency(Math.abs(selectedParty.openingBalance || 0))}
                         </strong>
                       </div>
                       <div>
-                        <span className="text-slate-500">Type: </span>
-                        <span className="font-bold px-1.5 py-0.5 rounded bg-white border border-amber-300 text-amber-950">
+                        <span className="text-slate-400">Type: </span>
+                        <span className="font-bold px-1.5 py-0.5 rounded bg-[#0c1840] border border-amber-500/40 text-amber-300">
                           {selectedParty.openingBalanceType || ((selectedParty.openingBalance || 0) < 0 ? 'CR (Advance)' : 'DR (Receivable)')}
                         </span>
                       </div>
                       {selectedParty.openingBalanceDate && (
                         <div>
-                          <span className="text-slate-500">As on: </span>
-                          <strong className="text-slate-800">{selectedParty.openingBalanceDate}</strong>
+                          <span className="text-slate-400">As on: </span>
+                          <strong className="text-slate-200">{selectedParty.openingBalanceDate}</strong>
                         </div>
                       )}
                     </div>
@@ -494,12 +494,12 @@ Thank you for your prompt response!`;
                         placeholder="Amount"
                         value={quickOpeningBalance || ''}
                         onChange={(e) => setQuickOpeningBalance(parseFloat(e.target.value) || 0)}
-                        className="px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-mono font-bold w-28"
+                        className="px-2.5 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-lg text-xs font-mono font-bold text-cyan-300 w-28 focus:outline-none focus:border-cyan-500"
                       />
                       <select
                         value={quickOpeningType}
                         onChange={(e) => setQuickOpeningType(e.target.value as 'DR' | 'CR')}
-                        className="px-2 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-bold"
+                        className="px-2 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-lg text-xs font-bold text-white focus:outline-none"
                       >
                         <option value="DR">DR (Receivable)</option>
                         <option value="CR">CR (Advance / Payable)</option>
@@ -508,11 +508,11 @@ Thank you for your prompt response!`;
                         type="date"
                         value={quickOpeningDate}
                         onChange={(e) => setQuickOpeningDate(e.target.value)}
-                        className="px-2 py-1.5 bg-white border border-amber-300 rounded-lg text-xs"
+                        className="px-2 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-lg text-xs text-white focus:outline-none"
                       />
                       <button
                         onClick={handleSaveQuickOpeningBalance}
-                        className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs"
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs cursor-pointer"
                       >
                         <Save className="w-3.5 h-3.5" /> Save Balance
                       </button>
@@ -527,16 +527,16 @@ Thank you for your prompt response!`;
                       setDateFilterEnabled(false);
                       setIsLedgerModalOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#09122e] hover:bg-[#0f1d44] border border-[#172654] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
-                    <Printer className="w-3.5 h-3.5 text-blue-400" /> 🖨️ Print Ledger
+                    <Printer className="w-3.5 h-3.5 text-cyan-400" /> 🖨️ Print Ledger
                   </button>
 
                   <button
                     onClick={() => {
                       setIsDateRangeModalOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                     title="Date to Date Ledger Print"
                   >
                     <Calendar className="w-3.5 h-3.5 text-amber-300" /> 📅 Date to Date Print
@@ -544,14 +544,14 @@ Thank you for your prompt response!`;
 
                   <button
                     onClick={() => onCreateInvoiceForParty(selectedParty.id)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40 transition-all cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> + New Bill
                   </button>
 
                   <button
                     onClick={() => onRecordPayment(selectedParty)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-[0_0_12px_rgba(16,185,129,0.3)] transition-colors cursor-pointer"
                   >
                     <Receipt className="w-3.5 h-3.5" /> ₹ Record Payment
                   </button>
@@ -559,7 +559,7 @@ Thank you for your prompt response!`;
                   {selectedParty.currentBalance > 0 && (
                     <button
                       onClick={() => handleSendReminder(selectedParty)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs rounded-xl border border-emerald-200 transition-colors"
+                      className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-semibold text-xs rounded-xl border border-emerald-500/30 transition-colors cursor-pointer"
                     >
                       <Share2 className="w-3.5 h-3.5" /> WhatsApp Reminder
                     </button>
@@ -568,13 +568,13 @@ Thank you for your prompt response!`;
               </div>
 
               {/* Transaction Ledger Table */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+              <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden">
+                <div className="p-4 bg-[#09122e]/60 border-b border-[#14234b] flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-white font-heading flex items-center gap-1.5">
                       <span>Transaction Ledger History ({partyInvoices.length} Bills, {partyVouchers.length} Vouchers)</span>
                     </h3>
-                    <span className="text-[10px] text-slate-500">Includes Sales, TDS Deductions (1%), and Payment receipts</span>
+                    <span className="text-[10px] text-slate-400">Includes Sales, TDS Deductions (1%), and Payment receipts</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -582,23 +582,23 @@ Thank you for your prompt response!`;
                       onClick={() => {
                         setIsDateRangeModalOpen(true);
                       }}
-                      className="flex items-center gap-1 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-lg border border-indigo-200 transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-3 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-bold text-[11px] rounded-lg border border-indigo-500/30 transition-colors cursor-pointer"
                     >
-                      <Calendar className="w-3.5 h-3.5 text-indigo-600" /> 📅 Date to Date Statement
+                      <Calendar className="w-3.5 h-3.5 text-indigo-400" /> 📅 Date to Date Statement
                     </button>
                     <button
                       onClick={() => {
                         setDateFilterEnabled(false);
                         setIsLedgerModalOpen(true);
                       }}
-                      className="flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-[11px] rounded-lg border border-blue-200 transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-[11px] rounded-lg border border-cyan-500/30 transition-colors cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" /> Full Statement Print (1-Page)
                     </button>
                   </div>
                 </div>
 
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-[#101b3d]">
                   {partyInvoices.length === 0 && partyVouchers.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-xs">
                       No invoices or payment vouchers recorded for this party yet.
@@ -607,24 +607,24 @@ Thank you for your prompt response!`;
                     <>
                       {/* Invoices */}
                       {partyInvoices.map((inv) => (
-                        <div key={inv.id} className="p-3.5 hover:bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                        <div key={inv.id} className="p-3.5 hover:bg-[#0c183d]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs transition-colors">
                           <div className="space-y-0.5">
-                            <div className="font-mono font-bold text-slate-900 flex items-center gap-2">
+                            <div className="font-mono font-bold text-white flex items-center gap-2">
                               <span>{inv.invoiceNumber}</span>
-                              <span className="text-[10px] font-sans font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded border border-slate-200">
+                              <span className="text-[10px] font-sans font-semibold bg-[#09122e] text-cyan-300 px-1.5 py-0.2 rounded border border-[#1b2b5d]">
                                 {inv.documentType === 'TAX_INVOICE' ? 'Tax Invoice' : inv.documentType}
                               </span>
                               {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
-                                <span className="text-[10px] font-sans font-bold bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300 flex items-center gap-0.5">
+                                <span className="text-[10px] font-sans font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded border border-amber-500/30 flex items-center gap-0.5">
                                   <Percent className="w-2.5 h-2.5" /> TDS {inv.tdsRate || 1}% ({formatIndianCurrency(inv.tdsAmount || 0)})
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-500">
+                            <div className="text-[11px] text-slate-400 font-mono">
                               Date: {inv.date} {inv.dueDate ? `• Due: ${inv.dueDate}` : ''}
                             </div>
                             {inv.items && inv.items.length > 0 && (
-                              <div className="text-[11.5px] font-semibold text-slate-800 pt-0.5">
+                              <div className="text-[11.5px] font-semibold text-slate-300 pt-0.5">
                                 {inv.items.map(it => it.name || it.description).filter(Boolean).join(', ')}
                               </div>
                             )}
@@ -632,18 +632,18 @@ Thank you for your prompt response!`;
 
                           <div className="flex items-center justify-between sm:justify-end gap-3">
                             <div className="text-left sm:text-right space-y-0.5">
-                              <div className="font-mono font-bold text-slate-900 flex sm:justify-end items-center gap-2">
-                                <span>Bill: {formatIndianCurrency(inv.grandTotal)}</span>
+                              <div className="font-mono font-bold text-white flex sm:justify-end items-center gap-2">
+                                <span>Bill: ₹ {formatIndianCurrency(inv.grandTotal)}</span>
                                 {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
-                                  <span className="text-[11px] font-normal text-slate-500">
-                                    (Net: {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
+                                  <span className="text-[11px] font-normal text-slate-400 font-mono">
+                                    (Net: ₹ {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
                                   </span>
                                 )}
                               </div>
-                              <div className={`text-[10px] font-semibold ${inv.paymentStatus === 'PAID' ? 'text-emerald-700' : 'text-rose-600'}`}>
+                              <div className={`text-[10px] font-semibold ${inv.paymentStatus === 'PAID' ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 {inv.paymentStatus === 'PAID' ? '✓ FULLY PAID' : `${inv.paymentStatus} (${formatIndianCurrency(inv.balanceDue)} due)`}
                                 {inv.paidAmount > 0 && inv.paymentStatus !== 'PAID' && (
-                                  <span className="text-slate-500 ml-1">[{formatIndianCurrency(inv.paidAmount)} received]</span>
+                                  <span className="text-slate-400 ml-1">[{formatIndianCurrency(inv.paidAmount)} received]</span>
                                 )}
                               </div>
                             </div>
@@ -655,7 +655,7 @@ Thank you for your prompt response!`;
                                   onClick={() => {
                                     onEditInvoice(inv);
                                   }}
-                                  className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  className="w-7 h-7 rounded-full bg-blue-600/20 hover:bg-blue-600 text-cyan-400 hover:text-white border border-blue-500/30 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
                                   title={`Edit Bill ${inv.invoiceNumber}`}
                                   aria-label="Edit Invoice"
                                 >
@@ -669,7 +669,7 @@ Thank you for your prompt response!`;
                                   onClick={() => {
                                     onDeleteInvoice(inv.id);
                                   }}
-                                  className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  className="w-7 h-7 rounded-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
                                   title={`Delete Bill ${inv.invoiceNumber}`}
                                   aria-label="Delete Invoice"
                                 >
@@ -683,30 +683,30 @@ Thank you for your prompt response!`;
 
                       {/* Payment Vouchers */}
                       {partyVouchers.map((pv) => (
-                        <div key={pv.id} className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs border-l-4 border-emerald-600 group">
+                        <div key={pv.id} className="p-3.5 bg-emerald-950/20 hover:bg-emerald-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs border-l-4 border-emerald-500 transition-colors group">
                           <div className="space-y-0.5">
-                            <div className="font-mono font-bold text-emerald-950 flex items-center gap-2">
+                            <div className="font-mono font-bold text-emerald-300 flex items-center gap-2">
                               <span>{pv.voucherNumber}</span>
-                              <span className="text-[10px] font-sans font-bold bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded border border-emerald-300">
+                              <span className="text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">
                                 Payment Received ({pv.paymentMode})
                               </span>
                             </div>
-                            <div className="text-[11px] text-slate-600">
-                              Date: {pv.date} • Ref / UTR: <span className="font-mono font-bold">{pv.referenceNumber || 'N/A'}</span>
+                            <div className="text-[11px] text-slate-400">
+                              Date: {pv.date} • Ref / UTR: <span className="font-mono font-bold text-cyan-400">{pv.referenceNumber || 'N/A'}</span>
                             </div>
                             {pv.remarks && (
-                              <div className="text-[11px] text-slate-700 italic">
-                                "{pv.remarks}"
+                              <div className="text-[11px] text-slate-300 italic">
+                                &ldquo;{pv.remarks}&rdquo;
                               </div>
                             )}
                           </div>
 
                           <div className="flex items-center justify-between sm:justify-end gap-3">
                             <div className="text-left sm:text-right space-y-0.5">
-                              <div className="font-mono font-black text-emerald-800 text-sm">
-                                - {formatIndianCurrency(pv.amount)} (Cr)
+                              <div className="font-mono font-black text-emerald-400 text-sm">
+                                - ₹ {formatIndianCurrency(pv.amount)} (Cr)
                               </div>
-                              <div className="text-[10px] text-emerald-700 font-semibold">
+                              <div className="text-[10px] text-emerald-300/80 font-semibold">
                                 Direct Ledger Credit
                               </div>
                             </div>

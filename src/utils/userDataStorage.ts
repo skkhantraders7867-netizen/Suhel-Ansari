@@ -140,6 +140,10 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
         (r: any) => !['att-1', 'att-2', 'att-3', 'att-4', 'att-5', 'att-6', 'att-7', 'att-8'].includes(r.id)
       );
 
+      const siteExpenses = (Array.isArray(parsed.siteExpenses) ? parsed.siteExpenses : []).filter(
+        (se: any) => !['site-exp-1', 'site-exp-2', 'site-exp-3', 'site-exp-4', 'site-exp-5', 'site-exp-6', 'site-exp-7'].includes(se.id)
+      );
+
       return {
         businessProfile: profile,
         invoices,
@@ -155,7 +159,7 @@ export function loadUserAccountData(user: AuthUser | null): UserAccountData {
         attendanceCompanies: Array.isArray(parsed.attendanceCompanies) ? parsed.attendanceCompanies : [],
         gstFilingRecords: Array.isArray(parsed.gstFilingRecords) ? parsed.gstFilingRecords : [],
         purchaseBillReturns: Array.isArray(parsed.purchaseBillReturns) ? parsed.purchaseBillReturns : [],
-        siteExpenses: Array.isArray(parsed.siteExpenses) ? parsed.siteExpenses : [],
+        siteExpenses,
       };
     }
   } catch (e) {

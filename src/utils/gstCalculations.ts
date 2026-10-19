@@ -25,6 +25,34 @@ export function formatIndianCurrency(amount: number, includeSymbol: boolean = tr
 }
 
 /**
+ * Formats date string from YYYY-MM-DD to DD-MM-YYYY (Pehle Date, fir Month, fir Year)
+ */
+export function formatDateToDMY(dateStr?: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  // If already DD-MM-YYYY or DD/MM/YYYY
+  if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(trimmed)) {
+    return trimmed.replace(/\//g, '-');
+  }
+  // If YYYY-MM-DD
+  const ymdMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (ymdMatch) {
+    const year = ymdMatch[1];
+    const month = String(ymdMatch[2]).padStart(2, '0');
+    const day = String(ymdMatch[3]).padStart(2, '0');
+    return `${day}-${month}-${year}`;
+  }
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+  return trimmed;
+}
+
+/**
  * Converts a number to Indian words format (Crores, Lakhs, Thousands, Hundreds)
  */
 export function numberToIndianWords(num: number): string {

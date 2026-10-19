@@ -1,6 +1,6 @@
 import React from 'react';
 import { Invoice, BusinessProfile } from '../types';
-import { formatIndianCurrency, numberToIndianWords } from '../utils/gstCalculations';
+import { formatIndianCurrency, numberToIndianWords, formatDateToDMY } from '../utils/gstCalculations';
 
 export interface ServiceOrderTemplateProps {
   invoice: Invoice;
@@ -303,7 +303,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
             </div>
             <div>
               <span>SARVICE DATE : </span>
-              <span className="font-semibold">{serviceOrderDate}</span>
+              <span className="font-semibold">{formatDateToDMY(serviceOrderDate)}</span>
             </div>
           </div>
           <div className="text-right space-y-0.5 text-[10.5px]">
@@ -616,7 +616,7 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
               </div>
               <div>
                 <span className="text-slate-600">Date: </span>
-                <span>{serviceOrderDate}</span>
+                <span>{formatDateToDMY(serviceOrderDate)}</span>
               </div>
             </div>
           </div>

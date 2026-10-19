@@ -356,6 +356,13 @@ export interface SiteExpense {
   receiptNumber?: string;
   notes?: string;
   approvedBy?: string;
+  // Account / UPI Payment Destination Details
+  accountHolderName?: string;
+  accountNumber?: string;
+  bankName?: string;
+  ifscCode?: string;
+  upiId?: string;
+  payeePhone?: string;
   createdAt: string;
 }
 
