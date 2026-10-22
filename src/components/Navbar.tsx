@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, Plus, ShoppingBag, Search, 
   HelpCircle, Settings, ShieldCheck, Download, Bell, Sparkles,
   LayoutDashboard, Users, Package, WalletCards, User, LogIn, LogOut, ChevronDown,
-  Menu, Moon, MapPin
+  Menu, Moon, Sun, MapPin, ArrowLeft
 } from 'lucide-react';
 import { BusinessProfile, ViewMode, AuthUser } from '../types';
 
@@ -11,6 +11,9 @@ interface NavbarProps {
   businessProfile: BusinessProfile;
   currentView: ViewMode;
   onSelectView: (view: ViewMode) => void;
+  onNavigateBack?: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
   onCreateInvoice: () => void;
   onOpenPos: () => void;
   onOpenHsnFinder: () => void;
@@ -18,6 +21,9 @@ interface NavbarProps {
   currentUser: AuthUser | null;
   onOpenAuthModal: () => void;
   onLogout: () => void;
+  onOpenCommandPalette?: () => void;
+  onOpenNotifications?: () => void;
+  unreadNotificationsCount?: number;
 }
 
 // Google G Icon for Navbar
@@ -34,6 +40,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   businessProfile,
   currentView,
   onSelectView,
+  onNavigateBack,
+  isSidebarOpen = false,
+  onToggleSidebar,
   onCreateInvoice,
   onOpenPos,
   onOpenHsnFinder,
@@ -41,65 +50,168 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuthModal,
   onLogout,
+  onOpenCommandPalette,
+  onOpenNotifications,
+  unreadNotificationsCount = 0,
 }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('sr_bills_theme');
+    if (saved) return saved === 'dark';
+    return true; // Default dark
+  });
+
+  useEffect(() => {
+    if (!isDarkMode) {
+      document.documentElement.classList.add('light-theme');
+      document.body.classList.add('light-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('sr_bills_theme', 'light');
+    } else {
+      document.documentElement.classList.remove('light-theme');
+      document.body.classList.remove('light-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('sr_bills_theme', 'dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode(prev => !prev);
+  };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#060c1e]/95 backdrop-blur-md border-b border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] no-print">
+    <header className="sticky top-0 z-30 bg-[#04081a]/95 backdrop-blur-xl border-b border-[#14234b]/80 shadow-[0_4px_30px_rgba(0,0,0,0.6)] no-print">
       <div className="max-w-[1750px] mx-auto px-3 sm:px-5 lg:px-6">
         
         {/* Top Tier: Brand, Search, Branch, User */}
-        <div className="h-16 flex items-center justify-between gap-3 md:gap-6">
+        <div className="h-16 flex items-center justify-between gap-2.5 md:gap-6">
           
-          {/* Brand Logo & Profile Name */}
-          <div className="flex items-center gap-3 shrink-0">
-            {/* High-tech SR glowing icon */}
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-sky-400 p-[1.5px] shadow-[0_0_15px_rgba(6,182,212,0.4)] shrink-0">
-              <div className="w-full h-full bg-[#070e24] rounded-[10px] flex items-center justify-center font-black text-white text-base tracking-tighter">
+          {/* Brand Logo & Profile Name with Menu Button on EXTREME LEFT */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* 1. Enhanced Ultra-Attractive 3D Cyber "Tree Dot" Menu Toggle Button */}
+            <button 
+              type="button" 
+              onClick={onToggleSidebar}
+              className={`p-2.5 sm:px-3 sm:py-2.5 rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-center shrink-0 active:scale-95 group relative border overflow-hidden ${
+                isSidebarOpen 
+                  ? 'bg-gradient-to-r from-blue-600 via-cyan-500 to-sky-400 text-white border-cyan-300 shadow-[0_0_25px_rgba(6,182,212,0.6)]' 
+                  : 'bg-gradient-to-br from-[#0c1a45]/90 via-[#071233]/95 to-[#03091e] hover:from-[#132863] hover:to-[#0a1844] text-cyan-300 border-[#1f3775] hover:border-cyan-400/70 shadow-[0_0_18px_rgba(6,182,212,0.25)] hover:shadow-[0_0_28px_rgba(6,182,212,0.5)]'
+              }`}
+              title={isSidebarOpen ? "Close Menu" : "Open Menu (3-Dots)"}
+              aria-label="Toggle Navigation Menu"
+            >
+              {/* Animated Cyber Sheen / Sweep on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none"></div>
+
+              {/* 3 Glowing Dots along the length/vertical side with high-tech laser line */}
+              <div className="relative flex flex-col gap-1.5 items-center justify-center w-4 h-6">
+                {/* Thin vertical laser track connecting the dots */}
+                <div className={`absolute top-0.5 bottom-0.5 w-[1.5px] rounded-full transition-all duration-300 ${
+                  isSidebarOpen 
+                    ? 'bg-white/80 shadow-[0_0_8px_#ffffff]' 
+                    : 'bg-gradient-to-b from-cyan-400/40 via-blue-400/50 to-purple-400/40 group-hover:from-cyan-300 group-hover:to-blue-400'
+                }`}></div>
+
+                {/* Dot 1: Top Cyan Pulsing Pearl */}
+                <div className="relative z-10 flex items-center justify-center">
+                  <span className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    isSidebarOpen 
+                      ? 'bg-white shadow-[0_0_10px_#ffffff] scale-110' 
+                      : 'bg-gradient-to-tr from-cyan-400 to-cyan-200 shadow-[0_0_8px_#22d3ee] group-hover:scale-125 group-hover:shadow-[0_0_12px_#22d3ee]'
+                  }`}></span>
+                  {!isSidebarOpen && (
+                    <span className="absolute w-3 h-3 rounded-full bg-cyan-400/30 animate-ping pointer-events-none opacity-60"></span>
+                  )}
+                </div>
+
+                {/* Dot 2: Center Electric Diamond / Pearl */}
+                <div className="relative z-10 flex items-center justify-center">
+                  <span className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    isSidebarOpen 
+                      ? 'bg-white shadow-[0_0_10px_#ffffff] scale-110' 
+                      : 'bg-gradient-to-tr from-blue-400 to-sky-200 shadow-[0_0_8px_#38bdf8] group-hover:scale-125 group-hover:shadow-[0_0_12px_#38bdf8]'
+                  }`}></span>
+                </div>
+
+                {/* Dot 3: Bottom Violet/Cyan Pearl */}
+                <div className="relative z-10 flex items-center justify-center">
+                  <span className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    isSidebarOpen 
+                      ? 'bg-white shadow-[0_0_10px_#ffffff] scale-110' 
+                      : 'bg-gradient-to-tr from-indigo-400 to-cyan-300 shadow-[0_0_8px_#818cf8] group-hover:scale-125 group-hover:shadow-[0_0_12px_#818cf8]'
+                  }`}></span>
+                </div>
+              </div>
+            </button>
+
+            {/* Back Button (Appears whenever inside any section other than Dashboard) */}
+            {currentView !== 'DASHBOARD' && onNavigateBack && (
+              <button 
+                type="button" 
+                onClick={onNavigateBack}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-900/60 via-cyan-950/70 to-[#071330] hover:from-blue-800/80 hover:to-cyan-900/80 border border-cyan-400/50 hover:border-cyan-300 text-cyan-300 hover:text-white transition-all shadow-[0_0_15px_rgba(6,182,212,0.25)] cursor-pointer active:scale-95 text-xs font-black shrink-0 group"
+                title="Go Back to Previous Section (Back Button)"
+              >
+                <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-0.5 transition-transform" />
+                <span className="font-extrabold tracking-wide">Back</span>
+              </button>
+            )}
+
+            {/* 2. High-tech SR glowing icon */}
+            <div 
+              onClick={() => onSelectView('DASHBOARD')}
+              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-sky-400 p-[1.5px] shadow-[0_0_15px_rgba(6,182,212,0.4)] shrink-0 cursor-pointer hover:shadow-[0_0_22px_rgba(6,182,212,0.6)] transition-all group"
+            >
+              <div className="w-full h-full bg-[#070e24] rounded-[10px] flex items-center justify-center font-black text-white text-base tracking-tighter group-hover:bg-[#0a1538] transition-colors">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-white font-extrabold font-heading">SR</span>
               </div>
             </div>
 
-            <div>
+            {/* 3. Title */}
+            <div 
+              onClick={() => onSelectView('DASHBOARD')}
+              className="cursor-pointer"
+            >
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base tracking-tight text-white font-heading">
+                <span className="font-extrabold text-base tracking-tight text-white font-heading hover:text-cyan-300 transition-colors">
                   SR Group Bills
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span> Live
                 </span>
               </div>
               <div className="text-[10px] text-cyan-400/90 font-medium tracking-tight">
                 Smart Billing for a Better Business
               </div>
             </div>
-
-            {/* Hamburger button */}
-            <button 
-              type="button" 
-              onClick={() => onSelectView('DASHBOARD')}
-              className="text-slate-400 hover:text-white p-1.5 rounded-lg ml-1 hover:bg-[#101b3d] transition-colors cursor-pointer"
-              title="Toggle Navigation"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
           </div>
 
-          {/* Center Search Input */}
+          {/* Quick Create Invoice Action Button */}
+          <button
+            type="button"
+            onClick={onCreateInvoice}
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-[0_0_12px_rgba(6,182,212,0.35)] border border-cyan-400/40 transition-all cursor-pointer active:scale-95"
+            title="Create New Tax Invoice"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Create Bill</span>
+          </button>
+
+          {/* Center Search / Command Palette Input */}
           <div className="hidden md:flex items-center flex-1 max-w-md mx-2">
-            <div className="relative w-full">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search invoice, party, product, etc..."
-                className="w-full pl-9 pr-16 py-2 bg-[#09122e] border border-[#1b2b5d] focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/50 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 transition-all outline-none"
-              />
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                <span className="text-[10px] font-mono text-slate-400 bg-[#12204a] px-1.5 py-0.5 rounded border border-[#21356f]">
+            <button
+              type="button"
+              onClick={onOpenCommandPalette}
+              className="w-full relative flex items-center pl-9 pr-16 py-2 bg-[#081230]/90 hover:bg-[#0b173e] border border-[#1b2b5d] hover:border-cyan-500/60 focus:border-cyan-500/70 rounded-xl text-xs text-slate-400 hover:text-slate-200 transition-all cursor-pointer text-left shadow-inner group"
+            >
+              <Search className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" />
+              <span className="truncate">Search bills, customers, stock, or commands...</span>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <span className="text-[10px] font-mono text-cyan-400/90 bg-[#12204a] px-2 py-0.5 rounded border border-[#21356f] shadow-xs">
                   Ctrl + K
                 </span>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Action Center (Branch, Notifications, Theme, Profile) */}
@@ -121,23 +233,42 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative">
               <button 
                 type="button"
-                className="p-2 rounded-xl bg-[#09122e] border border-[#1b2b5d] text-slate-300 hover:text-white hover:border-cyan-500/50 transition-colors cursor-pointer"
-                title="Notifications"
+                onClick={onOpenNotifications}
+                className="p-2 rounded-xl bg-[#09122e] hover:bg-[#0e1a3e] border border-[#1b2b5d] hover:border-cyan-500/50 text-slate-300 hover:text-white transition-all cursor-pointer relative"
+                title="Command Alerts & Notifications"
               >
-                <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-bold text-[9px] flex items-center justify-center shadow-xs">
-                  3
-                </span>
+                <Bell className="w-4 h-4 text-cyan-400" />
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-4 px-1 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white font-mono font-bold text-[9px] flex items-center justify-center shadow-[0_0_8px_rgba(244,63,94,0.6)]">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
               </button>
             </div>
 
-            {/* Theme Toggle Moon Icon */}
+            {/* Command Palette Button for Mobile */}
             <button 
               type="button"
-              className="p-2 rounded-xl bg-[#09122e] border border-[#1b2b5d] text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/50 transition-colors cursor-pointer"
-              title="Dark Theme"
+              onClick={onOpenCommandPalette}
+              className="md:hidden p-2 rounded-xl bg-[#09122e] border border-[#1b2b5d] text-cyan-400 hover:text-white transition-colors cursor-pointer"
+              title="Global Search (Ctrl+K)"
             >
-              <Moon className="w-4 h-4" />
+              <Search className="w-4 h-4" />
+            </button>
+
+            {/* Theme Toggle Button (Dark / Light) */}
+            <button 
+              type="button"
+              onClick={toggleTheme}
+              className={`p-2 rounded-xl border transition-all cursor-pointer active:scale-95 ${
+                isDarkMode 
+                  ? 'bg-[#09122e] border-[#1b2b5d] text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/50 shadow-xs' 
+                  : 'bg-amber-500/10 border-amber-400/50 text-amber-500 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+              }`}
+              title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+              aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+            >
+              {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
 
             {/* User Profile Capsule */}

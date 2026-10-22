@@ -1783,43 +1783,59 @@ Thank you for doing business with us!`;
                   </table>
                 </div>
 
-                {/* 4. INVOICE TOTAL & AMOUNT IN WORDS */}
-                <div className={`w-full border border-slate-900 border-t-0 text-[9px] ${contentCardBg}`}>
+                {/* 4. INVOICE TOTAL & AMOUNT IN WORDS (Optimized so text never cuts off or gets obscured by background watermarks) */}
+                <div className="w-full border border-slate-900 border-t-0 text-[9px] bg-white">
                   {/* Row 1 (UPAR): Tax Value in Words & TOTAL TAX VALUE - Only show when GST is applicable */}
-                  {!isNonGstBill && (
-                    <div className="grid grid-cols-12 bg-[#dce6f1]/25 border-b border-slate-900 min-h-[22px]">
-                      <div className="col-span-7 p-1 px-2 border-r border-slate-900 flex flex-wrap items-center">
-                        <span className="font-bold text-slate-950 mr-1 shrink-0 text-[8.5px]">Tax Value (In words) : </span>
-                        <span className="font-semibold text-slate-950 leading-tight text-[8.5px] break-words">
-                          {numberToIndianWords(effectiveTotalTax)}
-                        </span>
+                  {!isNonGstBill && (() => {
+                    const taxValueInWords = numberToIndianWords(effectiveTotalTax);
+                    return (
+                      <div className="grid grid-cols-12 bg-white border-b border-slate-900 min-h-[25px]">
+                        <div className="col-span-8 p-1.5 px-2.5 border-r border-slate-900 flex items-center bg-white">
+                          <div className="leading-snug flex flex-wrap items-baseline gap-x-1.5 w-full">
+                            <span className="font-bold text-slate-950 shrink-0 text-[8.5px]">Tax Value (In words) :</span>
+                            <span className={`font-semibold text-slate-950 break-normal whitespace-normal tracking-tight ${
+                              taxValueInWords.length > 75 ? 'text-[7.5px]' : taxValueInWords.length > 55 ? 'text-[8px]' : 'text-[8.5px]'
+                            }`}>
+                              {taxValueInWords}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="col-span-2 p-1.5 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] bg-[#dce6f1]">
+                          TOTAL TAX VALUE
+                        </div>
+                        <div className="col-span-2 p-1.5 px-2 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter text-[9.5px] bg-[#dce6f1]">
+                          {formatIndianCurrency(effectiveTotalTax, true)}
+                        </div>
                       </div>
-                      <div className="col-span-2 p-1 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] bg-[#dce6f1]/60">
-                        TOTAL TAX VALUE
-                      </div>
-                      <div className="col-span-3 p-1 px-1 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter text-[9.5px] bg-[#dce6f1]/60">
-                        {formatIndianCurrency(effectiveTotalTax, true)}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Row 2 (NICHE): Invoice / Quotation / Bill Value in Words & TOTAL VALUE */}
-                  <div className="grid grid-cols-12 bg-[#dce6f1]/40 min-h-[22px]">
-                    <div className="col-span-7 p-1 px-2 border-r border-slate-900 flex flex-wrap items-center">
-                      <span className="font-bold text-slate-950 mr-1 shrink-0 text-[8.5px]">
-                        {isQuotation ? 'Quotation Value (In words) : ' : isPurchaseBill ? 'Bill Value (In words) : ' : 'Invoice Value (In words) : '}
-                      </span>
-                      <span className="font-black text-slate-950 leading-tight text-[8.5px] break-words">
-                        {numberToIndianWords(invoice.grandTotal)}
-                      </span>
-                    </div>
-                    <div className="col-span-2 p-1 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] bg-[#dce6f1]/85">
-                      {isQuotation ? 'TOTAL QUOTATION VALUE' : isPurchaseBill ? 'TOTAL BILL VALUE' : 'TOTAL INVOICE VALUE'}
-                    </div>
-                    <div className="col-span-3 p-1 px-1 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter text-[9.5px] bg-[#dce6f1]/85">
-                      {formatIndianCurrency(invoice.grandTotal, true)}
-                    </div>
-                  </div>
+                  {(() => {
+                    const invoiceValueInWords = numberToIndianWords(invoice.grandTotal);
+                    return (
+                      <div className="grid grid-cols-12 bg-[#f4f7fb] min-h-[25px]">
+                        <div className="col-span-8 p-1.5 px-2.5 border-r border-slate-900 flex items-center bg-[#f4f7fb]">
+                          <div className="leading-snug flex flex-wrap items-baseline gap-x-1.5 w-full">
+                            <span className="font-bold text-slate-950 shrink-0 text-[8.5px]">
+                              {isQuotation ? 'Quotation Value (In words) :' : isPurchaseBill ? 'Bill Value (In words) :' : 'Invoice Value (In words) :'}
+                            </span>
+                            <span className={`font-black text-slate-950 break-normal whitespace-normal tracking-tight ${
+                              invoiceValueInWords.length > 75 ? 'text-[7.5px]' : invoiceValueInWords.length > 55 ? 'text-[8px]' : 'text-[8.5px]'
+                            }`}>
+                              {invoiceValueInWords}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="col-span-2 p-1.5 px-1 font-black text-slate-950 border-r border-slate-900 text-right flex items-center justify-end text-[8.5px] bg-[#dce6f1]">
+                          {isQuotation ? 'TOTAL QUOTATION VALUE' : isPurchaseBill ? 'TOTAL BILL VALUE' : 'TOTAL INVOICE VALUE'}
+                        </div>
+                        <div className="col-span-2 p-1.5 px-2 font-mono font-black text-slate-950 text-right flex items-center justify-end tabular-nums tracking-tighter text-[9.5px] bg-[#dce6f1]">
+                          {formatIndianCurrency(invoice.grandTotal, true)}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* 5. BANK DETAILS, TERMS & CONDITIONS & AUTHORISED SIGNATORY */}

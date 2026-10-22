@@ -269,6 +269,18 @@ export interface Invoice {
   transport?: TransportDetails;
   notes?: string;
   terms?: string;
+  // Purchase Return, Debit & % (Requested)
+  purchaseReturnAmount?: number;
+  purchaseDebitAmount?: number;
+  purchaseDebitPercent?: number;
+  purchaseReturnNotes?: string;
+  // Retention / Security Deposit Hold (Purchase Bills, Estimates & Contracts)
+  isRetentionApplicable?: boolean;
+  retentionRate?: number; // e.g. 5 for 5%, 10 for 10%
+  retentionBase?: 'TAXABLE' | 'TOTAL'; // Calculate on Taxable Amount or Total Bill
+  retentionAmount?: number;
+  retentionNotes?: string;
+  netPayableAfterDeductions?: number;
   // TDS Deduction
   isTdsApplicable?: boolean;
   tdsRate?: number; // e.g. 1 for 1%, 2 for 2%, 10 for 10%
@@ -448,6 +460,7 @@ export interface BusinessLetter {
   recipientCompany: string;
   recipientAddress: string;
   subject: string;
+  description?: string; // Summary / Description of letter
   salutation: string;
   openingParagraph: string;
   bodyParagraphs: string[];

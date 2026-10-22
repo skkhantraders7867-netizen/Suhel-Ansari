@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   LayoutDashboard, FileText, ShoppingBag, 
   Users, Package, FileSpreadsheet, Settings, Plus, Sparkles,
   Receipt, Truck, Wallet, QrCode, Layers, ShieldCheck,
-  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale, FileCheck2, HardHat
+  User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale, FileCheck2, HardHat,
+  X
 } from 'lucide-react';
 import { ViewMode, AuthUser } from '../types';
 
@@ -14,6 +15,8 @@ interface SidebarProps {
   lowStockCount: number;
   currentUser?: AuthUser | null;
   onOpenAuthModal?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 // Google G Icon for Sidebar
@@ -33,7 +36,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   lowStockCount,
   currentUser,
   onOpenAuthModal,
+  isOpen = false,
+  onClose,
 }) => {
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const handleItemClick = (id: ViewMode) => {
+    onSelectView(id);
+    onClose();
+  };
 
   const pages = [
     {
@@ -101,9 +121,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           id: 'PAYMENT_VOUCHERS' as ViewMode,
-          label: 'Payment Vouchers',
+          label: 'Payment Received Dashboard',
           icon: Receipt,
-          tag: 'Receipts',
+          tag: 'Receipts & Dues',
         },
         {
           id: 'GST_LEDGER' as ViewMode,
@@ -181,149 +201,189 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-full md:w-64 shrink-0 no-print space-y-3">
-      
-      {/* Top Standalone Dashboard Button matching reference image */}
-      <button
-        onClick={() => onSelectView('DASHBOARD')}
-        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-          currentView === 'DASHBOARD'
-            ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white shadow-[0_0_18px_rgba(2,132,199,0.45)] border border-cyan-400/40'
-            : 'bg-[#09122e] hover:bg-[#0e1a3e] text-slate-200 border border-[#172654]'
+    <>
+      {/* 1. Backdrop Overlay */}
+      <div 
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/75 backdrop-blur-xs z-50 transition-opacity duration-300 no-print ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
+      {/* 2. Slide-out Navigation Drawer containing everything in the red circle */}
+      <aside 
+        className={`fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[#050b1a] border-r border-[#14234b] shadow-[0_0_60px_rgba(0,0,0,0.95)] z-50 flex flex-col justify-between transition-transform duration-300 ease-out no-print ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <LayoutDashboard className="w-4 h-4 text-white shrink-0" />
-        <span className="font-heading tracking-wide">Dashboard</span>
-      </button>
-
-      {/* Main Navigation Pages Card */}
-      <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] p-3 space-y-4">
-        {pages.map((page) => {
-          return (
-            <div key={page.pageNumber} className="space-y-1">
-              {/* Page Section Title */}
-              <div className="px-2 py-1 flex items-center justify-between">
-                <span className="text-[10px] font-extrabold tracking-wider uppercase text-cyan-400/80">
-                  PAGE {page.pageNumber} : {page.title}
-                </span>
-              </div>
-
-              {/* Sub-items */}
-              <div className="space-y-0.5">
-                {page.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentView === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => onSelectView(item.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-blue-400/40'
-                          : 'text-slate-300 hover:bg-[#0f1d44] hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                        <span className="truncate">{item.label}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {item.tag && (
-                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
-                            item.tag === '18% GST' || item.tag === 'Receipts'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : item.tag === 'Work Order'
-                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                              : item.tag === 'Inward PO' || item.tag === 'Stickers' || item.tag === 'Suhel A4'
-                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                              : item.tag === 'Fast' || item.tag === 'NIC'
-                              ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                              : item.tag === 'DR/CR FY'
-                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                              : item.tag === 'GST Ledger'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                          }`}>
-                            {item.tag}
-                          </span>
-                        )}
-                        {item.badge && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
+        {/* Drawer Header with Title and Close X */}
+        <div className="p-3.5 px-4 border-b border-[#14234b] flex items-center justify-between shrink-0 bg-[#070e24]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 via-cyan-500 to-sky-400 p-[1.5px] flex items-center justify-center shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+              <div className="w-full h-full bg-[#070e24] rounded-[6.5px] flex items-center justify-center font-black text-white text-xs">
+                SR
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Account / Email Login Card */}
-      <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-extrabold tracking-wider uppercase text-cyan-400/80">
-            Account & Security
-          </span>
-          <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-            Active
-          </span>
-        </div>
-
-        <div className="p-2.5 bg-[#0a1435] border border-[#162758] rounded-xl space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs border border-cyan-400/30">
-                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
-              </div>
-              {currentUser?.provider === 'google' && (
-                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#070e24] rounded-full flex items-center justify-center shadow-xs border border-slate-700">
-                  <GoogleGIcon className="w-2.5 h-2.5" />
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-white truncate uppercase">
-                  {currentUser?.name || 'SUHEL ANSARI'}
-                </p>
-                {currentUser?.provider === 'google' && (
-                  <span className="text-[9px] font-bold text-blue-400 bg-blue-950/60 px-1.5 py-0.2 rounded border border-blue-800">
-                    Google
-                  </span>
-                )}
-              </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">
-                {currentUser?.email || 'newsinfra@rediffmail.com'}
-              </p>
+            <div>
+              <div className="font-extrabold text-sm text-white font-heading">SR Group Bills</div>
+              <div className="text-[10px] text-cyan-400/90 font-medium">Navigation Menu</div>
             </div>
           </div>
-          {onOpenAuthModal && (
-            <button
-              onClick={onOpenAuthModal}
-              className="w-full py-1.5 px-2.5 bg-[#0f1d47] hover:bg-[#162961] border border-[#213876] hover:border-cyan-500/50 text-slate-200 hover:text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
-            >
-              <GoogleGIcon className="w-3.5 h-3.5" />
-              <span>Switch / Google Login</span>
-            </button>
-          )}
+          <button 
+            type="button" 
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#101b3d] border border-transparent hover:border-cyan-500/30 transition-all cursor-pointer"
+            title="Close Menu"
+          >
+            <X className="w-5 h-5 text-cyan-300" />
+          </button>
         </div>
-      </div>
 
-      {/* Security & Indian GST Compliance Card */}
-      <div className="p-3.5 bg-gradient-to-br from-[#0c183d] to-[#060c1e] rounded-2xl border border-[#14234b] text-white space-y-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>100% Offline & Private</span>
+        {/* Scrollable Navigation Body */}
+        <div className="p-3.5 space-y-3.5 overflow-y-auto flex-1 custom-scrollbar">
+          {/* Top Standalone Dashboard Button */}
+          <button
+            onClick={() => handleItemClick('DASHBOARD')}
+            className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+              currentView === 'DASHBOARD'
+                ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white shadow-[0_0_18px_rgba(2,132,199,0.45)] border border-cyan-400/40'
+                : 'bg-[#09122e] hover:bg-[#0e1a3e] text-slate-200 border border-[#172654]'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4 text-white shrink-0" />
+            <span className="font-heading tracking-wide">Dashboard</span>
+          </button>
+
+          {/* Main Navigation Pages Card */}
+          <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] p-3 space-y-4">
+            {pages.map((page) => {
+              return (
+                <div key={page.pageNumber} className="space-y-1">
+                  {/* Page Section Title */}
+                  <div className="px-2 py-1 flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold tracking-wider uppercase text-cyan-400/80">
+                      PAGE {page.pageNumber} : {page.title}
+                    </span>
+                  </div>
+
+                  {/* Sub-items */}
+                  <div className="space-y-0.5">
+                    {page.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = currentView === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleItemClick(item.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-blue-400/40'
+                              : 'text-slate-300 hover:bg-[#0f1d44] hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                            <span className="truncate">{item.label}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.tag && (
+                              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                                item.tag === '18% GST' || item.tag === 'Receipts'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : item.tag === 'Work Order'
+                                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                                  : item.tag === 'Inward PO' || item.tag === 'Stickers' || item.tag === 'Suhel A4'
+                                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                  : item.tag === 'Fast' || item.tag === 'NIC'
+                                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                  : item.tag === 'DR/CR FY'
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                  : item.tag === 'GST Ledger'
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                              }`}>
+                                {item.tag}
+                              </span>
+                            )}
+                            {item.badge && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Account / Email Login Card */}
+          <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold tracking-wider uppercase text-cyan-400/80">
+                Account & Security
+              </span>
+              <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Active
+              </span>
+            </div>
+
+            <div className="p-2.5 bg-[#0a1435] border border-[#162758] rounded-xl space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs border border-cyan-400/30">
+                    {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
+                  </div>
+                  {currentUser?.provider === 'google' && (
+                    <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#070e24] rounded-full flex items-center justify-center shadow-xs border border-slate-700">
+                      <GoogleGIcon className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-white truncate uppercase">
+                      {currentUser?.name || 'SUHEL ANSARI'}
+                    </p>
+                    {currentUser?.provider === 'google' && (
+                      <span className="text-[9px] font-bold text-blue-400 bg-blue-950/60 px-1.5 py-0.2 rounded border border-blue-800">
+                        Google
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-mono truncate">
+                    {currentUser?.email || 'newsinfra@rediffmail.com'}
+                  </p>
+                </div>
+              </div>
+              {onOpenAuthModal && (
+                <button
+                  onClick={onOpenAuthModal}
+                  className="w-full py-1.5 px-2.5 bg-[#0f1d47] hover:bg-[#162961] border border-[#213876] hover:border-cyan-500/50 text-slate-200 hover:text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+                >
+                  <GoogleGIcon className="w-3.5 h-3.5" />
+                  <span>Switch / Google Login</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Security & Indian GST Compliance Card */}
+          <div className="p-3.5 bg-gradient-to-br from-[#0c183d] to-[#060c1e] rounded-2xl border border-[#14234b] text-white space-y-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>100% Offline & Private</span>
+            </div>
+            <p className="text-[10.5px] text-slate-400 leading-relaxed">
+              Your GST data, client ledgers & Invoices are securely saved with 1-click JSON backup export.
+            </p>
+          </div>
         </div>
-        <p className="text-[10.5px] text-slate-400 leading-relaxed">
-          Your GST data, client ledgers & Invoices are securely saved with 1-click JSON backup export.
-        </p>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

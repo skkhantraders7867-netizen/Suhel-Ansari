@@ -112,6 +112,12 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
   const [originalInvoiceDate, setOriginalInvoiceDate] = useState<string>(activeEditingInvoice?.originalInvoiceDate || '');
   const [reasonForNote, setReasonForNote] = useState<string>(activeEditingInvoice?.reasonForNote || '');
 
+  // Retention / Security Deposit Hold State (e.g. 5% or 10% held from bill)
+  const [isRetentionApplicable, setIsRetentionApplicable] = useState<boolean>(activeEditingInvoice?.isRetentionApplicable ?? false);
+  const [retentionRate, setRetentionRate] = useState<number>(activeEditingInvoice?.retentionRate ?? 5);
+  const [retentionBase, setRetentionBase] = useState<'TAXABLE' | 'TOTAL'>(activeEditingInvoice?.retentionBase || 'TOTAL');
+  const [retentionNotes, setRetentionNotes] = useState<string>(activeEditingInvoice?.retentionNotes || '5% Retention / Security Deposit Hold');
+
   // TDS (Tax Deducted at Source) State - Defaults to 1% as requested
   const [isTdsApplicable, setIsTdsApplicable] = useState<boolean>(activeEditingInvoice?.isTdsApplicable ?? false);
   const [tdsRate, setTdsRate] = useState<number>(activeEditingInvoice?.tdsRate ?? 1);
@@ -443,13 +449,21 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
       const rawGrandTotal = taxableTotal + (Number(shippingCharges) || 0) - (Number(extraDiscount) || 0);
       const grandTotal = Math.round(rawGrandTotal);
       const roundOff = Number((grandTotal - rawGrandTotal).toFixed(2));
-      const paid = Math.min(grandTotal, Math.max(0, Number(paidAmount) || 0));
-      const balanceDue = Math.max(0, grandTotal - paid);
+      const retentionRateNum = Number(retentionRate) || 0;
+      const retentionBaseAmount = retentionBase === 'TAXABLE' ? taxableTotal : grandTotal;
+      const retentionAmount = isRetentionApplicable ? Math.round((retentionBaseAmount * retentionRateNum) / 100) : 0;
 
       const tdsRateNum = Number(tdsRate) || 0;
       const tdsBaseAmount = tdsBase === 'TAXABLE' ? taxableTotal : grandTotal;
       const tdsAmount = isTdsApplicable ? Math.round((tdsBaseAmount * tdsRateNum) / 100) : 0;
-      const netPayableAfterTds = Math.max(0, grandTotal - tdsAmount);
+
+      const totalDeductions = retentionAmount + tdsAmount;
+      const netPayable = Math.max(0, grandTotal - totalDeductions);
+      const netPayableAfterTds = netPayable;
+      const effectiveTotalForDue = (isTdsApplicable || isRetentionApplicable) ? netPayable : grandTotal;
+
+      const paid = Math.min(grandTotal, Math.max(0, Number(paidAmount) || 0));
+      const balanceDue = Math.max(0, effectiveTotalForDue - paid);
 
       return {
         subTotal,
@@ -465,8 +479,10 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
         grandTotal,
         paidAmount: paid,
         balanceDue,
-        paymentStatus: paid >= grandTotal && grandTotal > 0 ? ('PAID' as const) : paid > 0 ? ('PARTIAL' as const) : ('UNPAID' as const),
+        paymentStatus: paid >= effectiveTotalForDue && effectiveTotalForDue > 0 ? ('PAID' as const) : paid > 0 ? ('PARTIAL' as const) : ('UNPAID' as const),
+        retentionAmount,
         tdsAmount,
+        netPayable,
         netPayableAfterTds,
       };
     }
@@ -479,9 +495,12 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
       false,
       isTdsApplicable,
       tdsRate,
-      tdsBase
+      tdsBase,
+      isRetentionApplicable,
+      retentionRate,
+      retentionBase
     );
-  }, [lineItems, extraDiscount, shippingCharges, paidAmount, isTdsApplicable, tdsRate, tdsBase, docType, isWithoutGst]);
+  }, [lineItems, extraDiscount, shippingCharges, paidAmount, isTdsApplicable, tdsRate, tdsBase, isRetentionApplicable, retentionRate, retentionBase, docType, isWithoutGst]);
 
   // Trigger celebration confetti & Save
   const handleSaveInvoice = (openPreview: boolean = true) => {
@@ -560,12 +579,20 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
       paymentStatus: totals.paymentStatus,
       paymentMode,
       paymentReference,
+      // Retention / Security Deposit Hold
+      isRetentionApplicable,
+      retentionRate: isRetentionApplicable ? Number(retentionRate) : undefined,
+      retentionBase: isRetentionApplicable ? retentionBase : undefined,
+      retentionAmount: isRetentionApplicable ? totals.retentionAmount : undefined,
+      retentionNotes: isRetentionApplicable ? retentionNotes : undefined,
+      netPayableAfterDeductions: (isRetentionApplicable || isTdsApplicable) ? totals.netPayable : undefined,
+      // TDS Deduction
       isTdsApplicable,
       tdsRate: isTdsApplicable ? Number(tdsRate) : undefined,
       tdsSection: isTdsApplicable ? tdsSection : undefined,
       tdsBase: isTdsApplicable ? tdsBase : undefined,
       tdsAmount: isTdsApplicable ? totals.tdsAmount : undefined,
-      netPayableAfterTds: isTdsApplicable ? totals.netPayableAfterTds : undefined,
+      netPayableAfterTds: (isTdsApplicable || isRetentionApplicable) ? totals.netPayable : undefined,
       originalInvoiceNumber: (docType === 'DEBIT_NOTE' || docType === 'CREDIT_NOTE') ? (originalInvoiceNumber.trim() || undefined) : undefined,
       originalInvoiceDate: (docType === 'DEBIT_NOTE' || docType === 'CREDIT_NOTE') ? (originalInvoiceDate || undefined) : undefined,
       reasonForNote: (docType === 'DEBIT_NOTE' || docType === 'CREDIT_NOTE') ? (reasonForNote.trim() || undefined) : undefined,
@@ -1960,6 +1987,82 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                   </div>
                 )}
 
+                {/* Retention / Security Amount Hold Section (Right above TDS as requested) */}
+                <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-xl p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={isRetentionApplicable}
+                        onChange={(e) => setIsRetentionApplicable(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-900">
+                        Apply Retention / Security Amount Hold (e.g. 5% or 10%)
+                      </span>
+                    </label>
+                    {isRetentionApplicable && (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300">
+                        {retentionRate}% Hold Active
+                      </span>
+                    )}
+                  </div>
+
+                  {isRetentionApplicable && (
+                    <div className="space-y-2 pt-1 border-t border-emerald-200/70 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Retention Rate (%)</label>
+                          <select
+                            value={retentionRate}
+                            onChange={(e) => setRetentionRate(parseFloat(e.target.value) || 5)}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900"
+                          >
+                            <option value="5">5% (Standard Retention)</option>
+                            <option value="10">10% (Security Deposit Hold)</option>
+                            <option value="2.5">2.5% (Retention Hold)</option>
+                            <option value="1">1% (Token Hold)</option>
+                            <option value="15">15% (Special Hold)</option>
+                            <option value="20">20% (Milestone Hold)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Retention Base</label>
+                          <select
+                            value={retentionBase}
+                            onChange={(e) => setRetentionBase(e.target.value as 'TAXABLE' | 'TOTAL')}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900"
+                          >
+                            <option value="TOTAL">Total Bill Value</option>
+                            <option value="TAXABLE">Taxable Value</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Retention Note / Purpose</label>
+                        <input 
+                          type="text"
+                          placeholder="e.g. 5% Security Amount hold till defect liability period"
+                          value={retentionNotes}
+                          onChange={(e) => setRetentionNotes(e.target.value)}
+                          className="w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                        />
+                      </div>
+
+                      <div className="flex justify-between items-center text-emerald-950 font-bold bg-emerald-100/80 px-2.5 py-1.5 rounded-lg text-xs">
+                        <span>Less: Retention / Security Hold ({retentionRate}%):</span>
+                        <span className="font-mono text-emerald-900 font-black">-{formatIndianCurrency(totals.retentionAmount)}</span>
+                      </div>
+
+                      <div className="p-2 bg-emerald-50 border border-emerald-200/90 rounded-lg text-[10px] text-emerald-900 leading-tight">
+                        ✓ <strong>Security Amount Hold:</strong> Yeh retention amount bill ke net payable se hold/deduct rahega aur party ledger me security deposit/retention ke roop me track hoga.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* TDS (Tax Deducted at Source 1%) Deduction Section */}
                 <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3 space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -1968,7 +2071,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                         type="checkbox"
                         checked={isTdsApplicable}
                         onChange={(e) => setIsTdsApplicable(e.target.checked)}
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
                       />
                       <span className="text-xs font-bold text-slate-900">
                         Apply TDS Deduction (e.g. 1%)
@@ -2041,14 +2144,28 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                     <span className="font-bold text-slate-900 text-sm">Grand Total:</span>
                     <span className="font-mono font-black text-xl text-blue-900">{formatIndianCurrency(totals.grandTotal)}</span>
                   </div>
-                  {isTdsApplicable && totals.tdsAmount > 0 && (
-                    <div className="flex justify-between items-baseline pt-1 border-t border-blue-200/70 text-emerald-800 font-bold">
-                      <span className="text-xs">Net Receivable / Payable:</span>
-                      <span className="font-mono text-base">{formatIndianCurrency(totals.netPayableAfterTds)}</span>
+                  {((isRetentionApplicable && (totals.retentionAmount || 0) > 0) || (isTdsApplicable && (totals.tdsAmount || 0) > 0)) && (
+                    <div className="pt-1.5 border-t border-blue-200/70 space-y-1">
+                      {isRetentionApplicable && (totals.retentionAmount || 0) > 0 && (
+                        <div className="flex justify-between items-baseline text-xs text-emerald-900 font-semibold">
+                          <span>Less: Retention / Security Hold ({retentionRate}%):</span>
+                          <span className="font-mono font-bold text-emerald-800">-{formatIndianCurrency(totals.retentionAmount)}</span>
+                        </div>
+                      )}
+                      {isTdsApplicable && (totals.tdsAmount || 0) > 0 && (
+                        <div className="flex justify-between items-baseline text-xs text-amber-900 font-semibold">
+                          <span>Less: TDS Deduction ({tdsRate}%):</span>
+                          <span className="font-mono font-bold text-amber-800">-{formatIndianCurrency(totals.tdsAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-baseline pt-1 border-t border-blue-300/60 text-slate-950 font-bold">
+                        <span className="text-xs uppercase tracking-wide">Net Receivable / Payable:</span>
+                        <span className="font-mono text-base font-black text-emerald-700">{formatIndianCurrency(totals.netPayable)}</span>
+                      </div>
                     </div>
                   )}
                   <div className="text-[10px] text-slate-500 italic leading-snug">
-                    {numberToIndianWords(isTdsApplicable ? totals.netPayableAfterTds : totals.grandTotal)}
+                    {numberToIndianWords(((isRetentionApplicable && (totals.retentionAmount || 0) > 0) || (isTdsApplicable && (totals.tdsAmount || 0) > 0)) ? totals.netPayable : totals.grandTotal)}
                   </div>
                 </div>
 

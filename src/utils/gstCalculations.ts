@@ -217,7 +217,10 @@ export function calculateInvoiceTotals(
   isUtgst: boolean = false,
   isTdsApplicable: boolean = false,
   tdsRate: number = 1,
-  tdsBase: 'TAXABLE' | 'TOTAL' = 'TAXABLE'
+  tdsBase: 'TAXABLE' | 'TOTAL' = 'TAXABLE',
+  isRetentionApplicable: boolean = false,
+  retentionRate: number = 5,
+  retentionBase: 'TAXABLE' | 'TOTAL' = 'TAXABLE'
 ) {
   let subTotal = 0;
   let itemDiscountTotal = 0;
@@ -251,16 +254,26 @@ export function calculateInvoiceTotals(
   const roundedGrandTotal = Math.round(grossTotal);
   const roundOff = Math.round((roundedGrandTotal - grossTotal) * 100) / 100;
 
+  // Retention money / Security deposit calculation
+  let retentionAmount = 0;
+  if (isRetentionApplicable && Number(retentionRate) > 0) {
+    const baseForRetention = retentionBase === 'TOTAL' ? roundedGrandTotal : taxableTotal;
+    retentionAmount = Math.round((baseForRetention * (Number(retentionRate) / 100)) * 100) / 100;
+  }
+
   // TDS deduction calculation
   let tdsAmount = 0;
   if (isTdsApplicable && Number(tdsRate) > 0) {
     const baseForTds = tdsBase === 'TOTAL' ? roundedGrandTotal : taxableTotal;
     tdsAmount = Math.round((baseForTds * (Number(tdsRate) / 100)) * 100) / 100;
   }
-  const netPayableAfterTds = Math.max(0, Math.round((roundedGrandTotal - tdsAmount) * 100) / 100);
+
+  const totalDeductions = retentionAmount + tdsAmount;
+  const netPayable = Math.max(0, Math.round((roundedGrandTotal - totalDeductions) * 100) / 100);
+  const netPayableAfterTds = netPayable;
 
   const finalPaid = Math.max(0, Number(paidAmount || 0));
-  const effectiveTotalForDue = isTdsApplicable ? netPayableAfterTds : roundedGrandTotal;
+  const effectiveTotalForDue = (isTdsApplicable || isRetentionApplicable) ? netPayable : roundedGrandTotal;
   const balanceDue = Math.max(0, Math.round((effectiveTotalForDue - finalPaid) * 100) / 100);
 
   let paymentStatus: PaymentStatus = 'UNPAID';
@@ -281,7 +294,9 @@ export function calculateInvoiceTotals(
     cessTotal: Math.round(cessTotal * 100) / 100,
     roundOff,
     grandTotal: roundedGrandTotal,
+    retentionAmount,
     tdsAmount,
+    netPayable,
     netPayableAfterTds,
     paidAmount: finalPaid,
     balanceDue,

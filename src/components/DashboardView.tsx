@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  TrendingUp, Package, AlertTriangle, 
+  TrendingUp, Package, AlertTriangle, AlertCircle,
   ArrowUpRight, ArrowDownRight, Plus, FileText, ShoppingBag, 
   Receipt, Eye, ChevronRight, ShieldCheck,
   Trash2, Layers, ShoppingCart,
   CheckCircle2, Wallet, BookOpen, Calendar, Clock,
-  Cloud, Headphones, Laptop, Check
+  Cloud, Headphones, Laptop, Check, Search, Filter,
+  SlidersHorizontal, ArrowUpDown, Download
 } from 'lucide-react';
 import { Invoice, Party, Item, BusinessProfile, DocumentType, ViewMode, PaymentVoucher, Expense, SiteExpense } from '../types';
 import { formatIndianCurrency, getDocumentTypeName } from '../utils/gstCalculations';
@@ -167,20 +168,73 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, []);
 
   // Real recent invoices from live data (sorted most recent first, no fake demo records)
-  const recentInvoices = useMemo(() => {
-    if (!invoices || invoices.length === 0) return [];
-    return [...invoices]
-      .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
-      .slice(0, 5);
+  // Range and filter states
+  const [chartRange, setChartRange] = useState<'3M' | '6M' | '12M' | 'FY'>('6M');
+  const [activeSeries, setActiveSeries] = useState<'ALL' | 'SALES' | 'PURCHASE'>('ALL');
+
+  // Recent Bills Table states
+  const [tableSearch, setTableSearch] = useState('');
+  const [tableDocType, setTableDocType] = useState<string>('ALL');
+  const [tableStatus, setTableStatus] = useState<string>('ALL');
+  const [tableSort, setTableSort] = useState<'DATE_DESC' | 'AMOUNT_DESC' | 'PARTY_ASC'>('DATE_DESC');
+
+  // --- USEFUL OPERATIONAL INTELLIGENCE & COMPLIANCE ALERTS ---
+  const overdueInvoices = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return invoices.filter(inv => 
+      inv.paymentStatus === 'OVERDUE' || 
+      ((inv.balanceDue || 0) > 0 && inv.dueDate && inv.dueDate < today)
+    );
   }, [invoices]);
 
-  // --- REAL DYNAMIC "SALES & PURCHASE OVERVIEW" (LAST 6 MONTHS) ---
+  const overdueTotal = useMemo(() => {
+    return overdueInvoices.reduce((sum, i) => sum + (i.balanceDue || 0), 0);
+  }, [overdueInvoices]);
+
+  const lowStockItems = useMemo(() => {
+    return items.filter(it => (it.currentStock ?? 0) <= (it.minStockLevel ?? 5));
+  }, [items]);
+
+  // Filtered & Sorted Recent Bills
+  const filteredRecentInvoices = useMemo(() => {
+    let list = [...invoices];
+    if (tableSearch.trim()) {
+      const q = tableSearch.toLowerCase().trim();
+      list = list.filter(inv => 
+        inv.invoiceNumber?.toLowerCase().includes(q) ||
+        inv.partyName?.toLowerCase().includes(q)
+      );
+    }
+    if (tableDocType !== 'ALL') {
+      list = list.filter(inv => inv.documentType === tableDocType);
+    }
+    if (tableStatus !== 'ALL') {
+      list = list.filter(inv => {
+        if (tableStatus === 'OVERDUE') {
+          const today = new Date().toISOString().split('T')[0];
+          return inv.paymentStatus === 'OVERDUE' || ((inv.balanceDue || 0) > 0 && inv.dueDate && inv.dueDate < today);
+        }
+        return inv.paymentStatus === tableStatus;
+      });
+    }
+    if (tableSort === 'DATE_DESC') {
+      list.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+    } else if (tableSort === 'AMOUNT_DESC') {
+      list.sort((a, b) => (b.grandTotal || 0) - (a.grandTotal || 0));
+    } else if (tableSort === 'PARTY_ASC') {
+      list.sort((a, b) => (a.partyName || '').localeCompare(b.partyName || ''));
+    }
+    return list.slice(0, 8);
+  }, [invoices, tableSearch, tableDocType, tableStatus, tableSort]);
+
+  const recentInvoices = filteredRecentInvoices;
+
+  // --- REAL DYNAMIC "SALES & PURCHASE OVERVIEW" WITH RANGE SELECTION ---
   const monthlyOverview = useMemo(() => {
     const now = new Date();
     let latestYear = now.getFullYear();
     let latestMonth = now.getMonth() + 1; // 1..12
 
-    // Scan all invoices to find latest month in case data has future or past dates
     invoices.forEach(inv => {
       const ym = extractYearMonth(inv.date);
       if (ym) {
@@ -190,6 +244,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
       }
     });
+
+    const monthCount = chartRange === '3M' ? 3 : chartRange === '6M' ? 6 : 12;
 
     const months: {
       key: string;
@@ -201,7 +257,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       purchaseCount: number;
     }[] = [];
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = monthCount - 1; i >= 0; i--) {
       let m = latestMonth - i;
       let y = latestYear;
       while (m <= 0) {
@@ -243,7 +299,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       }
     });
 
-    // Also include general expenses in purchase for the respective month
+    // Also include general expenses
     expenses?.forEach(exp => {
       const ym = extractYearMonth(exp.date);
       if (!ym) return;
@@ -255,7 +311,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       }
     });
 
-    // Also include site expenses in purchase for the respective month
+    // Also include site expenses
     siteExpenses?.forEach(se => {
       const ym = extractYearMonth(se.date);
       if (!ym) return;
@@ -268,10 +324,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
 
     return months;
-  }, [invoices, expenses, siteExpenses]);
+  }, [invoices, expenses, siteExpenses, chartRange]);
+
+  // Period totals
+  const periodSummary = useMemo(() => {
+    const totalSalesPeriod = monthlyOverview.reduce((sum, m) => sum + m.sales, 0);
+    const totalPurchasePeriod = monthlyOverview.reduce((sum, m) => sum + m.purchase, 0);
+    const netProfitPeriod = totalSalesPeriod - totalPurchasePeriod;
+    const marginPct = totalSalesPeriod > 0 ? Math.round((netProfitPeriod / totalSalesPeriod) * 100) : 0;
+    return { totalSalesPeriod, totalPurchasePeriod, netProfitPeriod, marginPct };
+  }, [monthlyOverview]);
 
   // Selected or hovered month for overview interactive tooltip (default to most recent month)
-  const [hoveredMonthIndex, setHoveredMonthIndex] = useState<number>(5);
+  const [hoveredMonthIndex, setHoveredMonthIndex] = useState<number>(monthlyOverview.length - 1);
   const activeMonth = monthlyOverview[hoveredMonthIndex] || monthlyOverview[monthlyOverview.length - 1];
 
   // Dynamic SVG chart geometry based on live monthly data
@@ -284,7 +349,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const yTop = 25;
     const yBottom = 155;
     const yHeight = yBottom - yTop;
-    const stepX = (xEnd - xStart) / 5;
+    const count = Math.max(2, monthlyOverview.length);
+    const stepX = (xEnd - xStart) / (count - 1);
 
     const salesPoints = monthlyOverview.map((m, i) => {
       const x = xStart + i * stepX;
@@ -408,18 +474,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-4 pb-10 text-slate-100">
       
-      {/* 1. Top Welcome Banner matching reference image */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-[#0a1638] via-[#091433] to-[#0c1a45] border border-blue-500/30 p-5 md:p-6 overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+      {/* 1. Top Welcome Banner matching reference image (Decorated with glowing waves, live capsules & quick actions) */}
+      <div className="relative rounded-2xl bg-gradient-to-r from-[#0a1638] via-[#091433] to-[#0c1a45] border border-blue-500/40 p-5 md:p-6 overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.6)] group">
+        {/* Ambient radial glow effect */}
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute left-1/3 -bottom-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
         {/* Futuristic glowing wave graphics */}
-        <div className="absolute right-0 top-0 bottom-0 w-full md:w-3/5 pointer-events-none opacity-45 overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-full md:w-3/5 pointer-events-none opacity-50 overflow-hidden">
           <svg className="w-full h-full" viewBox="0 0 500 120" preserveAspectRatio="none" fill="none">
             <path d="M0,60 C150,120 300,10 500,70" stroke="url(#cyan-wave)" strokeWidth="2.5" />
             <path d="M0,80 C180,30 320,110 500,40" stroke="url(#blue-wave)" strokeWidth="2" strokeDasharray="4 4" />
-            <path d="M100,100 C250,20 380,90 500,20" stroke="url(#cyan-wave)" strokeWidth="1.5" opacity="0.6" />
+            <path d="M100,100 C250,20 380,90 500,20" stroke="url(#cyan-wave)" strokeWidth="1.5" opacity="0.7" />
+            <path d="M50,40 C200,100 350,15 500,85" stroke="url(#cyan-wave)" strokeWidth="1" opacity="0.4" strokeDasharray="2 3" />
             <defs>
               <linearGradient id="cyan-wave" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#0066ff" stopOpacity="0.2" />
-                <stop offset="50%" stopColor="#00f2fe" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#00f2fe" stopOpacity="0.85" />
                 <stop offset="100%" stopColor="#38bdf8" stopOpacity="1" />
               </linearGradient>
               <linearGradient id="blue-wave" x1="0" y1="0" x2="1" y2="0">
@@ -431,23 +502,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </svg>
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight font-heading flex items-center gap-2">
-              <span>Welcome Back, {businessProfile?.name || 'Suhel Ansari'}</span>
-              <span>👋</span>
-            </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Here&apos;s what&apos;s happening with your business today.
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          {/* Left: Welcome heading & Business details */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl md:text-2xl font-black text-white tracking-tight font-heading flex items-center gap-2">
+                <span>Welcome Back, {businessProfile?.name || 'Suhel Ansari'}</span>
+                <span>👋</span>
+              </h1>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.25)]">
+                GST Ready
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#070e24]/90 border border-[#1b2b5d] text-slate-300 font-semibold flex items-center gap-1.5">
+                🏢 <span className="text-white font-bold">{businessProfile?.name || 'SR Group'}</span>
+              </span>
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#070e24]/90 border border-[#1b2b5d] text-slate-300 font-mono text-[11px] flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                GSTIN: <span className="text-cyan-300 font-bold">{businessProfile?.gstin || '08AABCS1429B1Z8'}</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-[#070e24]/90 border border-[#1b2b5d] text-slate-300 text-[11px] font-bold">
+                FY 2026-27
+              </span>
+            </div>
+            
+            <p className="text-xs text-slate-400">
+              Here&apos;s your live business performance, sales analytics, and outstanding receivables.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#081230]/80 border border-[#1b2b5d] rounded-xl px-3.5 py-2 text-right">
-            <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
-            <div className="text-left text-xs leading-tight">
-              <div className="font-bold text-white">{formattedDate.dateStr}</div>
-              <div className="text-[10px] text-slate-400">{formattedDate.timeStr}</div>
+          {/* Right: Date/Clock Capsule & Quick Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {/* Live Calendar & Clock Widget */}
+            <div className="flex items-center gap-3 bg-[#070e24]/90 border border-[#1b2b5d] hover:border-cyan-500/50 rounded-xl px-3.5 py-2 shadow-inner transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div className="text-left leading-tight">
+                <div className="font-bold text-xs text-white tracking-wide">{formattedDate.dateStr}</div>
+                <div className="text-[10px] text-cyan-400/90 font-mono font-medium">{formattedDate.timeStr}</div>
+              </div>
             </div>
+
+            {/* Quick Action: New Bill */}
+            <button
+              type="button"
+              onClick={() => onCreateInvoice('TAX_INVOICE')}
+              className="px-3.5 py-2 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+              title="Create New Tax Invoice"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Create Bill</span>
+            </button>
+
+            {/* Quick Action: POS Sale */}
+            <button
+              type="button"
+              onClick={onOpenPos}
+              className="px-3 py-2 bg-[#09122e] hover:bg-[#101b3d] text-amber-300 hover:text-white font-bold text-xs rounded-xl border border-amber-500/30 hover:border-amber-400 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-sm"
+              title="Open POS Counter Sale"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+              <span>POS</span>
+            </button>
           </div>
         </div>
       </div>
@@ -456,11 +575,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
         {/* KPI 1: Total Billed */}
-        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-cyan-500/50 p-4 relative overflow-hidden shadow-lg transition-all group">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-cyan-500/60 p-4 relative overflow-hidden shadow-lg hover:shadow-[0_0_25px_rgba(6,182,212,0.2)] transition-all group">
+          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-blue-600 via-cyan-400 to-sky-400"></div>
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 text-cyan-400 flex items-center justify-center font-bold text-base shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 text-cyan-400 flex items-center justify-center font-bold text-base shadow-[0_0_15px_rgba(6,182,212,0.3)] group-hover:scale-105 transition-transform">
               ₹
             </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-cyan-300 border border-blue-500/30">
+              Live Sales
+            </span>
           </div>
           <div className="text-xs font-semibold text-slate-400 mt-3">Total Billed</div>
           <div className="font-heading font-black text-white text-xl xl:text-2xl tracking-tight mt-0.5">
@@ -477,11 +600,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* KPI 2: Total Received */}
-        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-emerald-500/50 p-4 relative overflow-hidden shadow-lg transition-all group">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-emerald-500/60 p-4 relative overflow-hidden shadow-lg hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all group">
+          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-emerald-600 via-emerald-400 to-teal-400"></div>
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform">
               <Wallet className="w-5 h-5" />
             </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Collected
+            </span>
           </div>
           <div className="text-xs font-semibold text-slate-400 mt-3">Total Received</div>
           <div className="font-heading font-black text-white text-xl xl:text-2xl tracking-tight mt-0.5">
@@ -498,11 +625,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* KPI 3: Total Pending Due */}
-        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-rose-500/50 p-4 relative overflow-hidden shadow-lg transition-all group">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-rose-500/60 p-4 relative overflow-hidden shadow-lg hover:shadow-[0_0_25px_rgba(244,63,94,0.2)] transition-all group">
+          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-rose-600 via-rose-400 to-amber-400"></div>
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 rounded-xl bg-rose-600/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-rose-600/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shadow-[0_0_15px_rgba(244,63,94,0.3)] group-hover:scale-105 transition-transform">
               <ArrowDownRight className="w-5 h-5" />
             </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30">
+              Receivable
+            </span>
           </div>
           <div className="text-xs font-semibold text-slate-400 mt-3">Total Pending Due</div>
           <div className="font-heading font-black text-white text-xl xl:text-2xl tracking-tight mt-0.5">
@@ -519,11 +650,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* KPI 4: Total Purchase */}
-        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-purple-500/50 p-4 relative overflow-hidden shadow-lg transition-all group">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] hover:border-purple-500/60 p-4 relative overflow-hidden shadow-lg hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] transition-all group">
+          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-purple-600 via-purple-400 to-pink-400"></div>
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-400 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-400 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:scale-105 transition-transform">
               <Receipt className="w-5 h-5" />
             </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
+              Inward Bills
+            </span>
           </div>
           <div className="text-xs font-semibold text-slate-400 mt-3">Total Purchase</div>
           <div className="font-heading font-black text-white text-xl xl:text-2xl tracking-tight mt-0.5">
@@ -541,28 +676,169 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       </div>
 
+      {/* 2.5 Operational Intelligence & Live Command Alerts (Overdue, Low Stock, GST Deadlines) */}
+      {(overdueInvoices.length > 0 || lowStockItems.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {overdueInvoices.length > 0 && (
+            <div 
+              onClick={() => {
+                setTableStatus('OVERDUE');
+                const el = document.getElementById('recent-bills-table');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="fusion-card fusion-card-interactive p-4 rounded-2xl bg-gradient-to-r from-rose-950/40 via-[#0a122e] to-[#060c22] border border-rose-500/40 hover:border-rose-400/80 shadow-[0_0_20px_rgba(244,63,94,0.15)] flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-rose-600/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(244,63,94,0.3)]">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-xs text-white">Overdue Collections</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      {overdueInvoices.length} Bills
+                    </span>
+                  </div>
+                  <p className="text-xs font-mono font-bold text-rose-400 mt-0.5">
+                    ₹ {formatIndianCurrency(overdueTotal)} Due
+                  </p>
+                  <p className="text-[10px] text-slate-400 truncate">Click to filter bills and send reminder</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-rose-400 transition-colors shrink-0" />
+            </div>
+          )}
+
+          {lowStockItems.length > 0 && (
+            <div 
+              onClick={() => onNavigateTab?.('INVENTORY')}
+              className="fusion-card fusion-card-interactive p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-[#0a122e] to-[#060c22] border border-amber-500/40 hover:border-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.15)] flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-600/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.3)]">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-xs text-white">Low Stock Warning</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      {lowStockItems.length} Products
+                    </span>
+                  </div>
+                  <p className="text-xs font-mono font-bold text-amber-300 mt-0.5 truncate">
+                    {lowStockItems.map(i => i.name).slice(0, 2).join(', ')}...
+                  </p>
+                  <p className="text-[10px] text-slate-400 truncate">Restock needed to avoid fulfillment delay</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-amber-400 transition-colors shrink-0" />
+            </div>
+          )}
+
+          {/* GST Tax Compliance Deadline */}
+          <div 
+            onClick={() => onNavigateTab?.('REPORTS')}
+            className="fusion-card fusion-card-interactive p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-[#0a122e] to-[#060c22] border border-cyan-500/40 hover:border-cyan-400/80 shadow-[0_0_20px_rgba(6,182,212,0.15)] flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 text-cyan-400 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(6,182,212,0.3)]">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-xs text-white">GST Return Calendar</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    Active
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-cyan-300 mt-0.5">
+                  GSTR-1 &amp; GSTR-3B Ready
+                </p>
+                <p className="text-[10px] text-slate-400 truncate">1-click JSON download for GST Portal</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors shrink-0" />
+          </div>
+        </div>
+      )}
+
       {/* 3. Middle Section: Dynamic Real Live Sales & Purchase Overview, Payment Status, Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
         
         {/* Left: Dynamic Sales & Purchase Overview Chart (6 cols) */}
-        <div className="lg:col-span-6 bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] p-4 sm:p-5 relative overflow-hidden shadow-lg flex flex-col justify-between">
+        <div className="lg:col-span-6 fusion-card rounded-2xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
-                <h3 className="font-extrabold text-sm text-white font-heading">
-                  Sales &amp; Purchase Overview
-                </h3>
-                <span className="text-[10px] text-slate-400">Last 6 Months (Live Data)</span>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-sm text-white font-heading">
+                    Sales &amp; Purchase Overview
+                  </h3>
+                  <span className="text-[10px] text-cyan-400/90 font-mono font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800">
+                    Live Data
+                  </span>
+                </div>
+                
+                {/* Period summary stats */}
+                <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1 font-mono">
+                  <span>Sales: <strong className="text-cyan-300">₹{formatShortIndianCurrency(periodSummary.totalSalesPeriod)}</strong></span>
+                  <span>·</span>
+                  <span>Purchase: <strong className="text-purple-300">₹{formatShortIndianCurrency(periodSummary.totalPurchasePeriod)}</strong></span>
+                  <span>·</span>
+                  <span>Margin: <strong className={periodSummary.netProfitPeriod >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{periodSummary.marginPct}%</strong></span>
+                </div>
               </div>
-              <div className="flex items-center gap-4 text-xs font-semibold">
-                <span className="flex items-center gap-1.5 text-cyan-400">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
-                  Sales
-                </span>
-                <span className="flex items-center gap-1.5 text-purple-400">
-                  <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]"></span>
-                  Purchase
-                </span>
+
+              {/* Range & Series Controls */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Range Selector */}
+                <div className="flex items-center p-1 bg-[#050a1c] border border-[#14234b] rounded-xl text-[10px] font-bold">
+                  {(['3M', '6M', '12M'] as const).map(range => (
+                    <button
+                      key={range}
+                      type="button"
+                      onClick={() => setChartRange(range)}
+                      className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                        chartRange === range 
+                          ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]' 
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Series Filter Selector */}
+                <div className="flex items-center p-1 bg-[#050a1c] border border-[#14234b] rounded-xl text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSeries('ALL')}
+                    className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                      activeSeries === 'ALL' ? 'bg-[#12204a] text-white border border-[#21356f]' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Both
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSeries('SALES')}
+                    className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                      activeSeries === 'SALES' ? 'bg-cyan-950 text-cyan-300 border border-cyan-800' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Sales
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSeries('PURCHASE')}
+                    className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                      activeSeries === 'PURCHASE' ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Purchase
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -571,26 +847,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {/* Dynamic Interactive Tooltip */}
               <div className="absolute right-4 sm:right-8 top-2 bg-[#0c1840]/95 border border-cyan-500/40 rounded-xl p-2.5 shadow-[0_0_20px_rgba(6,182,212,0.35)] z-20 text-[11px] backdrop-blur-md pointer-events-none transition-all">
                 <div className="text-slate-200 font-bold mb-1.5 flex items-center justify-between gap-4">
-                  <span>{activeMonth.fullLabel}</span>
+                  <span>{activeMonth?.fullLabel}</span>
                   <span className="text-[10px] font-mono text-cyan-400">
-                    {activeMonth.salesCount + activeMonth.purchaseCount} bills
+                    {(activeMonth?.salesCount || 0) + (activeMonth?.purchaseCount || 0)} bills
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-cyan-300 font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></span>
                   <span>Sales:</span>
-                  <span className="ml-auto font-mono">₹ {formatIndianCurrency(activeMonth.sales)}</span>
+                  <span className="ml-auto font-mono">₹ {formatIndianCurrency(activeMonth?.sales || 0)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-purple-300 font-bold mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc]"></span>
                   <span>Purchase:</span>
-                  <span className="ml-auto font-mono">₹ {formatIndianCurrency(activeMonth.purchase)}</span>
+                  <span className="ml-auto font-mono">₹ {formatIndianCurrency(activeMonth?.purchase || 0)}</span>
                 </div>
-                {(activeMonth.sales > 0 || activeMonth.purchase > 0) && (
+                {((activeMonth?.sales || 0) > 0 || (activeMonth?.purchase || 0) > 0) && (
                   <div className="mt-1 pt-1 border-t border-[#1b2b5a] flex items-center justify-between text-[10px]">
                     <span className="text-slate-400">Margin:</span>
-                    <span className={`font-mono font-bold ${activeMonth.sales >= activeMonth.purchase ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {activeMonth.sales >= activeMonth.purchase ? '+' : '-'}₹ {formatIndianCurrency(Math.abs(activeMonth.sales - activeMonth.purchase))}
+                    <span className={`font-mono font-bold ${(activeMonth?.sales || 0) >= (activeMonth?.purchase || 0) ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {(activeMonth?.sales || 0) >= (activeMonth?.purchase || 0) ? '+' : '-'}₹ {formatIndianCurrency(Math.abs((activeMonth?.sales || 0) - (activeMonth?.purchase || 0)))}
                     </span>
                   </div>
                 )}
@@ -637,30 +913,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 )}
 
                 {/* Shaded Areas */}
-                {chartGeometry.salesArea && (
+                {(activeSeries === 'ALL' || activeSeries === 'SALES') && chartGeometry.salesArea && (
                   <path d={chartGeometry.salesArea} fill="url(#live-sales-grad)" />
                 )}
-                {chartGeometry.purchaseArea && (
+                {(activeSeries === 'ALL' || activeSeries === 'PURCHASE') && chartGeometry.purchaseArea && (
                   <path d={chartGeometry.purchaseArea} fill="url(#live-purchase-grad)" />
                 )}
 
                 {/* Sales Wave Line (Cyan) */}
-                <path
-                  d={chartGeometry.salesPath}
-                  fill="none"
-                  stroke="#00d2ff"
-                  strokeWidth="3"
-                  className="drop-shadow-[0_0_8px_rgba(0,210,255,0.8)]"
-                />
+                {(activeSeries === 'ALL' || activeSeries === 'SALES') && (
+                  <path
+                    d={chartGeometry.salesPath}
+                    fill="none"
+                    stroke="#00d2ff"
+                    strokeWidth="3"
+                    className="drop-shadow-[0_0_8px_rgba(0,210,255,0.8)]"
+                  />
+                )}
 
                 {/* Purchase Wave Line (Purple) */}
-                <path
-                  d={chartGeometry.purchasePath}
-                  fill="none"
-                  stroke="#c084fc"
-                  strokeWidth="3"
-                  className="drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]"
-                />
+                {(activeSeries === 'ALL' || activeSeries === 'PURCHASE') && (
+                  <path
+                    d={chartGeometry.purchasePath}
+                    fill="none"
+                    stroke="#c084fc"
+                    strokeWidth="3"
+                    className="drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]"
+                  />
+                )}
 
                 {/* Interactive Points & Click/Hover Columns */}
                 {chartGeometry.salesPoints.map((pt, i) => {
@@ -670,9 +950,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <g key={i}>
                       {/* Transparent hit target for hover/click */}
                       <rect 
-                        x={pt.x - 35} 
+                        x={pt.x - 30} 
                         y="15" 
-                        width="70" 
+                        width="60" 
                         height="145" 
                         fill="transparent" 
                         className="cursor-pointer"
@@ -681,18 +961,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       />
 
                       {/* Sales point */}
-                      <circle 
-                        cx={pt.x} 
-                        cy={pt.y} 
-                        r={isHovered ? 5.5 : 3.5} 
-                        fill={isHovered ? '#00f2fe' : '#00d2ff'} 
-                        stroke={isHovered ? '#ffffff' : '#070e24'} 
-                        strokeWidth={isHovered ? 2 : 1.5}
-                        className={isHovered ? 'drop-shadow-[0_0_8px_#00f2fe]' : ''}
-                      />
+                      {(activeSeries === 'ALL' || activeSeries === 'SALES') && (
+                        <circle 
+                          cx={pt.x} 
+                          cy={pt.y} 
+                          r={isHovered ? 5.5 : 3.5} 
+                          fill={isHovered ? '#00f2fe' : '#00d2ff'} 
+                          stroke={isHovered ? '#ffffff' : '#070e24'} 
+                          strokeWidth={isHovered ? 2 : 1.5}
+                          className={isHovered ? 'drop-shadow-[0_0_8px_#00f2fe]' : ''}
+                        />
+                      )}
 
                       {/* Purchase point */}
-                      {purPt && (
+                      {(activeSeries === 'ALL' || activeSeries === 'PURCHASE') && purPt && (
                         <circle 
                           cx={purPt.x} 
                           cy={purPt.y} 
@@ -731,7 +1013,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Center: Real Live Dynamic Payment Status Donut (3 cols) */}
-        <div className="lg:col-span-3 bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] p-4 sm:p-5 relative overflow-hidden shadow-lg flex flex-col justify-between">
+        <div className="lg:col-span-3 fusion-card rounded-2xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-white font-heading">
@@ -872,7 +1154,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <Receipt className="w-4 h-4" />
-                  <span>Payment Vouchers</span>
+                  <span>Payment Received Dashboard</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-white/80" />
               </button>

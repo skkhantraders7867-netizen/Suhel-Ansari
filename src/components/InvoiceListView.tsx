@@ -238,6 +238,11 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                       <div className="font-mono font-black text-white text-xs">
                         ₹ {formatIndianCurrency(inv.grandTotal)}
                       </div>
+                      {inv.isRetentionApplicable && (inv.retentionAmount || 0) > 0 && (
+                        <div className="text-[10px] text-emerald-400 font-medium font-mono">
+                          Retention {inv.retentionRate || 5}%: -₹ {formatIndianCurrency(inv.retentionAmount || 0)}
+                        </div>
+                      )}
                       {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
                         <div className="text-[10px] text-purple-400 font-medium font-mono">
                           TDS {inv.tdsRate || 1}%: -₹ {formatIndianCurrency(inv.tdsAmount || 0)}

@@ -3,8 +3,15 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #040817;
+    background-color: #030712;
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.06) 0%, transparent 40%),
+      radial-gradient(circle at 10% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+      linear-gradient(to bottom, #030712, #040817 60%, #02050f);
+    background-attachment: fixed;
     color: #f1f5f9;
+    min-height: 100vh;
   }
   
   h1, h2, h3, h4, .font-heading {
@@ -13,7 +20,38 @@
 
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
   }
+
+  *:focus-visible {
+    outline: 2px solid #22d3ee;
+    outline-offset: 2px;
+  }
+}
+
+/* Fusion 3D Glassmorphism & Elevation */
+.fusion-card {
+  background: linear-gradient(135deg, rgba(8, 16, 42, 0.88) 0%, rgba(5, 10, 26, 0.96) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(27, 45, 95, 0.55);
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.fusion-card:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.85), 0 0 20px rgba(6, 182, 212, 0.12), 0 0 0 1px rgba(34, 211, 238, 0.1) inset;
+  transform: translateY(-2px);
+}
+
+.fusion-card-interactive {
+  cursor: pointer;
+  transform: translateZ(0);
+}
+
+.fusion-card-interactive:active {
+  transform: translateY(0px) scale(0.99);
 }
 
 /* Custom Futuristic Scrollbar */
@@ -22,14 +60,25 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #060d24;
+  background: #040817;
 }
 ::-webkit-scrollbar-thumb {
-  background: #172852;
+  background: #15244e;
   border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
+  background: #0284c7;
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Print Specific Rules for GST Invoices */
@@ -138,5 +187,76 @@
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
+}
+
+/* Light Theme Mode */
+html.light-theme,
+body.light-theme {
+  background-color: #f8fafc !important;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+    linear-gradient(to bottom, #f8fafc, #f1f5f9 60%, #e2e8f0) !important;
+  color: #0f172a !important;
+  color-scheme: light;
+}
+
+body.light-theme .fusion-card {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06) !important;
+  color: #0f172a !important;
+}
+
+body.light-theme .text-white {
+  color: #0f172a !important;
+}
+
+body.light-theme .text-slate-200,
+body.light-theme .text-slate-300 {
+  color: #1e293b !important;
+}
+
+body.light-theme .text-slate-400 {
+  color: #64748b !important;
+}
+
+body.light-theme .bg-\[\#07102b\],
+body.light-theme .bg-\[\#081335\],
+body.light-theme .bg-\[\#091538\],
+body.light-theme .bg-\[\#07112f\],
+body.light-theme .bg-\[\#050e26\],
+body.light-theme .bg-\[\#09122e\],
+body.light-theme .bg-\[\#04091e\],
+body.light-theme .bg-\[\#081230\],
+body.light-theme .bg-\[\#0a163b\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.light-theme header,
+body.light-theme aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-theme .border-\[\#172758\],
+body.light-theme .border-\[\#14234d\],
+body.light-theme .border-\[\#1b2d62\],
+body.light-theme .border-\[\#18295a\],
+body.light-theme .border-\[\#101b3d\],
+body.light-theme .border-\[\#162758\],
+body.light-theme .border-\[\#1b2b5d\],
+body.light-theme .border-\[\#1d3269\],
+body.light-theme .border-\[\#1b2f65\] {
+  border-color: #e2e8f0 !important;
+}
+
+body.light-theme input,
+body.light-theme select {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 

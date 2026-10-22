@@ -12,6 +12,7 @@ export const INITIAL_BUSINESS_LETTERS: BusinessLetter[] = [
     recipientCompany: 'NEW SR INFRA',
     recipientAddress: 'Sec-07, Plot No- 295, Ground floor-02, Taluka, Gandhidham, Kutch, Gujarat - 370201 | GSTIN: 24CTGPR1641K1ZJ',
     subject: 'TAX INVOICE - FABRICATION & ERECTION OF MS STRUCTURE JOB (RUNNING BILL RA-01)',
+    description: 'Running Bill RA-01 covering structural fabrication (110.56 MT) and erection works under Service Order NSI/SE/N0015.',
     salutation: 'To Whom It May Concern,',
     openingParagraph: 'Tax Invoice for Structural Fabrication and Erection Works under Service Order No: NSI/SE/N0015 dated 15-06-2025.',
     bodyParagraphs: [
@@ -57,6 +58,7 @@ export const INITIAL_BUSINESS_LETTERS: BusinessLetter[] = [
     recipientCompany: 'Apex Industrial Infrastructure Ltd.',
     recipientAddress: 'Plot 48-A, MIDC Industrial Area, Taloja, Navi Mumbai - 410208',
     subject: 'Commercial Quotation for Precision CNC Machining & Structural Fabrication Works',
+    description: 'Detailed commercial offer and scope of supply for multi-axis CNC machined shafts, SS-316L flanges, and base frames.',
     salutation: 'Dear Sir / Madam,',
     openingParagraph: 'We thank you for your enquiry and interest shown in Suhel Engineering. In reference to your tender specification dated 24th August 2026, we are pleased to submit our most competitive quotation and detailed scope of supply for your esteemed project.',
     bodyParagraphs: [
@@ -100,6 +102,7 @@ export const INITIAL_BUSINESS_LETTERS: BusinessLetter[] = [
     recipientCompany: 'Maharashtra Industrial Development Corporation (MIDC)',
     recipientAddress: 'Central Division Office, Turbhe, Navi Mumbai - 400703',
     subject: 'Official Authorization & Vendor Representation Letter for Industrial Plant Maintenance',
+    description: 'Formal appointment and site representative authorization for on-site QA/NDT inspections under Contract MIDC/MECH/2026/0912.',
     salutation: 'Respected Sir,',
     openingParagraph: 'We hereby formally certify and authorize the appointment of our Senior Technical Representative for all on-site inspections, quality audits, statutory coordination, and technical execution under Contract Agreement Ref No. MIDC/MECH/2026/0912.',
     bodyParagraphs: [
@@ -140,6 +143,7 @@ export const INITIAL_BUSINESS_LETTERS: BusinessLetter[] = [
     recipientCompany: 'Dynamic Heavy Industries Corp.',
     recipientAddress: 'Industrial Zone IV, Pune-Nashik Expressway, Chakan, Pune - 410501',
     subject: 'Work Order Acceptance & Project Commencement Confirmation',
+    description: 'Work order acknowledgement for PO DHI/PO/2026/894 regarding heavy conveyor rollers and structural support gantries.',
     salutation: 'Dear Valued Client,',
     openingParagraph: 'We acknowledge with sincere gratitude the receipt of your Purchase Order No. DHI/PO/2026/894 dated 28th August 2026 for the fabrication and precision assembly of Heavy Conveyor Rollers and Structural Support Gantries.',
     bodyParagraphs: [

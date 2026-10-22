@@ -59,6 +59,8 @@ import { HsnFinderModal } from './components/HsnFinderModal';
 import { BusinessSettingsModal } from './components/BusinessSettingsModal';
 import { RecordPaymentModal } from './components/RecordPaymentModal';
 import { PaymentReceivedVoucherModal } from './components/PaymentReceivedVoucherModal';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
 
 export default function App() {
   // --- SUPABASE AUTHENTICATION STATE ---
@@ -284,8 +286,20 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  // --- NAVIGATION & VIEWS ---
+  // --- NAVIGATION & VIEWS HISTORY (Supports Mobile Hardware/Swipe Back & On-Screen Back) ---
   const [currentView, setCurrentView] = useState<ViewMode>('DASHBOARD');
+  const [viewHistory, setViewHistory] = useState<ViewMode[]>(['DASHBOARD']);
+  const currentViewRef = useRef<ViewMode>(currentView);
+  const viewHistoryRef = useRef<ViewMode[]>(viewHistory);
+
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
+  useEffect(() => {
+    viewHistoryRef.current = viewHistory;
+  }, [viewHistory]);
+
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [initialDocTypeForCreate, setInitialDocTypeForCreate] = useState<DocumentType>('TAX_INVOICE');
   const [preselectedPartyIdForCreate, setPreselectedPartyIdForCreate] = useState<string | undefined>(undefined);
@@ -294,6 +308,7 @@ export default function App() {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [isHsnFinderOpen, setIsHsnFinderOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Payment Modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -321,24 +336,182 @@ export default function App() {
     onConfirm: () => {},
   });
 
+  // Global Command Palette & Notification Center Modals (Fusion 3D Command Center)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // Keyboard shortcut listener (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Switch to a new section/view and update history stack with pushState
+  const handleSelectView = (view: ViewMode) => {
+    if (view === currentViewRef.current) return;
+    setViewHistory(prev => {
+      // Avoid immediate duplicate
+      if (prev[prev.length - 1] === view) return prev;
+      return [...prev, view];
+    });
+    setCurrentView(view);
+    try {
+      window.history.pushState({ appState: 'section', view }, '', window.location.pathname);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Close any active modal or navigate back one section
+  const handleNavigateBack = () => {
+    // 1. If any modal/drawer is open, dismiss it first
+    if (isSidebarOpen) { setIsSidebarOpen(false); return; }
+    if (previewInvoice) { setPreviewInvoice(null); return; }
+    if (isPaymentModalOpen) { setIsPaymentModalOpen(false); return; }
+    if (isPaymentVoucherModalOpen) { setIsPaymentVoucherModalOpen(false); return; }
+    if (isSettingsOpen) { setIsSettingsOpen(false); return; }
+    if (isHsnFinderOpen) { setIsHsnFinderOpen(false); return; }
+    if (isCommandPaletteOpen) { setIsCommandPaletteOpen(false); return; }
+    if (isNotificationsOpen) { setIsNotificationsOpen(false); return; }
+    if (confirmDialog.isOpen) { setConfirmDialog(prev => ({ ...prev, isOpen: false })); return; }
+
+    // 2. Otherwise navigate back one section in the view history
+    const history = viewHistoryRef.current;
+    if (history.length > 1) {
+      const nextHistory = [...history];
+      nextHistory.pop(); // remove current view
+      const targetView = nextHistory[nextHistory.length - 1];
+      setViewHistory(nextHistory);
+      setCurrentView(targetView);
+    } else if (currentViewRef.current !== 'DASHBOARD') {
+      setViewHistory(['DASHBOARD']);
+      setCurrentView('DASHBOARD');
+    }
+  };
+
+  // Intercept Mobile Swipe Gesture / Android Hardware Back Button
+  // Ensures only the current section or open modal backs out instead of exiting the entire website!
+  useEffect(() => {
+    try {
+      window.history.replaceState({ appState: 'root', view: 'DASHBOARD' }, '', window.location.pathname);
+      window.history.pushState({ appState: 'active', view: currentViewRef.current }, '', window.location.pathname);
+    } catch (e) {
+      // ignore
+    }
+
+    const handlePopState = () => {
+      // Check if any modal is open
+      if (isSidebarOpen) {
+        setIsSidebarOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (previewInvoice) {
+        setPreviewInvoice(null);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (isPaymentModalOpen) {
+        setIsPaymentModalOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (isPaymentVoucherModalOpen) {
+        setIsPaymentVoucherModalOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (isSettingsOpen) {
+        setIsSettingsOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (isHsnFinderOpen) {
+        setIsHsnFinderOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (isCommandPaletteOpen) {
+        setIsCommandPaletteOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (isNotificationsOpen) {
+        setIsNotificationsOpen(false);
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+      if (confirmDialog.isOpen) {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try { window.history.pushState({ appState: 'section', view: currentViewRef.current }, '', window.location.pathname); } catch (e) {}
+        return;
+      }
+
+      // No modal is open, go back 1 section
+      const history = viewHistoryRef.current;
+      if (history.length > 1) {
+        const nextHistory = [...history];
+        nextHistory.pop();
+        const targetView = nextHistory[nextHistory.length - 1];
+        setViewHistory(nextHistory);
+        setCurrentView(targetView);
+        try { window.history.pushState({ appState: 'section', view: targetView }, '', window.location.pathname); } catch (e) {}
+      } else if (currentViewRef.current !== 'DASHBOARD') {
+        setViewHistory(['DASHBOARD']);
+        setCurrentView('DASHBOARD');
+        try { window.history.pushState({ appState: 'section', view: 'DASHBOARD' }, '', window.location.pathname); } catch (e) {}
+      } else {
+        // Already on DASHBOARD - re-push state to prevent exiting the website accidentally
+        try { window.history.pushState({ appState: 'section', view: 'DASHBOARD' }, '', window.location.pathname); } catch (e) {}
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [
+    isSidebarOpen,
+    previewInvoice,
+    isPaymentModalOpen,
+    isPaymentVoucherModalOpen,
+    isSettingsOpen,
+    isHsnFinderOpen,
+    isCommandPaletteOpen,
+    isNotificationsOpen,
+    confirmDialog.isOpen,
+  ]);
+
   // Unpaid invoices count (excluding quotations)
   const unpaidCount = invoices.filter(i => i.documentType !== 'QUOTATION' && i.paymentStatus !== 'PAID' && i.balanceDue > 0).length;
   // Low stock count
   const lowStockCount = items.filter(i => i.currentStock <= i.minStockLevel).length;
+
+  // Real Dynamic Alert Count (Overdue + Low stock + Statutory Compliance reminders)
+  const todayIso = new Date().toISOString().split('T')[0];
+  const overdueAlertsCount = invoices.filter(i => (
+    i.paymentStatus === 'OVERDUE' || 
+    (i.balanceDue > 0 && i.dueDate && i.dueDate < todayIso)
+  )).length;
+  const unreadNotificationsCount = overdueAlertsCount + lowStockCount + 2; // +2 statutory GST calendar notifications
 
   // --- INVOICE ACTIONS ---
   const handleOpenCreateInvoice = (docType: DocumentType = 'TAX_INVOICE', partyId?: string) => {
     setEditingInvoice(null);
     setInitialDocTypeForCreate(docType);
     setPreselectedPartyIdForCreate(partyId);
-    setCurrentView('CREATE_INVOICE');
+    handleSelectView('CREATE_INVOICE');
   };
 
   const handleEditInvoice = (inv: Invoice) => {
     setEditingInvoice(inv);
     setInitialDocTypeForCreate(inv.documentType);
     setPreselectedPartyIdForCreate(inv.partyId);
-    setCurrentView('CREATE_INVOICE');
+    handleSelectView('CREATE_INVOICE');
   };
 
   const handleUpdateInvoice = (updatedInv: Invoice) => {
@@ -1246,19 +1419,40 @@ export default function App() {
       <Navbar 
         businessProfile={businessProfile}
         currentView={currentView}
-        onSelectView={setCurrentView}
+        onSelectView={handleSelectView}
+        onNavigateBack={handleNavigateBack}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
         onCreateInvoice={() => handleOpenCreateInvoice('TAX_INVOICE')}
-        onOpenPos={() => setCurrentView('POS')}
+        onOpenPos={() => handleSelectView('POS')}
         onOpenHsnFinder={() => setIsHsnFinderOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleSignOut}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        unreadNotificationsCount={unreadNotificationsCount}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1750px] w-full mx-auto px-3 sm:px-5 lg:px-6 py-5">
         
+        {/* Navigation Sidebar Drawer (opens when clicking the 3-lines menu button on the left) */}
+        <Sidebar 
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          currentView={currentView}
+          onSelectView={(v) => {
+            handleSelectView(v);
+            setIsSidebarOpen(false);
+          }}
+          unpaidCount={unpaidCount}
+          lowStockCount={lowStockCount}
+          currentUser={currentUser}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        />
+
         {/* Full-width views (Invoice Builder, POS) */}
         {currentView === 'CREATE_INVOICE' ? (
           <InvoiceBuilder 
@@ -1278,7 +1472,7 @@ export default function App() {
             onAddNewItem={handleAddNewItem}
             onCancel={() => {
               setEditingInvoice(null);
-              setCurrentView('INVOICES');
+              handleNavigateBack();
             }}
           />
         ) : currentView === 'POS' ? (
@@ -1287,24 +1481,11 @@ export default function App() {
             parties={parties}
             businessProfile={businessProfile}
             onSaveInvoice={handleSaveInvoice}
-            onBack={() => setCurrentView('DASHBOARD')}
+            onBack={handleNavigateBack}
           />
         ) : (
-          /* Standard Layout: Sidebar + Active Tab View */
-          <div className="flex flex-col md:flex-row gap-5">
-            
-            {/* Sidebar */}
-            <Sidebar 
-              currentView={currentView}
-              onSelectView={setCurrentView}
-              unpaidCount={unpaidCount}
-              lowStockCount={lowStockCount}
-              currentUser={currentUser}
-              onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            />
-
-            {/* View Viewports */}
-            <div className="flex-1 min-w-0 space-y-4">
+          /* Standard Layout: Full-Width Active View (Sidebar opens via top-left menu button) */
+          <div className="w-full min-w-0 space-y-4">
               
               {/* Page Section Indicator & Quick Sub-tabs (Only for sub-pages, Dashboard shows its full header) */}
               {currentView !== 'DASHBOARD' && (
@@ -1333,13 +1514,13 @@ export default function App() {
                     {['INVOICES', 'QUOTATIONS', 'SERVICE_ORDERS', 'PURCHASE_ESTIMATES', 'POS', 'LETTERHEAD_STUDIO'].includes(currentView) && (
                       <>
                         <button
-                          onClick={() => setCurrentView('DASHBOARD')}
+                          onClick={() => handleSelectView('DASHBOARD')}
                           className="px-3 py-1 rounded-xl text-xs font-bold transition-all bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654] cursor-pointer"
                         >
                           Dashboard
                         </button>
                         <button
-                          onClick={() => setCurrentView('INVOICES')}
+                          onClick={() => handleSelectView('INVOICES')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             currentView === 'INVOICES' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1352,7 +1533,7 @@ export default function App() {
                           )}
                         </button>
                         <button
-                          onClick={() => setCurrentView('QUOTATIONS')}
+                          onClick={() => handleSelectView('QUOTATIONS')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             currentView === 'QUOTATIONS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1363,7 +1544,7 @@ export default function App() {
                           </span>
                         </button>
                         <button
-                          onClick={() => setCurrentView('SERVICE_ORDERS')}
+                          onClick={() => handleSelectView('SERVICE_ORDERS')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             currentView === 'SERVICE_ORDERS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1374,7 +1555,7 @@ export default function App() {
                           </span>
                         </button>
                         <button
-                          onClick={() => setCurrentView('PURCHASE_ESTIMATES')}
+                          onClick={() => handleSelectView('PURCHASE_ESTIMATES')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             currentView === 'PURCHASE_ESTIMATES' ? 'bg-amber-500 text-slate-950 font-black shadow-[0_0_12px_rgba(245,158,11,0.4)]' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1385,7 +1566,7 @@ export default function App() {
                           </span>
                         </button>
                         <button
-                          onClick={() => setCurrentView('POS')}
+                          onClick={() => handleSelectView('POS')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'POS' ? 'bg-amber-500 text-slate-950' : 'bg-[#09122e] text-amber-300 hover:bg-[#0f1d44] border border-amber-500/30'
                           }`}
@@ -1393,7 +1574,7 @@ export default function App() {
                           POS Counter
                         </button>
                         <button
-                          onClick={() => setCurrentView('LETTERHEAD_STUDIO')}
+                          onClick={() => handleSelectView('LETTERHEAD_STUDIO')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'LETTERHEAD_STUDIO' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1423,7 +1604,7 @@ export default function App() {
                     {['INVENTORY', 'BARCODE_STUDIO'].includes(currentView) && (
                       <>
                         <button
-                          onClick={() => setCurrentView('INVENTORY')}
+                          onClick={() => handleSelectView('INVENTORY')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             currentView === 'INVENTORY' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1436,7 +1617,7 @@ export default function App() {
                           )}
                         </button>
                         <button
-                          onClick={() => setCurrentView('BARCODE_STUDIO')}
+                          onClick={() => handleSelectView('BARCODE_STUDIO')}
                           className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'BARCODE_STUDIO' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1450,7 +1631,7 @@ export default function App() {
                     {['EXPENSES', 'SITE_EXPENSES', 'CASH_BANK', 'EWAY_BILLS', 'REPORTS'].includes(currentView) && (
                       <>
                         <button
-                          onClick={() => setCurrentView('EXPENSES')}
+                          onClick={() => handleSelectView('EXPENSES')}
                           className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'EXPENSES' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1458,7 +1639,7 @@ export default function App() {
                           Expenses & P&L
                         </button>
                         <button
-                          onClick={() => setCurrentView('SITE_EXPENSES')}
+                          onClick={() => handleSelectView('SITE_EXPENSES')}
                           className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'SITE_EXPENSES' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1466,7 +1647,7 @@ export default function App() {
                           Site Expenses
                         </button>
                         <button
-                          onClick={() => setCurrentView('CASH_BANK')}
+                          onClick={() => handleSelectView('CASH_BANK')}
                           className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'CASH_BANK' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1474,7 +1655,7 @@ export default function App() {
                           Cash Galla & Banks
                         </button>
                         <button
-                          onClick={() => setCurrentView('EWAY_BILLS')}
+                          onClick={() => handleSelectView('EWAY_BILLS')}
                           className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'EWAY_BILLS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1482,7 +1663,7 @@ export default function App() {
                           E-Way Bills
                         </button>
                         <button
-                          onClick={() => setCurrentView('REPORTS')}
+                          onClick={() => handleSelectView('REPORTS')}
                           className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             currentView === 'REPORTS' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-400/40' : 'bg-[#09122e] text-slate-300 hover:text-white hover:bg-[#0f1d44] border border-[#172654]'
                           }`}
@@ -1593,6 +1774,7 @@ export default function App() {
                     setCurrentView('CREATE_INVOICE');
                   }}
                   onUpdateStatus={handleUpdateQuotationStatus}
+                  onUpdateInvoice={handleUpdateInvoice}
                 />
               )}
 
@@ -1761,12 +1943,11 @@ export default function App() {
                   onUpdateAttendanceCompany={handleUpdateAttendanceCompany}
                   onDeleteAttendanceCompany={handleDeleteAttendanceCompany}
                   onClearAllAttendanceAndStaff={handleClearAllAttendanceAndStaff}
+                  onBack={handleNavigateBack}
                 />
               )}
 
             </div>
-
-          </div>
         )}
 
       </main>
@@ -1850,6 +2031,41 @@ export default function App() {
         confirmLabel={confirmDialog.confirmLabel}
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* 7. Global Command Palette & Quick Navigation (Ctrl+K) */}
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        invoices={invoices}
+        parties={parties}
+        items={items}
+        onSelectView={setCurrentView}
+        onSelectInvoice={(inv) => {
+          setPreviewInvoice(inv);
+          setIsCommandPaletteOpen(false);
+        }}
+        onCreateInvoice={(docType) => {
+          handleOpenCreateInvoice(docType);
+          setIsCommandPaletteOpen(false);
+        }}
+        onOpenSettings={() => {
+          setIsSettingsOpen(true);
+          setIsCommandPaletteOpen(false);
+        }}
+      />
+
+      {/* 8. Notification & Compliance Center Modal */}
+      <NotificationCenterModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        invoices={invoices}
+        items={items}
+        onSelectView={setCurrentView}
+        onSelectInvoice={(inv) => {
+          setPreviewInvoice(inv);
+          setIsNotificationsOpen(false);
+        }}
       />
 
     </div>

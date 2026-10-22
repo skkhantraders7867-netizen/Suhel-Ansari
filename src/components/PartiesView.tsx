@@ -614,6 +614,11 @@ Thank you for your prompt response!`;
                               <span className="text-[10px] font-sans font-semibold bg-[#09122e] text-cyan-300 px-1.5 py-0.2 rounded border border-[#1b2b5d]">
                                 {inv.documentType === 'TAX_INVOICE' ? 'Tax Invoice' : inv.documentType}
                               </span>
+                              {inv.isRetentionApplicable && (inv.retentionAmount || 0) > 0 && (
+                                <span className="text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/30 flex items-center gap-0.5">
+                                  <Percent className="w-2.5 h-2.5" /> Retention {inv.retentionRate || 5}% ({formatIndianCurrency(inv.retentionAmount || 0)})
+                                </span>
+                              )}
                               {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
                                 <span className="text-[10px] font-sans font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded border border-amber-500/30 flex items-center gap-0.5">
                                   <Percent className="w-2.5 h-2.5" /> TDS {inv.tdsRate || 1}% ({formatIndianCurrency(inv.tdsAmount || 0)})
@@ -634,9 +639,9 @@ Thank you for your prompt response!`;
                             <div className="text-left sm:text-right space-y-0.5">
                               <div className="font-mono font-bold text-white flex sm:justify-end items-center gap-2">
                                 <span>Bill: ₹ {formatIndianCurrency(inv.grandTotal)}</span>
-                                {inv.isTdsApplicable && (inv.tdsAmount || 0) > 0 && (
+                                {(inv.isTdsApplicable || inv.isRetentionApplicable) && (
                                   <span className="text-[11px] font-normal text-slate-400 font-mono">
-                                    (Net: ₹ {formatIndianCurrency(inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0)))})
+                                    (Net: ₹ {formatIndianCurrency(inv.netPayableAfterDeductions || inv.netPayableAfterTds || (inv.grandTotal - (inv.tdsAmount || 0) - (inv.retentionAmount || 0)))})
                                   </span>
                                 )}
                               </div>

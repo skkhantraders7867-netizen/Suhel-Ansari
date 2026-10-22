@@ -505,27 +505,27 @@ export const ServiceOrderTemplate: React.FC<ServiceOrderTemplateProps> = ({
               </tr>
 
               {/* Tax Value Words Row */}
-              <tr className="bg-transparent">
-                <td colSpan={5} className="border border-black py-1 px-2 font-bold text-left text-[9.5px] bg-transparent">
-                  TAX VALUE WORDS (INR) : <span className="font-normal uppercase">{taxValueWords}</span>
+              <tr className="bg-white">
+                <td colSpan={5} className="border border-black py-1 px-2 font-bold text-left text-[9.5px] bg-white">
+                  TAX VALUE WORDS (INR) : <span className="font-semibold uppercase break-normal whitespace-normal">{taxValueWords}</span>
                 </td>
-                <td colSpan={isInterState ? 1 : 2} className="border border-black py-1 px-1 text-center font-bold text-[9.5px] uppercase bg-transparent">
+                <td colSpan={isInterState ? 1 : 2} className="border border-black py-1 px-1 text-center font-bold text-[9.5px] uppercase bg-slate-100">
                   GST VALUE (INR)
                 </td>
-                <td className="border border-black py-1 px-1.5 text-right font-mono font-bold text-[10.5px] bg-transparent">
+                <td className="border border-black py-1 px-1.5 text-right font-mono font-bold text-[10.5px] bg-slate-100">
                   ₹ {formatIndianCurrency(totalGst)}
                 </td>
               </tr>
 
               {/* Order Value Words Row */}
-              <tr className="bg-transparent">
-                <td colSpan={5} className="border border-black py-1 px-2 font-bold text-left text-[9.5px] bg-transparent">
-                  ORDER VALUE WORDS (INR) : <span className="font-normal uppercase">{orderValueWords}</span>
+              <tr className="bg-[#f8fafc]">
+                <td colSpan={5} className="border border-black py-1 px-2 font-bold text-left text-[9.5px] bg-[#f8fafc]">
+                  ORDER VALUE WORDS (INR) : <span className="font-semibold uppercase break-normal whitespace-normal">{orderValueWords}</span>
                 </td>
-                <td colSpan={isInterState ? 1 : 2} className="border border-black py-1 px-1 text-center font-bold text-[9.5px] uppercase bg-transparent">
+                <td colSpan={isInterState ? 1 : 2} className="border border-black py-1 px-1 text-center font-bold text-[9.5px] uppercase bg-slate-100">
                   ORDER VALUE (INR)
                 </td>
-                <td className="border border-black py-1 px-1.5 text-right font-mono font-bold text-[10.5px] bg-transparent">
+                <td className="border border-black py-1 px-1.5 text-right font-mono font-bold text-[10.5px] bg-slate-100">
                   ₹ {formatIndianCurrency(grandTotal)}
                 </td>
               </tr>
