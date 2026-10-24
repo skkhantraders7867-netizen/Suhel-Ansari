@@ -4,7 +4,7 @@ import {
   ArrowUpRight, ArrowDownRight, FileText, UserPlus, Trash2, Edit2, ShieldCheck, ChevronRight,
   Printer, Percent, Download, Receipt, Save, Check, Calendar, X
 } from 'lucide-react';
-import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
+import { Party, Invoice, BusinessProfile, PaymentVoucher, DebitVoucher } from '../types';
 import { formatIndianCurrency, generateUpiUrl, detectStateFromGSTIN, numberToIndianWords } from '../utils/gstCalculations';
 import { GST_STATES } from '../data/mockData';
 import { PartyLedgerPrintModal } from './PartyLedgerPrintModal';
@@ -14,15 +14,19 @@ interface PartiesViewProps {
   invoices: Invoice[];
   businessProfile: BusinessProfile;
   paymentVouchers?: PaymentVoucher[];
+  debitVouchers?: DebitVoucher[];
   onAddNewParty: (party: Omit<Party, 'id' | 'createdAt' | 'currentBalance'>) => Party;
   onUpdateParty: (party: Party) => void;
   onDeleteParty: (id: string) => void;
   onCreateInvoiceForParty: (partyId: string) => void;
   onRecordPayment: (party: Party) => void;
+  onRecordDebitVoucher?: (party: Party) => void;
   onEditInvoice?: (invoice: Invoice) => void;
   onDeleteInvoice?: (id: string) => void;
   onEditVoucher?: (voucher: PaymentVoucher) => void;
   onDeleteVoucher?: (id: string) => void;
+  onEditDebitVoucher?: (voucher: DebitVoucher) => void;
+  onDeleteDebitVoucher?: (id: string) => void;
 }
 
 export const PartiesView: React.FC<PartiesViewProps> = ({
@@ -30,15 +34,19 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   invoices = [],
   businessProfile,
   paymentVouchers = [],
+  debitVouchers = [],
   onAddNewParty,
   onUpdateParty,
   onDeleteParty,
   onCreateInvoiceForParty,
   onRecordPayment,
+  onRecordDebitVoucher,
   onEditInvoice,
   onDeleteInvoice,
   onEditVoucher,
   onDeleteVoucher,
+  onEditDebitVoucher,
+  onDeleteDebitVoucher,
 }) => {
   const [activeType, setActiveType] = useState<'CUSTOMER' | 'SUPPLIER'>('CUSTOMER');
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,6 +112,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   // Calculate party ledger transactions
   const partyInvoices = invoices.filter(inv => inv.partyId === selectedParty?.id && inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE');
   const partyVouchers = paymentVouchers.filter(pv => pv.partyId === selectedParty?.id);
+  const partyDebitVouchers = debitVouchers.filter(dv => dv.partyId === selectedParty?.id);
 
   // WhatsApp Payment Reminder
   const handleSendReminder = (party: Party) => {
@@ -556,6 +565,15 @@ Thank you for your prompt response!`;
                     <Receipt className="w-3.5 h-3.5" /> ₹ Record Payment
                   </button>
 
+                  {onRecordDebitVoucher && (
+                    <button
+                      onClick={() => onRecordDebitVoucher(selectedParty)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-[0_0_12px_rgba(225,29,72,0.3)] transition-colors cursor-pointer"
+                    >
+                      <Receipt className="w-3.5 h-3.5 text-rose-200" /> ₹ Debit Voucher
+                    </button>
+                  )}
+
                   {selectedParty.currentBalance > 0 && (
                     <button
                       onClick={() => handleSendReminder(selectedParty)}
@@ -740,6 +758,65 @@ Thank you for your prompt response!`;
                                   className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
                                   title={`Delete Voucher ${pv.voucherNumber}`}
                                   aria-label="Delete Voucher"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Debit Vouchers */}
+                      {partyDebitVouchers.map((dv) => (
+                        <div key={dv.id} className="p-3.5 bg-rose-950/20 hover:bg-rose-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs border-l-4 border-rose-500 transition-colors group">
+                          <div className="space-y-0.5">
+                            <div className="font-mono font-bold text-rose-300 flex items-center gap-2">
+                              <span>{dv.voucherNumber}</span>
+                              <span className="text-[10px] font-sans font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.2 rounded">
+                                Debit Voucher ({dv.paymentMode})
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              Date: {dv.date} • Ref / UTR: <span className="font-mono font-bold text-cyan-400">{dv.referenceNumber || 'N/A'}</span>
+                            </div>
+                            {dv.remarks && (
+                              <div className="text-[11px] text-slate-300 italic">
+                                &ldquo;{dv.remarks}&rdquo;
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3">
+                            <div className="text-left sm:text-right space-y-0.5">
+                              <div className="font-mono font-black text-rose-400 text-sm">
+                                + ₹ {formatIndianCurrency(dv.amount)} (Dr)
+                              </div>
+                              <div className="text-[10px] text-rose-300/80 font-semibold">
+                                Direct Ledger Debit
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {onEditDebitVoucher && (
+                                <button
+                                  type="button"
+                                  onClick={() => onEditDebitVoucher(dv)}
+                                  className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  title={`Edit Debit Voucher ${dv.voucherNumber}`}
+                                  aria-label="Edit Debit Voucher"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
+                              {onDeleteDebitVoucher && (
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteDebitVoucher(dv.id)}
+                                  className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-2xs shrink-0 cursor-pointer hover:scale-110"
+                                  title={`Delete Debit Voucher ${dv.voucherNumber}`}
+                                  aria-label="Delete Debit Voucher"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>

@@ -4,7 +4,7 @@ import {
   Users, Package, FileSpreadsheet, Settings, Plus, Sparkles,
   Receipt, Truck, Wallet, QrCode, Layers, ShieldCheck,
   User, LogIn, KeyRound, UserCheck, ShoppingCart, Scale, FileCheck2, HardHat,
-  X
+  ArrowUpRight, X
 } from 'lucide-react';
 import { ViewMode, AuthUser } from '../types';
 

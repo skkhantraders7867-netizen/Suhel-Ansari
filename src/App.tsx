@@ -3,7 +3,7 @@ import {
   Invoice, Party, Item, BusinessProfile, ViewMode, DocumentType, PaymentMode,
   Expense, BankAccount, CashTransaction, EWayBillRecord, AuthUser,
   StaffMember, AttendanceRecord, AttendanceCompany, PaymentVoucher,
-  GstFilingRecord, PurchaseBillReturnRecord, SiteExpense
+  DebitVoucher, GstFilingRecord, PurchaseBillReturnRecord, SiteExpense
 } from './types';
 import { 
   INITIAL_BUSINESS_PROFILE, 
@@ -49,6 +49,7 @@ import { BarcodeStudioView } from './components/BarcodeStudioView';
 import { PartiesView } from './components/PartiesView';
 import { OpeningBalancesView } from './components/OpeningBalancesView';
 import { PaymentVouchersView } from './components/PaymentVouchersView';
+import { DebitVouchersView } from './components/DebitVouchersView';
 import { InventoryView } from './components/InventoryView';
 import { GstReportsView } from './components/GstReportsView';
 import { GstLedgerView } from './components/GstLedgerView';
@@ -59,6 +60,7 @@ import { HsnFinderModal } from './components/HsnFinderModal';
 import { BusinessSettingsModal } from './components/BusinessSettingsModal';
 import { RecordPaymentModal } from './components/RecordPaymentModal';
 import { PaymentReceivedVoucherModal } from './components/PaymentReceivedVoucherModal';
+import { DebitVoucherModal } from './components/DebitVoucherModal';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
 
@@ -109,6 +111,11 @@ export default function App() {
       ? initialUserData.paymentVouchers
       : [];
   });
+  const [debitVouchers, setDebitVouchers] = useState<DebitVoucher[]>(() => {
+    return Array.isArray(initialUserData.debitVouchers)
+      ? initialUserData.debitVouchers
+      : [];
+  });
   const [gstFilingRecords, setGstFilingRecords] = useState<GstFilingRecord[]>(() => {
     return Array.isArray(initialUserData.gstFilingRecords)
       ? initialUserData.gstFilingRecords
@@ -136,6 +143,7 @@ export default function App() {
     setAttendanceRecords(Array.isArray(loaded.attendanceRecords) ? [...loaded.attendanceRecords] : []);
     setAttendanceCompanies(Array.isArray(loaded.attendanceCompanies) ? [...loaded.attendanceCompanies] : []);
     setPaymentVouchers(Array.isArray(loaded.paymentVouchers) ? [...loaded.paymentVouchers] : []);
+    setDebitVouchers(Array.isArray(loaded.debitVouchers) ? [...loaded.debitVouchers] : []);
     setGstFilingRecords(Array.isArray(loaded.gstFilingRecords) ? [...loaded.gstFilingRecords] : []);
     setPurchaseBillReturns(Array.isArray(loaded.purchaseBillReturns) ? [...loaded.purchaseBillReturns] : []);
   };
@@ -196,6 +204,7 @@ export default function App() {
       attendanceRecords,
       attendanceCompanies,
       paymentVouchers,
+      debitVouchers,
       gstFilingRecords,
       purchaseBillReturns,
     };
@@ -205,7 +214,7 @@ export default function App() {
       // Debounced push to Supabase table
       pushUserAccountDataToSupabase(currentUser, fullData);
     }
-  }, [currentUser, businessProfile, invoices, parties, items, expenses, siteExpenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers, gstFilingRecords, purchaseBillReturns]);
+  }, [currentUser, businessProfile, invoices, parties, items, expenses, siteExpenses, bankAccounts, cashTransactions, ewayBills, staffMembers, attendanceRecords, attendanceCompanies, paymentVouchers, debitVouchers, gstFilingRecords, purchaseBillReturns]);
 
   // Asynchronously sync from Supabase when user logs in or switches
   useEffect(() => {
@@ -249,6 +258,9 @@ export default function App() {
       }
       if (Array.isArray(cloudData.paymentVouchers) && cloudData.paymentVouchers.length > 0) {
         setPaymentVouchers(cloudData.paymentVouchers);
+      }
+      if (Array.isArray(cloudData.debitVouchers) && cloudData.debitVouchers.length > 0) {
+        setDebitVouchers(cloudData.debitVouchers);
       }
       if (Array.isArray(cloudData.gstFilingRecords) && cloudData.gstFilingRecords.length > 0) {
         setGstFilingRecords(cloudData.gstFilingRecords);
@@ -320,6 +332,12 @@ export default function App() {
   const [voucherTargetParty, setVoucherTargetParty] = useState<Party | null>(null);
   const [voucherTargetInvoice, setVoucherTargetInvoice] = useState<Invoice | null>(null);
   const [editingPaymentVoucher, setEditingPaymentVoucher] = useState<PaymentVoucher | null>(null);
+
+  // Debit Voucher Modal
+  const [isDebitVoucherModalOpen, setIsDebitVoucherModalOpen] = useState(false);
+  const [debitVoucherTargetParty, setDebitVoucherTargetParty] = useState<Party | null>(null);
+  const [debitVoucherTargetBill, setDebitVoucherTargetBill] = useState<Invoice | null>(null);
+  const [editingDebitVoucher, setEditingDebitVoucher] = useState<DebitVoucher | null>(null);
 
   // In-App Confirm Dialog (Replaces blocked window.confirm)
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -803,6 +821,123 @@ export default function App() {
             return {
               ...p,
               currentBalance: (p.currentBalance || 0) + v.amount,
+            };
+          }
+          return p;
+        }));
+
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  // --- DEBIT VOUCHER (PAYMENT MADE) ACTIONS ---
+  const handleOpenDebitVoucherModal = (party?: Party | null, bill?: Invoice | null, voucher?: DebitVoucher | null) => {
+    setDebitVoucherTargetParty(party || null);
+    setDebitVoucherTargetBill(bill || null);
+    setEditingDebitVoucher(voucher || null);
+    setIsDebitVoucherModalOpen(true);
+  };
+
+  const handleSaveDebitVoucher = (voucher: DebitVoucher, linkedBillId?: string, bankAccountId?: string) => {
+    setDebitVouchers(prev => {
+      const exists = prev.some(v => v.id === voucher.id);
+      if (exists) {
+        return prev.map(v => v.id === voucher.id ? voucher : v);
+      }
+      return [voucher, ...prev];
+    });
+
+    // 1. Update linked bill / invoice if any
+    if (linkedBillId) {
+      setInvoices(prev => prev.map(inv => {
+        if (inv.id === linkedBillId) {
+          const newPaid = Math.min(inv.grandTotal, (inv.paidAmount || 0) + voucher.amount);
+          const newDue = Math.max(0, inv.grandTotal - newPaid);
+          return {
+            ...inv,
+            paidAmount: newPaid,
+            balanceDue: newDue,
+            paymentStatus: newDue === 0 ? 'PAID' : 'PARTIAL',
+            paymentMode: voucher.paymentMode,
+            paymentReference: voucher.referenceNumber,
+          };
+        }
+        return inv;
+      }));
+    }
+
+    // 2. Update Party balance (Debit payment reduces payable towards supplier)
+    setParties(prev => prev.map(p => {
+      if (p.id === voucher.partyId) {
+        return {
+          ...p,
+          currentBalance: (p.currentBalance || 0) + voucher.amount,
+        };
+      }
+      return p;
+    }));
+
+    // 3. If Cash, record outflow in cashTransactions
+    if (voucher.paymentMode === 'CASH') {
+      const newCashTx: CashTransaction = {
+        id: `cash-dv-${Date.now()}`,
+        date: voucher.date,
+        type: 'OUTFLOW',
+        category: 'SUPPLIER_PAYMENT',
+        amount: voucher.amount,
+        description: `Debit Voucher #${voucher.voucherNumber} to ${voucher.partyName}`,
+        referenceNumber: voucher.voucherNumber,
+        partyName: voucher.partyName,
+        createdAt: new Date().toISOString(),
+      };
+      setCashTransactions(prev => [newCashTx, ...prev]);
+    } else if (bankAccountId) {
+      // If Bank, deduct from bank account balance
+      setBankAccounts(prev => prev.map(acc => {
+        if (acc.id === bankAccountId) {
+          return { ...acc, balance: acc.balance - voucher.amount };
+        }
+        return acc;
+      }));
+    }
+  };
+
+  const handleDeleteDebitVoucher = (voucherId: string) => {
+    const v = debitVouchers.find(p => p.id === voucherId);
+    if (!v) return;
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Debit Voucher',
+      message: `Are you sure you want to delete debit voucher "${v.voucherNumber}" (Amount: ₹${v.amount})?`,
+      confirmLabel: 'Delete Voucher',
+      onConfirm: () => {
+        setDebitVouchers(prev => prev.filter(p => p.id !== voucherId));
+
+        // Reverse bill paid balance if linked
+        if (v.billId) {
+          setInvoices(prev => prev.map(inv => {
+            if (inv.id === v.billId) {
+              const newPaid = Math.max(0, (inv.paidAmount || 0) - v.amount);
+              const newDue = Math.max(0, inv.grandTotal - newPaid);
+              return {
+                ...inv,
+                paidAmount: newPaid,
+                balanceDue: newDue,
+                paymentStatus: newDue === inv.grandTotal ? 'UNPAID' : (newDue === 0 ? 'PAID' : 'PARTIAL'),
+              };
+            }
+            return inv;
+          }));
+        }
+
+        // Reverse party balance
+        setParties(prev => prev.map(p => {
+          if (p.id === v.partyId) {
+            return {
+              ...p,
+              currentBalance: (p.currentBalance || 0) - v.amount,
             };
           }
           return p;
@@ -1834,11 +1969,13 @@ export default function App() {
                   invoices={invoices}
                   businessProfile={businessProfile}
                   paymentVouchers={paymentVouchers}
+                  debitVouchers={debitVouchers}
                   onAddNewParty={handleAddNewParty}
                   onUpdateParty={handleUpdateParty}
                   onDeleteParty={handleDeleteParty}
                   onCreateInvoiceForParty={(partyId) => handleOpenCreateInvoice('TAX_INVOICE', partyId)}
                   onRecordPayment={(party) => handleOpenPaymentVoucherModal(party)}
+                  onRecordDebitVoucher={(party) => handleOpenDebitVoucherModal(party)}
                   onEditInvoice={handleEditInvoice}
                   onDeleteInvoice={handleDeleteInvoice}
                   onEditVoucher={(voucher) => {
@@ -1847,6 +1984,12 @@ export default function App() {
                     handleOpenPaymentVoucherModal(p, inv, voucher);
                   }}
                   onDeleteVoucher={handleDeletePaymentVoucher}
+                  onEditDebitVoucher={(voucher) => {
+                    const p = parties.find(party => party.id === voucher.partyId);
+                    const b = voucher.billId ? invoices.find(i => i.id === voucher.billId) : undefined;
+                    handleOpenDebitVoucherModal(p, b, voucher);
+                  }}
+                  onDeleteDebitVoucher={handleDeleteDebitVoucher}
                 />
               )}
 
@@ -1864,6 +2007,7 @@ export default function App() {
               {currentView === 'PAYMENT_VOUCHERS' && (
                 <PaymentVouchersView 
                   paymentVouchers={paymentVouchers}
+                  debitVouchers={debitVouchers}
                   parties={parties}
                   invoices={invoices}
                   bankAccounts={bankAccounts}
@@ -1875,6 +2019,31 @@ export default function App() {
                     handleOpenPaymentVoucherModal(p, inv, voucher);
                   }}
                   onDeleteVoucher={handleDeletePaymentVoucher}
+                  onOpenCreateDebitVoucher={(party, bill) => handleOpenDebitVoucherModal(party, bill)}
+                  onOpenEditDebitVoucher={(voucher) => {
+                    const p = parties.find(party => party.id === voucher.partyId);
+                    const b = voucher.billId ? invoices.find(i => i.id === voucher.billId) : undefined;
+                    handleOpenDebitVoucherModal(p, b, voucher);
+                  }}
+                  onDeleteDebitVoucher={handleDeleteDebitVoucher}
+                />
+              )}
+
+              {currentView === 'DEBIT_VOUCHERS' && (
+                <DebitVouchersView 
+                  debitVouchers={debitVouchers}
+                  parties={parties}
+                  invoices={invoices}
+                  bankAccounts={bankAccounts}
+                  businessProfile={businessProfile}
+                  onOpenCreateVoucher={(party, bill) => handleOpenDebitVoucherModal(party, bill)}
+                  onOpenEditVoucher={(voucher) => {
+                    const p = parties.find(party => party.id === voucher.partyId);
+                    const b = voucher.billId ? invoices.find(i => i.id === voucher.billId) : undefined;
+                    handleOpenDebitVoucherModal(p, b, voucher);
+                  }}
+                  onDeleteVoucher={handleDeleteDebitVoucher}
+                  onSwitchToPaymentReceived={() => setCurrentView('PAYMENT_VOUCHERS')}
                 />
               )}
 
@@ -2009,6 +2178,25 @@ export default function App() {
         editingVoucher={editingPaymentVoucher}
         onSaveVoucher={handleSavePaymentVoucher}
         onDeleteVoucher={handleDeletePaymentVoucher}
+      />
+
+      {/* 4c. Debit Voucher Modal (Supplier Payments, Outflow Accounting & Voucher Print) */}
+      <DebitVoucherModal
+        isOpen={isDebitVoucherModalOpen}
+        onClose={() => {
+          setIsDebitVoucherModalOpen(false);
+          setEditingDebitVoucher(null);
+        }}
+        targetParty={debitVoucherTargetParty}
+        targetBill={debitVoucherTargetBill}
+        parties={parties}
+        invoices={invoices}
+        bankAccounts={bankAccounts}
+        businessProfile={businessProfile}
+        debitVouchers={debitVouchers}
+        editingVoucher={editingDebitVoucher}
+        onSaveVoucher={handleSaveDebitVoucher}
+        onDeleteVoucher={handleDeleteDebitVoucher}
       />
 
       {/* 5. Email Login & Registration Modal */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, FileText, Users, Package, ArrowRight, Plus, 
   Receipt, ShoppingBag, LayoutDashboard, Settings, Layers, 
-  Truck, Wallet, HardHat, FileSpreadsheet, UserCheck, Scale, QrCode
+  Truck, Wallet, HardHat, FileSpreadsheet, UserCheck, Scale, QrCode, ArrowUpRight
 } from 'lucide-react';
 import { ViewMode, Invoice, Party, Item, DocumentType } from '../types';
 

@@ -29,6 +29,7 @@ export type ViewMode =
   | 'PARTIES' 
   | 'OPENING_BALANCES'
   | 'PAYMENT_VOUCHERS'
+  | 'DEBIT_VOUCHERS'
   | 'GST_LEDGER'
   | 'INVENTORY' 
   | 'EXPENSES'
@@ -147,6 +148,25 @@ export interface PaymentVoucher {
   invoiceId?: string;
   invoiceNumber?: string;
   invoiceAmount?: number;
+  remarks?: string;
+  bankAccountId?: string;
+  bankAccountName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface DebitVoucher {
+  id: string;
+  voucherNumber: string;
+  date: string;
+  partyId: string;
+  partyName: string;
+  amount: number;
+  paymentMode: PaymentMode;
+  referenceNumber: string; // UTR, Cheque No, Bank Ref
+  billId?: string;
+  billNumber?: string;
+  billAmount?: number;
   remarks?: string;
   bankAccountId?: string;
   bankAccountName?: string;

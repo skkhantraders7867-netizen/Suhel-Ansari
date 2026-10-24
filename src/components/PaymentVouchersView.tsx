@@ -5,11 +5,13 @@ import {
   CreditCard, QrCode, FileText, Check, AlertCircle, X, TrendingUp,
   Percent, ArrowUpRight, Clock, Users, ChevronRight, Eye, Send, Sparkles
 } from 'lucide-react';
-import { PaymentVoucher, Party, Invoice, BusinessProfile, BankAccount, PaymentMode } from '../types';
+import { PaymentVoucher, DebitVoucher, Party, Invoice, BusinessProfile, BankAccount, PaymentMode } from '../types';
 import { formatIndianCurrency, numberToIndianWords } from '../utils/gstCalculations';
+import { DebitVouchersView } from './DebitVouchersView';
 
 interface PaymentVouchersViewProps {
   paymentVouchers: PaymentVoucher[];
+  debitVouchers?: DebitVoucher[];
   parties: Party[];
   invoices: Invoice[];
   bankAccounts: BankAccount[];
@@ -17,6 +19,10 @@ interface PaymentVouchersViewProps {
   onOpenCreateVoucher: (party?: Party, invoice?: Invoice) => void;
   onOpenEditVoucher: (voucher: PaymentVoucher) => void;
   onDeleteVoucher: (voucherId: string) => void;
+  onOpenCreateDebitVoucher?: (party?: Party, bill?: Invoice) => void;
+  onOpenEditDebitVoucher?: (voucher: DebitVoucher) => void;
+  onDeleteDebitVoucher?: (voucherId: string) => void;
+  onSwitchToDebitVouchers?: () => void;
 }
 
 type DashboardTab = 'VOUCHERS_LIST' | 'PENDING_DUES' | 'PARTY_SUMMARY';
@@ -24,6 +30,7 @@ type PeriodFilter = 'ALL' | 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'LAST_MONTH';
 
 export const PaymentVouchersView: React.FC<PaymentVouchersViewProps> = ({
   paymentVouchers = [],
+  debitVouchers = [],
   parties = [],
   invoices = [],
   bankAccounts = [],
@@ -31,7 +38,12 @@ export const PaymentVouchersView: React.FC<PaymentVouchersViewProps> = ({
   onOpenCreateVoucher,
   onOpenEditVoucher,
   onDeleteVoucher,
+  onOpenCreateDebitVoucher,
+  onOpenEditDebitVoucher,
+  onDeleteDebitVoucher,
+  onSwitchToDebitVouchers,
 }) => {
+  const [dashboardMode, setDashboardMode] = useState<'RECEIPTS' | 'DEBITS'>('RECEIPTS');
   const [activeTab, setActiveTab] = useState<DashboardTab>('VOUCHERS_LIST');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<string>('ALL');
@@ -260,9 +272,61 @@ Thank you!`;
     document.body.removeChild(link);
   };
 
+  if (dashboardMode === 'DEBITS') {
+    return (
+      <DebitVouchersView
+        debitVouchers={debitVouchers}
+        parties={parties}
+        invoices={invoices}
+        bankAccounts={bankAccounts}
+        businessProfile={businessProfile}
+        onOpenCreateVoucher={onOpenCreateDebitVoucher || (() => {})}
+        onOpenEditVoucher={onOpenEditDebitVoucher || (() => {})}
+        onDeleteVoucher={onDeleteDebitVoucher || (() => {})}
+        onSwitchToPaymentReceived={() => setDashboardMode('RECEIPTS')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 pb-16">
       
+      {/* TOP DASHBOARD SWITCHER (Payment Received <-> Debit Voucher) */}
+      <div className="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setDashboardMode('RECEIPTS')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              dashboardMode === 'RECEIPTS'
+                ? 'bg-emerald-600 text-white shadow-md border border-emerald-500/50'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+            }`}
+          >
+            <Receipt className="w-3.5 h-3.5 text-emerald-200" />
+            <span>Payment Received Dashboard (भुगतान प्राप्ति)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDashboardMode('DEBITS')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              dashboardMode === 'DEBITS'
+                ? 'bg-rose-600 text-white shadow-md border border-rose-500/50 font-black'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+            }`}
+          >
+            <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
+            <span>Debit Voucher Dashboard (डेबिट वाउचर / अदायगी)</span>
+          </button>
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2 pr-2 text-[11px] text-slate-400 font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Inflow &amp; Receivables Center</span>
+        </div>
+      </div>
+
       {/* 1. TOP DASHBOARD COMMAND BANNER */}
       <div className="bg-gradient-to-r from-slate-950 via-[#071f1d] to-slate-950 text-white p-6 md:p-8 rounded-3xl border border-emerald-500/30 shadow-2xl relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
