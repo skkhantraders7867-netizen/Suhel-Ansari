@@ -62,7 +62,12 @@ export const PurchaseEstimatesView: React.FC<PurchaseEstimatesViewProps> = ({
     if (!targetParty && est.partyName) {
       targetParty = parties.find(p => p.name.trim().toLowerCase() === est.partyName.trim().toLowerCase());
     }
-    if (!targetParty) {
+    if (targetParty) {
+      targetParty = {
+        ...targetParty,
+        type: 'SUPPLIER',
+      };
+    } else {
       targetParty = {
         id: est.partyId || `supp-${Date.now()}`,
         name: est.partyName || 'Supplier',

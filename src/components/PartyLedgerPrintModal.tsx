@@ -238,14 +238,12 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       (inv.partyName && party.name && inv.partyName.trim().toLowerCase() === party.name.trim().toLowerCase())
     );
     if (!matchesParty) return false;
-    // Quotations are estimates for customers, exclude
-    if (inv.documentType === 'QUOTATION') return false;
-    // If party is supplier, include all purchase bills, purchase estimates and bills
+    // Quotations and Service Orders are not financial bills, strictly exclude from ledger
+    if (inv.documentType === 'QUOTATION' || inv.documentType === 'SERVICE_ORDER') return false;
+    // Always include Purchase Estimates and Purchase Bills
+    if (inv.documentType === 'PURCHASE_ESTIMATE' || inv.documentType === 'PURCHASE_BILL') return true;
+    // If party is supplier, include all supplier purchase bills and bills
     if (party.type === 'SUPPLIER') return true;
-    // For customers, include if it is a purchase bill or converted purchase estimate
-    if (inv.documentType === 'PURCHASE_ESTIMATE') {
-      return inv.quotationStatus === 'CONVERTED' || (inv.paidAmount && inv.paidAmount > 0);
-    }
     return true;
   });
 
@@ -266,18 +264,22 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   );
 
   // Build Chronological Ledger Entries
-  // 1. Collect all transaction entries (Invoices, Purchase Bills, TDS, Payments, Vouchers)
+  // 1. Collect all transaction entries (Invoices, Purchase Bills, Purchase Estimates, TDS, Payments, Vouchers)
   const allTransactionEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
 
-  // Add all Invoices & Purchase Bills
+  // Add all Invoices, Purchase Bills & Purchase Estimates
   partyInvoices.forEach((inv) => {
-    const isPurchase = inv.documentType === 'PURCHASE_BILL' || inv.documentType === 'PURCHASE_ESTIMATE' || party.type === 'SUPPLIER';
+    const isPurchaseEstimate = inv.documentType === 'PURCHASE_ESTIMATE';
+    const isPurchaseBill = inv.documentType === 'PURCHASE_BILL';
+    const isPurchase = isPurchaseBill || isPurchaseEstimate || party.type === 'SUPPLIER';
 
     const itemDesc = (inv.items && inv.items.length > 0)
-      ? `${isPurchase ? 'PURCHASE BILL: ' : ''}${inv.items.map(item => `${item.name || item.description || 'Item'} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')}`
-      : isPurchase
-        ? (inv.notes || 'PURCHASE OF GOODS / SERVICES')
-        : 'TAX INVOICE GOODS / SERVICES';
+      ? `${isPurchaseEstimate ? 'PURCHASE ESTIMATE: ' : isPurchaseBill ? 'PURCHASE BILL: ' : isPurchase ? 'PURCHASE: ' : ''}${inv.items.map(item => `${item.name || item.description || 'Item'} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')}`
+      : isPurchaseEstimate
+        ? (inv.notes || 'PURCHASE ESTIMATE / INWARD ENTRY')
+        : isPurchase
+          ? (inv.notes || 'PURCHASE OF GOODS / SERVICES')
+          : 'TAX INVOICE GOODS / SERVICES';
 
     // Calculate invoice/bill total amount safely with all possible fallbacks
     const invBillAmount = Number(
@@ -295,7 +297,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       date: formatDateToDMY(inv.date),
       rawDate: inv.date,
       txTimestamp: txTime,
-      type: isPurchase ? 'PUR-BILL' : 'JOURNAL',
+      type: isPurchaseEstimate ? 'PUR-EST' : isPurchase ? 'PUR-BILL' : 'JOURNAL',
       invoiceNo: inv.invoiceNumber,
       itemDescription: itemDesc,
       amount: invBillAmount,
