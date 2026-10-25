@@ -4,7 +4,7 @@ import {
   ZoomIn, ZoomOut, Layers, Maximize2, Minimize2, FileText, Sliders, Building2, Eye, EyeOff,
   Calendar, Filter, RefreshCw
 } from 'lucide-react';
-import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
+import { Party, Invoice, BusinessProfile, PaymentVoucher, DebitVoucher } from '../types';
 import { GST_STATES } from '../data/mockData';
 import { formatIndianCurrency, numberToIndianWords } from '../utils/gstCalculations';
 import { printElementSafely, downloadElementAsPdf } from '../utils/pdfExport';
@@ -14,11 +14,11 @@ interface LedgerEntry {
   date: string;
   rawDate?: string;
   txTimestamp?: number;
-  type: string;        // e.g. JOURNAL, RCPT, OB
-  invoiceNo: string;   // e.g. 13(26-27) or INV-001
+  type: string;        // e.g. JOURNAL, RCPT, OB, PUR-BILL, PMT, DB-NT
+  invoiceNo: string;   // e.g. 13(26-27) or INV-001 or PB-001
   itemDescription: string; // Item Description
-  amount: number;      // Bill Amount (Debit)
-  payment: number;     // Payment or TDS (Credit)
+  amount: number;      // Bill Amount (Debit for customer, Credit for supplier)
+  payment: number;     // Payment or TDS (Credit for customer, Debit for supplier)
   tdsAmount?: number;
   tdsRate?: number;
   tdsSection?: string;
@@ -33,6 +33,7 @@ interface PartyLedgerPrintModalProps {
   invoices: Invoice[];
   businessProfile: BusinessProfile;
   paymentVouchers?: PaymentVoucher[];
+  debitVouchers?: DebitVoucher[];
   onUpdateParty?: (party: Party) => void;
   initialDateFilterEnabled?: boolean;
   initialFromDate?: string;
@@ -134,6 +135,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   invoices = [],
   businessProfile,
   paymentVouchers = [],
+  debitVouchers = [],
   onUpdateParty,
   initialDateFilterEnabled = false,
   initialFromDate,
@@ -229,34 +231,55 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
   // Calculate effective opening balance value with sign
   const effectiveOpeningBalance = balanceType === 'Cr' ? -Math.abs(Number(openingBalance) || 0) : Math.abs(Number(openingBalance) || 0);
 
-  // Filter invoices for this party
-  const partyInvoices = invoices.filter(
-    inv => (
+  // Filter invoices for this party (including Purchase Bills and Purchase Estimates for suppliers)
+  const partyInvoices = invoices.filter(inv => {
+    const matchesParty = (
       (inv.partyId && party.id && inv.partyId === party.id) || 
       (inv.partyName && party.name && inv.partyName.trim().toLowerCase() === party.name.trim().toLowerCase())
-    ) && 
-    inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE'
-  );
+    );
+    if (!matchesParty) return false;
+    // Quotations are estimates for customers, exclude
+    if (inv.documentType === 'QUOTATION') return false;
+    // If party is supplier, include all purchase bills, purchase estimates and bills
+    if (party.type === 'SUPPLIER') return true;
+    // For customers, include if it is a purchase bill or converted purchase estimate
+    if (inv.documentType === 'PURCHASE_ESTIMATE') {
+      return inv.quotationStatus === 'CONVERTED' || (inv.paidAmount && inv.paidAmount > 0);
+    }
+    return true;
+  });
 
-  // Filter payment vouchers for this party
-  const partyVouchers = paymentVouchers.filter(
+  // Filter payment vouchers (receipts)
+  const partyVouchers = (paymentVouchers || []).filter(
     pv => (
       (pv.partyId && party.id && pv.partyId === party.id) || 
       (pv.partyName && party.name && pv.partyName.trim().toLowerCase() === party.name.trim().toLowerCase())
     )
   );
 
+  // Filter debit vouchers (payments made to suppliers/vendors)
+  const partyDebitVouchers = (debitVouchers || []).filter(
+    dv => (
+      (dv.partyId && party.id && dv.partyId === party.id) || 
+      (dv.partyName && party.name && dv.partyName.trim().toLowerCase() === party.name.trim().toLowerCase())
+    )
+  );
+
   // Build Chronological Ledger Entries
-  // 1. Collect all transaction entries (Invoices, TDS, Payments)
+  // 1. Collect all transaction entries (Invoices, Purchase Bills, TDS, Payments, Vouchers)
   const allTransactionEntries: Omit<LedgerEntry, 'runningBalance'>[] = [];
 
-  // Add all Invoices
+  // Add all Invoices & Purchase Bills
   partyInvoices.forEach((inv) => {
-    const itemDesc = (inv.items && inv.items.length > 0)
-      ? inv.items.map(item => `${item.name || item.description || 'Item'} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')
-      : 'TAX INVOICE GOODS / SERVICES';
+    const isPurchase = inv.documentType === 'PURCHASE_BILL' || inv.documentType === 'PURCHASE_ESTIMATE' || party.type === 'SUPPLIER';
 
-    // Calculate invoice bill total amount safely with all possible fallbacks
+    const itemDesc = (inv.items && inv.items.length > 0)
+      ? `${isPurchase ? 'PURCHASE BILL: ' : ''}${inv.items.map(item => `${item.name || item.description || 'Item'} (Qty: ${item.quantity} ${item.unit || 'PCS'})`).join(', ')}`
+      : isPurchase
+        ? (inv.notes || 'PURCHASE OF GOODS / SERVICES')
+        : 'TAX INVOICE GOODS / SERVICES';
+
+    // Calculate invoice/bill total amount safely with all possible fallbacks
     const invBillAmount = Number(
       inv.grandTotal ?? 
       (inv as any).total ?? 
@@ -272,7 +295,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       date: formatDateToDMY(inv.date),
       rawDate: inv.date,
       txTimestamp: txTime,
-      type: 'JOURNAL',
+      type: isPurchase ? 'PUR-BILL' : 'JOURNAL',
       invoiceNo: inv.invoiceNumber,
       itemDescription: itemDesc,
       amount: invBillAmount,
@@ -288,7 +311,7 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
         date: formatDateToDMY(inv.date),
         rawDate: inv.date,
         txTimestamp: txTime,
-        type: 'RCPT',
+        type: isPurchase ? 'TDS' : 'RCPT',
         invoiceNo: inv.invoiceNumber,
         itemDescription: `TDS DEDUCTED @${inv.tdsRate || 0}% SEC ${inv.tdsSection || '194C'} (CHALLAN ADJUSTMENT)`,
         amount: 0,
@@ -300,8 +323,8 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       });
     }
 
-    // 3. If invoice has recorded paidAmount that is NOT from a PaymentVoucher, include it
-    const hasVoucherForInv = partyVouchers.some(pv => pv.invoiceId === inv.id);
+    // 3. If invoice has recorded paidAmount that is NOT from a PaymentVoucher or DebitVoucher, include it
+    const hasVoucherForInv = partyVouchers.some(pv => pv.invoiceId === inv.id) || partyDebitVouchers.some(dv => dv.billId === inv.id);
     if (!hasVoucherForInv && (inv.paidAmount || 0) > 0) {
       const paidAmt = Number(inv.paidAmount || 0);
       allTransactionEntries.push({
@@ -309,19 +332,50 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
         date: formatDateToDMY(inv.date),
         rawDate: inv.date,
         txTimestamp: txTime,
-        type: 'RCPT',
+        type: isPurchase ? 'PMT' : 'RCPT',
         invoiceNo: inv.invoiceNumber,
         itemDescription: inv.paymentReference 
-          ? `PAYMENT RECEIVED VIA ${inv.paymentMode?.toUpperCase() || 'BANK / UPI'} (REF: ${inv.paymentReference})`
-          : `PAYMENT RECEIVED VIA ${inv.paymentMode?.toUpperCase() || 'BANK / UPI'}`,
+          ? `${isPurchase ? 'PAYMENT PAID TO SUPPLIER' : 'PAYMENT RECEIVED'} VIA ${inv.paymentMode?.toUpperCase() || 'BANK / UPI'} (REF: ${inv.paymentReference})`
+          : `${isPurchase ? 'PAYMENT PAID TO SUPPLIER' : 'PAYMENT RECEIVED'} VIA ${inv.paymentMode?.toUpperCase() || 'BANK / UPI'}`,
         amount: 0,
         payment: paidAmt,
         entryType: 'PAYMENT',
       });
     }
+
+    // 4. If purchase has return amount or debit note, include deductions
+    if (isPurchase && (inv.purchaseReturnAmount || 0) > 0) {
+      allTransactionEntries.push({
+        id: `entry-ret-${inv.id}`,
+        date: formatDateToDMY(inv.date),
+        rawDate: inv.date,
+        txTimestamp: txTime,
+        type: 'DB-NT',
+        invoiceNo: inv.invoiceNumber,
+        itemDescription: `PURCHASE RETURN: GOODS RETURNED TO SUPPLIER${inv.purchaseReturnNotes ? ` (${inv.purchaseReturnNotes})` : ''}`,
+        amount: 0,
+        payment: Number(inv.purchaseReturnAmount || 0),
+        entryType: 'PAYMENT',
+      });
+    }
+
+    if (isPurchase && (inv.purchaseDebitAmount || 0) > 0) {
+      allTransactionEntries.push({
+        id: `entry-deb-${inv.id}`,
+        date: formatDateToDMY(inv.date),
+        rawDate: inv.date,
+        txTimestamp: txTime,
+        type: 'DB-NT',
+        invoiceNo: inv.invoiceNumber,
+        itemDescription: `DEBIT NOTE: RATE DIFFERENCE / SHORTAGE DEDUCTION${inv.purchaseDebitPercent ? ` (${inv.purchaseDebitPercent}%)` : ''}`,
+        amount: 0,
+        payment: Number(inv.purchaseDebitAmount || 0),
+        entryType: 'PAYMENT',
+      });
+    }
   });
 
-  // 4. Add all dedicated Payment Vouchers
+  // 5. Add all dedicated Payment Vouchers (Receipts from customer)
   partyVouchers.forEach((pv) => {
     allTransactionEntries.push({
       id: `entry-pv-${pv.id}`,
@@ -333,6 +387,22 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
       itemDescription: `PAYMENT RECEIVED VIA ${pv.paymentMode.toUpperCase()} (REF: ${pv.referenceNumber || 'N/A'})${pv.remarks ? ` - ${pv.remarks}` : ''}`,
       amount: 0,
       payment: Number(pv.amount || 0),
+      entryType: 'PAYMENT',
+    });
+  });
+
+  // 6. Add all dedicated Debit Vouchers (Payments made to suppliers)
+  partyDebitVouchers.forEach((dv) => {
+    allTransactionEntries.push({
+      id: `entry-dv-${dv.id}`,
+      date: formatDateToDMY(dv.date),
+      rawDate: dv.date,
+      txTimestamp: parseDateToMidnight(dv.date),
+      type: 'PMT',
+      invoiceNo: dv.billNumber || dv.voucherNumber || '-',
+      itemDescription: `PAYMENT PAID TO SUPPLIER VIA ${dv.paymentMode.toUpperCase()} (REF: ${dv.referenceNumber || 'N/A'})${dv.remarks ? ` - ${dv.remarks}` : ''}`,
+      amount: 0,
+      payment: Number(dv.amount || 0),
       entryType: 'PAYMENT',
     });
   });
@@ -1234,8 +1304,12 @@ Thank you for your business!`;
                     <th className="py-1.5 px-1 border-r border-black font-bold text-center">Type</th>
                     <th className="py-1.5 px-1 border-r border-black font-bold text-center">Invoice #</th>
                     <th className="py-1.5 px-2 border-r border-black font-bold text-center">Item Description</th>
-                    <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">Amount (Dr)</th>
-                    <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">Payment (Cr)</th>
+                    <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">
+                      {party.type === 'SUPPLIER' ? 'Bill Amount (Cr)' : 'Amount (Dr)'}
+                    </th>
+                    <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">
+                      {party.type === 'SUPPLIER' ? 'Payment Paid (Dr)' : 'Payment (Cr)'}
+                    </th>
                     <th className="py-1.5 px-1.5 font-bold text-center">Balance</th>
                   </tr>
                 </thead>
@@ -1274,12 +1348,12 @@ Thank you for your business!`;
                           </div>
                         </td>
 
-                        {/* Amount (Debit) */}
+                        {/* Amount (Debit for customer, Credit for supplier) */}
                         <td className={`${cellPadding} text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums`}>
                           {(entry.entryType === 'INVOICE' || entry.amount > 0) ? formatIndianCurrency(entry.amount, true) : ''}
                         </td>
 
-                        {/* Payment (Credit / TDS / Payment) */}
+                        {/* Payment (Credit for customer, Debit for supplier) */}
                         <td className={`${cellPadding} text-right font-mono font-bold text-black border-r border-black align-middle tabular-nums`}>
                           {(entry.entryType === 'PAYMENT' || entry.entryType === 'TDS' || entry.payment > 0) ? formatIndianCurrency(entry.payment, true) : ''}
                         </td>
@@ -1308,7 +1382,7 @@ Thank you for your business!`;
                       {formatIndianCurrency(totalCredit, true)}
                     </td>
                     <td className="py-1.5 px-2 text-right font-mono font-black text-[#0f2e6b] bg-[#dce6f1] tabular-nums">
-                      {formatIndianCurrency(Math.abs(finalBalance), true)} {finalBalance >= 0 ? 'Dr' : 'Cr'}
+                      {formatIndianCurrency(Math.abs(finalBalance), true)} {party.type === 'SUPPLIER' ? (finalBalance >= 0 ? 'Cr (Payable)' : 'Dr (Advance)') : (finalBalance >= 0 ? 'Dr' : 'Cr')}
                     </td>
                   </tr>
                 </tfoot>
@@ -1324,7 +1398,7 @@ Thank you for your business!`;
                     : 'NET OUTSTANDING BALANCE IN WORDS:'}
                 </span>
                 <span className="font-bold text-slate-900 leading-tight">
-                  {numberToIndianWords(Math.abs(finalBalance))} Only {finalBalance >= 0 ? '(Receivable)' : '(Settled)'}
+                  {numberToIndianWords(Math.abs(finalBalance))} Only {party.type === 'SUPPLIER' ? (finalBalance >= 0 ? '(Payable to Supplier)' : '(Advance Settled)') : (finalBalance >= 0 ? '(Receivable)' : '(Settled)')}
                 </span>
               </div>
               <div className="text-right shrink-0">

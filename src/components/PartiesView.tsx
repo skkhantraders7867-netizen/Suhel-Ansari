@@ -109,10 +109,32 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
     return matchesType && matchesSearch;
   });
 
-  // Calculate party ledger transactions
-  const partyInvoices = invoices.filter(inv => inv.partyId === selectedParty?.id && inv.documentType !== 'QUOTATION' && inv.documentType !== 'PURCHASE_ESTIMATE');
-  const partyVouchers = paymentVouchers.filter(pv => pv.partyId === selectedParty?.id);
-  const partyDebitVouchers = debitVouchers.filter(dv => dv.partyId === selectedParty?.id);
+  // Calculate party ledger transactions (matching by partyId and partyName fallback)
+  const partyInvoices = invoices.filter(inv => {
+    const matchesParty = (
+      (inv.partyId && selectedParty?.id && inv.partyId === selectedParty.id) ||
+      (inv.partyName && selectedParty?.name && inv.partyName.trim().toLowerCase() === selectedParty.name.trim().toLowerCase())
+    );
+    if (!matchesParty) return false;
+    if (inv.documentType === 'QUOTATION') return false;
+    // For suppliers, include purchase bills and purchase estimates
+    if (selectedParty?.type === 'SUPPLIER') return true;
+    // For customers, exclude draft purchase estimates
+    if (inv.documentType === 'PURCHASE_ESTIMATE') {
+      return inv.quotationStatus === 'CONVERTED' || (inv.paidAmount && inv.paidAmount > 0);
+    }
+    return true;
+  });
+
+  const partyVouchers = paymentVouchers.filter(pv => 
+    (pv.partyId && selectedParty?.id && pv.partyId === selectedParty.id) ||
+    (pv.partyName && selectedParty?.name && pv.partyName.trim().toLowerCase() === selectedParty.name.trim().toLowerCase())
+  );
+
+  const partyDebitVouchers = debitVouchers.filter(dv => 
+    (dv.partyId && selectedParty?.id && dv.partyId === selectedParty.id) ||
+    (dv.partyName && selectedParty?.name && dv.partyName.trim().toLowerCase() === selectedParty.name.trim().toLowerCase())
+  );
 
   // WhatsApp Payment Reminder
   const handleSendReminder = (party: Party) => {
@@ -316,7 +338,7 @@ Thank you for your prompt response!`;
                 placeholder={`Search ${activeType.toLowerCase()}s by name, phone, GSTIN...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#09122e] border border-[#1b2b5d] rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/50"
+                className="w-full pl-9 pr-4 py-2 bg-[#09122e] border border-[#1b2b5d] rounded-xl text-xs text-white font-semibold placeholder:text-slate-400 focus:outline-none focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
           </div>
@@ -590,9 +612,11 @@ Thank you for your prompt response!`;
                 <div className="p-4 bg-[#09122e]/60 border-b border-[#14234b] flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-xs uppercase tracking-wider text-white font-heading flex items-center gap-1.5">
-                      <span>Transaction Ledger History ({partyInvoices.length} Bills, {partyVouchers.length} Vouchers)</span>
+                      <span>Transaction Ledger History ({partyInvoices.length} Bills/Purchases, {partyVouchers.length + partyDebitVouchers.length} Vouchers)</span>
                     </h3>
-                    <span className="text-[10px] text-slate-400">Includes Sales, TDS Deductions (1%), and Payment receipts</span>
+                    <span className="text-[10px] text-slate-400">
+                      {selectedParty?.type === 'SUPPLIER' ? 'Includes Purchase Bills, Inward Entries, Payments Paid & Debit Vouchers' : 'Includes Sales Invoices, TDS Deductions (1%), and Payment receipts'}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -617,20 +641,24 @@ Thank you for your prompt response!`;
                 </div>
 
                 <div className="divide-y divide-[#101b3d]">
-                  {partyInvoices.length === 0 && partyVouchers.length === 0 ? (
+                  {partyInvoices.length === 0 && partyVouchers.length === 0 && partyDebitVouchers.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-xs">
-                      No invoices or payment vouchers recorded for this party yet.
+                      No invoices, purchase bills, or payment vouchers recorded for this party yet.
                     </div>
                   ) : (
                     <>
-                      {/* Invoices */}
+                      {/* Invoices & Purchase Bills */}
                       {partyInvoices.map((inv) => (
                         <div key={inv.id} className="p-3.5 hover:bg-[#0c183d]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs transition-colors">
                           <div className="space-y-0.5">
                             <div className="font-mono font-bold text-white flex items-center gap-2">
                               <span>{inv.invoiceNumber}</span>
-                              <span className="text-[10px] font-sans font-semibold bg-[#09122e] text-cyan-300 px-1.5 py-0.2 rounded border border-[#1b2b5d]">
-                                {inv.documentType === 'TAX_INVOICE' ? 'Tax Invoice' : inv.documentType}
+                              <span className={`text-[10px] font-sans font-semibold px-1.5 py-0.2 rounded border ${
+                                inv.documentType === 'PURCHASE_BILL' || inv.documentType === 'PURCHASE_ESTIMATE'
+                                  ? 'bg-amber-950/70 text-amber-300 border-amber-500/40'
+                                  : 'bg-[#09122e] text-cyan-300 border-[#1b2b5d]'
+                              }`}>
+                                {inv.documentType === 'PURCHASE_BILL' ? 'Purchase Bill' : inv.documentType === 'PURCHASE_ESTIMATE' ? 'Purchase Entry' : inv.documentType === 'TAX_INVOICE' ? 'Tax Invoice' : inv.documentType}
                               </span>
                               {inv.isRetentionApplicable && (inv.retentionAmount || 0) > 0 && (
                                 <span className="text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/30 flex items-center gap-0.5">
@@ -1194,6 +1222,7 @@ Thank you for your prompt response!`;
           invoices={invoices}
           businessProfile={businessProfile}
           paymentVouchers={paymentVouchers}
+          debitVouchers={debitVouchers}
           onUpdateParty={onUpdateParty}
           initialDateFilterEnabled={dateFilterEnabled}
           initialFromDate={ledgerFromDate}

@@ -4,7 +4,7 @@ import {
   ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, FileText,
   Users, Building2, Calendar, Filter, Sparkles
 } from 'lucide-react';
-import { Party, Invoice, BusinessProfile, PaymentVoucher } from '../types';
+import { Party, Invoice, BusinessProfile, PaymentVoucher, DebitVoucher } from '../types';
 import { formatIndianCurrency } from '../utils/gstCalculations';
 import { PartyLedgerPrintModal } from './PartyLedgerPrintModal';
 
@@ -13,6 +13,7 @@ interface OpeningBalancesViewProps {
   invoices: Invoice[];
   businessProfile: BusinessProfile;
   paymentVouchers?: PaymentVoucher[];
+  debitVouchers?: DebitVoucher[];
   onUpdateParty: (party: Party) => void;
   onAddNewParty: (party: Omit<Party, 'id' | 'createdAt' | 'currentBalance'>) => Party;
 }
@@ -22,6 +23,7 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
   invoices,
   businessProfile,
   paymentVouchers = [],
+  debitVouchers = [],
   onUpdateParty,
   onAddNewParty,
 }) => {
@@ -398,7 +400,7 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
               placeholder="Search by party name, phone, GSTIN, city..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 font-medium"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 font-semibold"
             />
           </div>
 
@@ -771,6 +773,7 @@ export const OpeningBalancesView: React.FC<OpeningBalancesViewProps> = ({
           invoices={invoices}
           businessProfile={businessProfile}
           paymentVouchers={paymentVouchers}
+          debitVouchers={debitVouchers}
           onUpdateParty={onUpdateParty}
         />
       )}

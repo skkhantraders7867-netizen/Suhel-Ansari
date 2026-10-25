@@ -260,3 +260,83 @@ body.light-theme select {
   color: #0f172a !important;
 }
 
+/* ==========================================================================
+   Universal High-Contrast Input, Search & Form Field Text Visibility
+   Ensures text typed into ANY input box, search box or textarea is always 100% visible
+   ========================================================================== */
+
+/* 1. Base input text default: crisp slate-900 dark text */
+input, select, textarea {
+  color: #0f172a;
+}
+
+/* 2. Light Backgrounds & Inside Light Cards / Modals: ALWAYS Dark Text */
+input[class*="bg-white"],
+select[class*="bg-white"],
+textarea[class*="bg-white"],
+input[class*="bg-slate-50"],
+select[class*="bg-slate-50"],
+textarea[class*="bg-slate-50"],
+input[class*="bg-slate-100"],
+select[class*="bg-slate-100"],
+textarea[class*="bg-slate-100"],
+input[class*="bg-slate-200"],
+select[class*="bg-slate-200"],
+textarea[class*="bg-slate-200"],
+input[class*="bg-amber-50"],
+select[class*="bg-amber-50"],
+textarea[class*="bg-amber-50"],
+.bg-white input,
+.bg-white select,
+.bg-white textarea,
+.bg-slate-50 input,
+.bg-slate-50 select,
+.bg-slate-50 textarea,
+.bg-slate-100 input,
+.bg-slate-100 select,
+.bg-slate-100 textarea {
+  color: #0f172a !important;
+}
+
+/* 3. Dark Themed Inputs (Dashboard, Tables, Dark Modals): Crisp Bright Text */
+input[class*="bg-[#0"],
+select[class*="bg-[#0"],
+textarea[class*="bg-[#0"],
+input[class*="bg-[#1"],
+select[class*="bg-[#1"],
+textarea[class*="bg-[#1"],
+input[class*="bg-slate-9"],
+select[class*="bg-slate-9"],
+textarea[class*="bg-slate-9"],
+input[class*="bg-slate-8"],
+select[class*="bg-slate-8"],
+textarea[class*="bg-slate-8"],
+input[class*="bg-gray-9"],
+select[class*="bg-gray-9"],
+textarea[class*="bg-gray-9"],
+.bg-\[\#070e24\] input:not([class*="bg-white"]):not([class*="bg-slate-50"]),
+.bg-\[\#09122e\] input:not([class*="bg-white"]):not([class*="bg-slate-50"]) {
+  color: #f8fafc !important;
+}
+
+/* 4. High-contrast placeholders so placeholder text is legible */
+input::placeholder,
+textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+input[class*="bg-[#"]::placeholder,
+textarea[class*="bg-[#"]::placeholder,
+input[class*="bg-slate-9"]::placeholder,
+textarea[class*="bg-slate-9"]::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Active focus states for clarity */
+input:focus, textarea:focus, select:focus {
+  outline-color: #0284c7;
+}
+
+

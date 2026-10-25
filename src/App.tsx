@@ -1999,6 +1999,7 @@ export default function App() {
                   invoices={invoices}
                   businessProfile={businessProfile}
                   paymentVouchers={paymentVouchers}
+                  debitVouchers={debitVouchers}
                   onUpdateParty={handleUpdateParty}
                   onAddNewParty={handleAddNewParty}
                 />
