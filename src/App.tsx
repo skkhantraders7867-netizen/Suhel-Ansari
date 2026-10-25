@@ -1884,6 +1884,8 @@ export default function App() {
                   invoices={invoices}
                   parties={parties}
                   businessProfile={businessProfile}
+                  paymentVouchers={paymentVouchers}
+                  debitVouchers={debitVouchers}
                   onCreatePurchaseEstimate={() => handleOpenCreateInvoice('PURCHASE_ESTIMATE')}
                   onViewPurchaseEstimate={(inv) => setPreviewInvoice(inv)}
                   onEditPurchaseEstimate={handleEditInvoice}

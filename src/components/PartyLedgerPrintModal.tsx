@@ -1305,10 +1305,10 @@ Thank you for your business!`;
                     <th className="py-1.5 px-1 border-r border-black font-bold text-center">Invoice #</th>
                     <th className="py-1.5 px-2 border-r border-black font-bold text-center">Item Description</th>
                     <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">
-                      {party.type === 'SUPPLIER' ? 'Bill Amount (Cr)' : 'Amount (Dr)'}
+                      Amount
                     </th>
                     <th className="py-1.5 px-1.5 border-r border-black font-bold text-center">
-                      {party.type === 'SUPPLIER' ? 'Payment Paid (Dr)' : 'Payment (Cr)'}
+                      Payment (dr)
                     </th>
                     <th className="py-1.5 px-1.5 font-bold text-center">Balance</th>
                   </tr>

@@ -3,15 +3,18 @@ import {
   ShoppingCart, Plus, Search, Eye, Edit2, Copy, Trash2, 
   ArrowRight, CheckCircle2, Clock, AlertTriangle, Send, Share2, 
   Building, Phone, Calendar, Check, XCircle, FileCheck, ArrowUpRight, 
-  Package, Truck, Receipt, RotateCcw, Percent, FileText, X
+  Package, Truck, Receipt, RotateCcw, Percent, FileText, X, Printer
 } from 'lucide-react';
-import { Invoice, BusinessProfile, Party } from '../types';
+import { Invoice, BusinessProfile, Party, PaymentVoucher, DebitVoucher } from '../types';
 import { formatIndianCurrency } from '../utils/gstCalculations';
+import { PartyLedgerPrintModal } from './PartyLedgerPrintModal';
 
 interface PurchaseEstimatesViewProps {
   invoices: Invoice[];
   parties: Party[];
   businessProfile: BusinessProfile;
+  paymentVouchers?: PaymentVoucher[];
+  debitVouchers?: DebitVoucher[];
   onCreatePurchaseEstimate: () => void;
   onViewPurchaseEstimate: (estimate: Invoice) => void;
   onEditPurchaseEstimate: (estimate: Invoice) => void;
@@ -28,6 +31,8 @@ export const PurchaseEstimatesView: React.FC<PurchaseEstimatesViewProps> = ({
   invoices,
   parties,
   businessProfile,
+  paymentVouchers = [],
+  debitVouchers = [],
   onCreatePurchaseEstimate,
   onViewPurchaseEstimate,
   onEditPurchaseEstimate,
@@ -47,6 +52,33 @@ export const PurchaseEstimatesView: React.FC<PurchaseEstimatesViewProps> = ({
   const [inputDebitAmount, setInputDebitAmount] = useState<number>(0);
   const [inputDebitPercent, setInputDebitPercent] = useState<number>(0);
   const [inputReturnNotes, setInputReturnNotes] = useState<string>('');
+
+  // Party Ledger Print Modal State
+  const [selectedPartyForLedger, setSelectedPartyForLedger] = useState<Party | null>(null);
+  const [isSupplierSelectModalOpen, setIsSupplierSelectModalOpen] = useState<boolean>(false);
+
+  const handleOpenLedgerForEstimate = (est: Invoice) => {
+    let targetParty = parties.find(p => p.id === est.partyId);
+    if (!targetParty && est.partyName) {
+      targetParty = parties.find(p => p.name.trim().toLowerCase() === est.partyName.trim().toLowerCase());
+    }
+    if (!targetParty) {
+      targetParty = {
+        id: est.partyId || `supp-${Date.now()}`,
+        name: est.partyName || 'Supplier',
+        phone: est.partyPhone || '',
+        gstin: est.partyGstin || '',
+        billingAddress: est.partyAddress || '',
+        city: est.partyCity || '',
+        state: est.partyState || '',
+        stateCode: est.partyStateCode || '',
+        currentBalance: 0,
+        type: 'SUPPLIER',
+        createdAt: new Date().toISOString(),
+      };
+    }
+    setSelectedPartyForLedger(targetParty);
+  };
 
   // Filter purchase estimates (or purchase bills if applicable)
   const allPurchaseEstimates = useMemo(() => {
@@ -277,7 +309,24 @@ export const PurchaseEstimatesView: React.FC<PurchaseEstimatesViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const suppliers = parties.filter(p => p.type === 'SUPPLIER');
+                if (suppliers.length === 1) {
+                  setSelectedPartyForLedger(suppliers[0]);
+                } else {
+                  setIsSupplierSelectModalOpen(true);
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
+              title="Print Supplier / Party Ledger"
+            >
+              <Printer className="w-4 h-4 text-cyan-300" />
+              <span>🖨️ Print Ledger</span>
+            </button>
+
             <button
               onClick={onCreatePurchaseEstimate}
               className="flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-amber-500/30 transition-all transform active:scale-95 cursor-pointer"
@@ -608,13 +657,23 @@ export const PurchaseEstimatesView: React.FC<PurchaseEstimatesViewProps> = ({
                             <Percent className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* View / Print */}
+                          {/* View / Print Purchase */}
                           <button
                             onClick={() => onViewPurchaseEstimate(est)}
                             className="p-1.5 text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                             title="View & Print Purchase"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+
+                          {/* Print Party / Supplier Ledger */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenLedgerForEstimate(est)}
+                            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title={`Print Ledger for ${est.partyName || 'Supplier'}`}
+                          >
+                            <Printer className="w-4 h-4" />
                           </button>
 
                           {/* WhatsApp Share */}
@@ -829,6 +888,69 @@ export const PurchaseEstimatesView: React.FC<PurchaseEstimatesViewProps> = ({
         </div>
       )}
 
+      {/* Supplier Selection Modal for Header Print Ledger Button */}
+      {isSupplierSelectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Printer className="w-4 h-4 text-cyan-400" />
+                <h3 className="font-bold text-sm">Select Supplier to Print Ledger</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsSupplierSelectModalOpen(false)}
+                className="text-white/80 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 max-h-80 overflow-y-auto divide-y divide-slate-100">
+              {parties.filter(p => p.type === 'SUPPLIER').length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-xs">
+                  No suppliers registered yet. You can also print ledger directly using the printer icon on each purchase row.
+                </div>
+              ) : (
+                parties.filter(p => p.type === 'SUPPLIER').map((supp) => (
+                  <button
+                    key={supp.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPartyForLedger(supp);
+                      setIsSupplierSelectModalOpen(false);
+                    }}
+                    className="w-full py-3 px-3 hover:bg-slate-50 flex items-center justify-between text-left transition-colors cursor-pointer rounded-xl group"
+                  >
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs group-hover:text-blue-600">{supp.name}</div>
+                      <div className="text-[11px] text-slate-500">{supp.phone} {supp.city ? `• ${supp.city}` : ''}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600">
+                      <span>Open Ledger</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Party Ledger Statement Modal */}
+      {selectedPartyForLedger && (
+        <PartyLedgerPrintModal 
+          isOpen={Boolean(selectedPartyForLedger)}
+          onClose={() => setSelectedPartyForLedger(null)}
+          party={selectedPartyForLedger}
+          invoices={invoices}
+          businessProfile={businessProfile}
+          paymentVouchers={paymentVouchers}
+          debitVouchers={debitVouchers}
+        />
+      )}
+
     </div>
   );
 };
+
