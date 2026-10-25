@@ -134,7 +134,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       { id: 'nav-barcodes', title: 'Barcode Label Studio', view: 'BARCODE_STUDIO' as ViewMode, icon: QrCode },
       { id: 'nav-expenses', title: 'Business Expenses & P&L', view: 'EXPENSES' as ViewMode, icon: Receipt },
       { id: 'nav-site-expenses', title: 'Project Site Expenses (7 Categories)', view: 'SITE_EXPENSES' as ViewMode, icon: HardHat },
-      { id: 'nav-cash-bank', title: 'Cash Drawer Galla & Bank Accounts', view: 'CASH_BANK' as ViewMode, icon: Wallet },
+      { id: 'nav-cash-bank', title: 'Cash Drawer & Bank Accounts', view: 'CASH_BANK' as ViewMode, icon: Wallet },
       { id: 'nav-eway', title: 'E-Way Bills & Transit JSON', view: 'EWAY_BILLS' as ViewMode, icon: Truck },
       { id: 'nav-gst-ledger', title: 'GST Ledger & Input Tax Credit', view: 'GST_LEDGER' as ViewMode, icon: FileText },
       { id: 'nav-opening-balance', title: 'Opening Balances (FY DR/CR)', view: 'OPENING_BALANCES' as ViewMode, icon: Scale },

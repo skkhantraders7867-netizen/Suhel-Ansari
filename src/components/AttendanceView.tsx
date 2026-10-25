@@ -722,9 +722,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     return data;
   }, [attendanceRecords, selectedMonth, trendRange, companyFilteredMonthRecords.length]);
 
-  // Staff members specifically belonging to the selected month:
-  // 1) Staff who have an attendance record in selectedMonth
-  // 2) Staff created explicitly for selectedMonth
+  // Staff members specifically belonging to the selected month
   const currentMonthStaff = useMemo(() => {
     const staffIdsWithRecord = new Set(monthRecords.map((r) => r.staffId));
     const staffNamesWithRecord = new Set(monthRecords.map((r) => (r.staffName || '').trim().toLowerCase()));
@@ -732,16 +730,57 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     return staffMembers.filter((s) => {
       if (staffIdsWithRecord.has(s.id)) return true;
       if (s.name && staffNamesWithRecord.has(s.name.trim().toLowerCase())) return true;
-      if (s.createdMonth === selectedMonth || s.month === selectedMonth) return true;
       return false;
     });
-  }, [staffMembers, monthRecords, selectedMonth]);
+  }, [staffMembers, monthRecords]);
 
-  // Other staff members (belonging to other months)
+  // List of all workers from previous months or staff directory who are NOT yet in current month's attendance register
   const otherMonthsStaff = useMemo(() => {
-    const currentIds = new Set(currentMonthStaff.map((s) => s.id));
-    return staffMembers.filter((s) => !currentIds.has(s.id));
-  }, [staffMembers, currentMonthStaff]);
+    const currentMonthStaffIds = new Set(monthRecords.map((r) => r.staffId).filter(Boolean));
+    const currentMonthStaffNames = new Set(monthRecords.map((r) => (r.staffName || '').trim().toLowerCase()));
+
+    const map = new Map<string, StaffMember>();
+
+    // 1. From staffMembers directory
+    staffMembers.forEach((s) => {
+      const alreadyInCurrentMonth = currentMonthStaffIds.has(s.id) || currentMonthStaffNames.has((s.name || '').trim().toLowerCase());
+      if (!alreadyInCurrentMonth) {
+        map.set(s.id, s);
+      }
+    });
+
+    // 2. From attendance records of previous / other months (captures any worker logged in previous months)
+    attendanceRecords.forEach((r) => {
+      if (r.month !== selectedMonth) {
+        const staffId = r.staffId || r.id;
+        const alreadyInCurrentMonth = currentMonthStaffIds.has(staffId) || currentMonthStaffNames.has((r.staffName || '').trim().toLowerCase());
+        if (!alreadyInCurrentMonth && !map.has(staffId)) {
+          map.set(staffId, {
+            id: staffId,
+            employeeId: r.employeeId,
+            companyName: r.companyName,
+            name: r.staffName,
+            role: r.role || 'Worker',
+            phone: '',
+            defaultRate: r.salaryRate || 650,
+            rateType: 'PER_DAY',
+            joiningDate: r.joiningDate || `${r.month}-01`,
+            accountHolderName: r.accountHolderName,
+            relationName: r.relationName,
+            accountNumber: r.accountNumber,
+            bankName: r.bankName,
+            ifscCode: r.ifscCode,
+            upiId: r.upiId,
+            month: r.month,
+            createdMonth: r.month,
+            status: 'ACTIVE',
+          });
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [staffMembers, attendanceRecords, monthRecords, selectedMonth]);
 
   // Live Auto-Calculation for Quick Calculator
   const liveGrossSalary = Math.round(Number(calcSalaryRate || 0) * Number(calcDutyDays || 0));
@@ -1169,46 +1208,54 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     setSearchQuery('');
     setStatusFilter('ALL');
     setCompanySearchInput('');
-    alert(`✅ ${formattedMonthTitle} attendance view refreshed. Is month ka data isolated aur safe hai.`);
+    alert(`✅ ${formattedMonthTitle} attendance view refreshed. Month data is isolated and safely stored.`);
   };
 
   // Import selected workers from other months into current month
   const handleImportStaffToCurrentMonth = (staffIds: string[]) => {
     if (!staffIds.length) {
-      alert('Kripya import karne ke liye kam se kam 1 worker select karein.');
+      alert('Please select at least 1 worker to import.');
       return;
     }
 
     let count = 0;
     staffIds.forEach((staffId) => {
-      const staff = staffMembers.find((s) => s.id === staffId);
+      const staff = staffMembers.find((s) => s.id === staffId) || otherMonthsStaff.find((s) => s.id === staffId);
       if (!staff) return;
 
       const alreadyHas = monthRecords.some((r) => r.staffId === staff.id || (r.staffName && r.staffName.toLowerCase() === staff.name.toLowerCase()));
       if (!alreadyHas) {
-        const defaultDuty = 26;
-        const gross = staff.defaultRate * defaultDuty;
+        // Fetch their latest previous record for rate, duty, OT rate & details
+        const prevRec = [...attendanceRecords]
+          .filter(r => (r.staffId === staff.id || (r.staffName && r.staffName.toLowerCase() === staff.name.toLowerCase())) && r.month !== selectedMonth)
+          .sort((a, b) => b.month.localeCompare(a.month))[0];
+
+        const effectiveRate = staff.defaultRate || prevRec?.salaryRate || 650;
+        const defaultDuty = prevRec?.dutyDays ? Math.min(31, prevRec.dutyDays) : 26;
+        const gross = effectiveRate * defaultDuty;
+        const effectiveOtRate = prevRec?.overtimeRate || Math.round(effectiveRate / 8) || 80;
+
         const newRec: AttendanceRecord = {
           id: `att-${staff.id}-${selectedMonth}`,
           staffId: staff.id,
           staffName: staff.name,
-          employeeId: staff.employeeId,
-          companyName: staff.companyName,
-          role: staff.role,
+          employeeId: staff.employeeId || prevRec?.employeeId,
+          companyName: staff.companyName || prevRec?.companyName,
+          role: staff.role || prevRec?.role || 'Worker',
           month: selectedMonth,
           dutyDate: `${selectedMonth}-01`,
-          joiningDate: staff.joiningDate,
-          accountHolderName: staff.accountHolderName,
-          relationName: staff.relationName,
-          accountNumber: staff.accountNumber,
-          bankName: staff.bankName,
-          ifscCode: staff.ifscCode,
-          upiId: staff.upiId,
-          salaryRate: staff.defaultRate,
+          joiningDate: staff.joiningDate || prevRec?.joiningDate,
+          accountHolderName: staff.accountHolderName || prevRec?.accountHolderName,
+          relationName: staff.relationName || prevRec?.relationName,
+          accountNumber: staff.accountNumber || prevRec?.accountNumber,
+          bankName: staff.bankName || prevRec?.bankName,
+          ifscCode: staff.ifscCode || prevRec?.ifscCode,
+          upiId: staff.upiId || prevRec?.upiId,
+          salaryRate: effectiveRate,
           dutyDays: defaultDuty,
           totalSalary: gross,
           overtimeHours: 0,
-          overtimeRate: Math.round(staff.defaultRate / 8) || 75,
+          overtimeRate: effectiveOtRate,
           overtimeAmount: 0,
           advanceDeduction: 0,
           bonus: 0,
@@ -1218,13 +1265,18 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           dailyAttendance: {},
         };
         onSaveAttendanceRecord(newRec);
+
+        // Also ensure staff exists in staffMembers directory
+        if (!staffMembers.some(s => s.id === staff.id)) {
+          onAddStaffMember(staff);
+        }
         count++;
       }
     });
 
     setIsImportStaffModalOpen(false);
     setSelectedStaffIdsToImport([]);
-    alert(`✅ ${count} worker(s) successfully imported into ${formattedMonthTitle}. Ye records sirf ${formattedMonthTitle} me rahenge.`);
+    alert(`✅ ${count} worker(s) successfully imported into ${formattedMonthTitle}. Ab aap unki duty, advance aur wages update kar sakte hain.`);
   };
 
   // Day marking toggle
@@ -1443,6 +1495,21 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           >
             <Plus className="w-3.5 h-3.5" />
             <span>+ Add Worker</span>
+          </button>
+
+          {/* 1B. 📥 Import Employees Button (Pichhle Mahine se Import) */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedStaffIdsToImport([]);
+              setImportSearchQuery('');
+              setIsImportStaffModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-black rounded-xl border border-yellow-200 shadow-[0_0_15px_rgba(245,158,11,0.35)] transition-all cursor-pointer active:scale-95"
+            title="Import Workers from Previous Month into Current Month"
+          >
+            <Upload className="w-3.5 h-3.5 rotate-180 text-slate-950 font-black" />
+            <span>📥 Import Employees {otherMonthsStaff.length > 0 ? `(${otherMonthsStaff.length})` : ''}</span>
           </button>
 
           {/* 2. ✓ Mark Attendance Button (Emerald Green) */}
@@ -1729,9 +1796,22 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         {/* Matrix Grid */}
         {companyFilteredMonthRecords.length === 0 ? (
           <div className="text-center py-10 px-4 border border-dashed border-[#172758] rounded-xl bg-[#09122e]/40">
-            <Users className="w-10 h-10 mx-auto text-slate-600 mb-2 opacity-50" />
             <p className="text-xs font-bold text-slate-300">No workers in {formattedMonthTitle}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Add a worker or import from another month to view the attendance calendar.</p>
+            <p className="text-[11px] text-slate-500 mt-1">Add a worker or import from previous months to view the attendance calendar.</p>
+            {otherMonthsStaff.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStaffIdsToImport([]);
+                  setImportSearchQuery('');
+                  setIsImportStaffModalOpen(true);
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shadow-xs"
+              >
+                <Upload className="w-3.5 h-3.5 rotate-180" />
+                <span>📥 Import {otherMonthsStaff.length} Employees From Previous Month</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto pb-2 scrollbar-none">
@@ -1835,7 +1915,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <div>
             {/* Header with Search and Filter */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#14234d] pb-3 mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-cyan-400">
                   <Users className="w-4 h-4" />
                 </div>
@@ -1845,6 +1925,22 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 border border-blue-500/30">
                   {filteredRecords.length} Workers
                 </span>
+
+                {/* Import From Prev Month Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedStaffIdsToImport([]);
+                    setImportSearchQuery('');
+                    setIsImportStaffModalOpen(true);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 rounded-lg text-amber-300 text-[11px] font-extrabold transition-all cursor-pointer active:scale-95 shadow-xs"
+                  title="Import employees from previous months"
+                >
+                  <Upload className="w-3 h-3 rotate-180" />
+                  <span>📥 Import From Prev Month {otherMonthsStaff.length > 0 ? `(${otherMonthsStaff.length})` : ''}</span>
+                </button>
+
                 {isSalaryCalcMinimized && (
                   <button
                     type="button"
@@ -1892,8 +1988,53 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
             {/* Table */}
             {filteredRecords.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-xs">
-                No employees matching filter.
+              <div className="text-center py-10 px-4 border border-dashed border-[#172758] rounded-2xl bg-[#081230]/60 space-y-3 my-2">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-400 mx-auto">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold text-white">
+                    No Employees in {formattedMonthTitle}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                    {otherMonthsStaff.length > 0
+                      ? `Found ${otherMonthsStaff.length} worker(s) from previous months ready to import into ${formattedMonthTitle}.`
+                      : 'You can add new workers or import employees from previous months.'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                  {otherMonthsStaff.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStaffIdsToImport([]);
+                        setImportSearchQuery('');
+                        setIsImportStaffModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-black rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.35)] border border-yellow-200 transition-all cursor-pointer active:scale-95"
+                    >
+                      <Upload className="w-4 h-4 rotate-180" />
+                      <span>📥 Import Previous Month Employees ({otherMonthsStaff.length})</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewStaffEmployeeId(getNextEmployeeId());
+                      setNewStaffCompanyName(selectedCompany !== 'ALL' ? selectedCompany : (allAvailableCompanies[0]?.name || 'SR Group & Fabrication'));
+                      setNewStaffJoiningDate(`${selectedMonth}-01`);
+                      setNewStaffDutyDays(26);
+                      setNewStaffOvertimeHours(0);
+                      setNewStaffOvertimeRate(85);
+                      setNewStaffAdvance(0);
+                      setIsAddStaffModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl border border-blue-400/40 transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Add New Worker</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="overflow-x-auto scrollbar-none">
@@ -3663,7 +3804,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   setNewStaffUpiId('');
                   setNewStaffDocuments([]);
                   setIsAddStaffModalOpen(false);
-                  alert(`✅ Worker "${newStaffName.trim()}" successfully added to ${formattedMonthTitle}! Ye worker sirf ${formattedMonthTitle} me rahega.`);
+                  alert(`✅ Worker "${newStaffName.trim()}" successfully added to ${formattedMonthTitle}! This worker record belongs exclusively to ${formattedMonthTitle}.`);
                 }}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors"
               >
@@ -4470,7 +4611,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     Import Workers to {formattedMonthTitle}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Chune huye workers sirf <strong>{formattedMonthTitle}</strong> ke register me add honge
+                    Selected workers will only be added to the <strong>{formattedMonthTitle}</strong> register
                   </p>
                 </div>
               </div>
@@ -4526,7 +4667,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 if (filtered.length === 0) {
                   return (
                     <div className="py-8 text-center text-xs text-slate-500">
-                      Koi worker nahi mila jise import kiya ja sake.
+                      No workers found eligible for import.
                     </div>
                   );
                 }
@@ -4587,30 +4728,46 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-100">
               <span className="text-xs font-semibold text-slate-500">
-                {selectedStaffIdsToImport.length} worker(s) selected
+                {selectedStaffIdsToImport.length} of {otherMonthsStaff.length} worker(s) selected
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsImportStaffModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
+
+                {otherMonthsStaff.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = otherMonthsStaff.map(s => s.id);
+                      handleImportStaffToCurrentMonth(allIds);
+                    }}
+                    className="px-3.5 py-2 text-xs font-black text-amber-950 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 active:scale-95"
+                    title="1-Click: Import all workers from previous month at once"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-900" />
+                    <span>⚡ Import All ({otherMonthsStaff.length})</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   disabled={selectedStaffIdsToImport.length === 0}
                   onClick={() => handleImportStaffToCurrentMonth(selectedStaffIdsToImport)}
-                  className={`px-5 py-2 text-xs font-black text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-4 py-2 text-xs font-black text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                     selectedStaffIdsToImport.length > 0
                       ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
                       : 'bg-slate-300 cursor-not-allowed'
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  Import ({selectedStaffIdsToImport.length})
+                  Import Selected ({selectedStaffIdsToImport.length})
                 </button>
               </div>
             </div>

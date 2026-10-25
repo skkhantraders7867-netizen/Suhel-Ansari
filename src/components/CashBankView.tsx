@@ -185,17 +185,17 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 font-heading">Cash & Bank Accounts Management</h1>
-            <span className="text-[11px] font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-              Galla & Passbook
+            <h1 className="text-xl font-black text-white font-heading">Cash &amp; Bank Accounts Management</h1>
+            <span className="text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+              Cash Register &amp; Passbook
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time shop counter cash drawer (Galla Hisaab), multiple bank account balances, and inter-bank transfers.
+          <p className="text-xs text-slate-400 mt-1">
+            Real-time counter cash drawer balance, multiple bank account ledgers, and inter-bank transfers.
           </p>
         </div>
 
@@ -203,7 +203,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
           {activeTab === 'CASH_GALLA' ? (
             <button
               onClick={() => setIsAddCashModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>+ Record Cash Entry</span>
@@ -212,14 +212,14 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsBankTransferModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#09122e] hover:bg-[#0e1a3e] border border-[#14234b] text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
-                <ArrowLeftRight className="w-4 h-4 text-blue-600" />
+                <ArrowLeftRight className="w-4 h-4 text-cyan-400" />
                 <span>Transfer Funds</span>
               </button>
               <button
                 onClick={() => setIsAddBankModalOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20"
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/20 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>+ Add Bank Account</span>
@@ -232,32 +232,32 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
       {/* KPI Overview Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
-        {/* Total Cash in Galla */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Cash in Hand (Galla Counter)</span>
-            <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
+        {/* Total Cash in Register */}
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>Cash in Hand (Cash Register)</span>
+            <div className="p-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-slate-900">
+          <div className="mt-2 text-xl font-extrabold text-emerald-400">
             ₹{expectedCashInHand.toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 text-[11px] text-emerald-700 flex items-center gap-1">
+          <div className="mt-1 text-[11px] text-emerald-300/80 flex items-center gap-1">
             <span>+{cashTransactions.filter(t => t.type === 'INFLOW').length} inflows</span>
             <span>• -{cashTransactions.filter(t => t.type === 'OUTFLOW').length} outflows</span>
           </div>
         </div>
 
         {/* Total in Bank Accounts */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Total Bank Balance</span>
-            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-1.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-lg">
               <Landmark className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-blue-700">
+          <div className="mt-2 text-xl font-extrabold text-cyan-400">
             ₹{totalBankBalance.toLocaleString('en-IN')}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -266,14 +266,14 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
         </div>
 
         {/* Total Liquid Capital */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Total Liquid Business Funds</span>
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+            <div className="p-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg">
               <IndianRupee className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-indigo-700">
+          <div className="mt-2 text-xl font-extrabold text-indigo-300">
             ₹{(expectedCashInHand + totalBankBalance).toLocaleString('en-IN')}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -283,30 +283,30 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
 
       </div>
 
-      {/* Tabs Switcher: Cash Galla vs Bank Accounts */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      {/* Tabs Switcher: Cash Register vs Bank Accounts */}
+      <div className="flex items-center gap-2 border-b border-[#14234b] pb-2">
         <button
           onClick={() => setActiveTab('CASH_GALLA')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
             activeTab === 'CASH_GALLA'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-emerald-600/90 text-white shadow-lg shadow-emerald-600/20 border border-emerald-500/40'
+              : 'bg-[#09122e] text-slate-300 hover:bg-[#0e1a3e] border border-[#14234b]'
           }`}
         >
-          <Wallet className="w-4 h-4" />
-          <span>Daily Cash Drawer (Galla Hisaab)</span>
+          <Wallet className="w-4 h-4 text-emerald-400" />
+          <span>Daily Cash Drawer &amp; Register</span>
         </button>
 
         <button
           onClick={() => setActiveTab('BANK_ACCOUNTS')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
             activeTab === 'BANK_ACCOUNTS'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-cyan-600/90 text-white shadow-lg shadow-cyan-600/20 border border-cyan-500/40'
+              : 'bg-[#09122e] text-slate-300 hover:bg-[#0e1a3e] border border-[#14234b]'
           }`}
         >
-          <Landmark className="w-4 h-4" />
-          <span>Bank Accounts & Statements ({bankAccounts.length})</span>
+          <Landmark className="w-4 h-4 text-cyan-400" />
+          <span>Bank Accounts &amp; Statements ({bankAccounts.length})</span>
         </button>
       </div>
 
@@ -315,11 +315,11 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
         <div className="space-y-6">
           
           {/* Daily Physical Cash Drawer Reconciliation Box */}
-          <div className="bg-gradient-to-br from-slate-900 to-emerald-950 p-5 rounded-2xl text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-gradient-to-br from-[#0a1828] via-[#091e20] to-[#070e24] p-5 rounded-2xl text-white border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400">
-                  Daily Evening Galla Tally (Closing Match)
+                  Daily Evening Cash Drawer Reconciliation
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-1 max-w-md">
@@ -335,7 +335,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                   placeholder="e.g. 23500"
                   value={physicalCashCount}
                   onChange={(e) => setPhysicalCashCount(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -346,7 +346,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                       <CheckCircle2 className="w-4 h-4" /> Perfectly Matched!
                     </span>
                   ) : cashDiff > 0 ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-xl border border-blue-500/30">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold bg-cyan-500/20 text-cyan-300 px-3 py-1.5 rounded-xl border border-cyan-500/30">
                       +₹{cashDiff} Extra Cash
                     </span>
                   ) : (
@@ -360,32 +360,32 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
           </div>
 
           {/* Cash Transactions List */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <span className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-                Recent Cash Movements & Counter Logs
+          <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden">
+            <div className="p-4 bg-[#09122e] border-b border-[#14234b] flex items-center justify-between">
+              <span className="font-bold text-xs text-white uppercase tracking-wider">
+                Recent Cash Movements &amp; Counter Logs
               </span>
-              <span className="text-xs text-slate-500">{cashTransactions.length} entries</span>
+              <span className="text-xs text-slate-400">{cashTransactions.length} entries</span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4">Date & Time</th>
+                  <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-semibold uppercase tracking-wider text-[11px]">
+                    <th className="py-3 px-4">Date &amp; Time</th>
                     <th className="py-3 px-3">Type</th>
-                    <th className="py-3 px-3">Category & Details</th>
+                    <th className="py-3 px-3">Category &amp; Details</th>
                     <th className="py-3 px-3">Party / Ref</th>
                     <th className="py-3 px-4 text-right">Inflow (Cash +)</th>
                     <th className="py-3 px-4 text-right">Outflow (Cash -)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-[#101b3d] text-slate-200">
                   {cashTransactions.map(tx => (
-                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={tx.id} className="hover:bg-[#0c183d]/60 transition-colors">
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-900">{tx.date}</div>
-                        <div className="text-[10px] text-slate-400">
+                        <div className="font-semibold text-white">{tx.date}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">
                           {tx.createdAt.replace('T', ' ').slice(11, 16)}
                         </div>
                       </td>
@@ -393,8 +393,8 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                       <td className="py-3 px-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-extrabold text-[10px] ${
                           tx.type === 'INFLOW' 
-                            ? 'bg-emerald-100 text-emerald-800' 
-                            : 'bg-rose-100 text-rose-800'
+                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' 
+                            : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                         }`}>
                           {tx.type === 'INFLOW' ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
                           {tx.type}
@@ -402,22 +402,22 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                       </td>
 
                       <td className="py-3 px-3">
-                        <div className="font-bold text-slate-900">{tx.description}</div>
-                        <div className="text-[10px] text-slate-500">{tx.category}</div>
+                        <div className="font-bold text-white">{tx.description}</div>
+                        <div className="text-[10px] text-slate-400">{tx.category}</div>
                       </td>
 
                       <td className="py-3 px-3">
-                        <div className="text-slate-800">{tx.partyName || '—'}</div>
+                        <div className="text-slate-300">{tx.partyName || '—'}</div>
                         {tx.referenceNumber && (
-                          <div className="text-[10px] text-slate-400 font-mono">#{tx.referenceNumber}</div>
+                          <div className="text-[10px] text-cyan-400 font-mono">#{tx.referenceNumber}</div>
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-black text-emerald-600">
+                      <td className="py-3 px-4 text-right font-black text-emerald-400">
                         {tx.type === 'INFLOW' ? `+₹${tx.amount.toLocaleString('en-IN')}` : '—'}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-black text-rose-600">
+                      <td className="py-3 px-4 text-right font-black text-rose-400">
                         {tx.type === 'OUTFLOW' ? `-₹${tx.amount.toLocaleString('en-IN')}` : '—'}
                       </td>
                     </tr>
@@ -439,37 +439,37 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
             {bankAccounts.map((acc) => (
               <div 
                 key={acc.id}
-                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs relative overflow-hidden flex flex-col justify-between"
+                className="bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col justify-between"
               >
                 {acc.isDefault && (
-                  <span className="absolute top-3 right-3 text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">
+                  <span className="absolute top-3 right-3 text-[9px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full uppercase">
                     Default Bank
                   </span>
                 )}
 
                 <div>
-                  <div className="flex items-center gap-2 text-blue-700">
+                  <div className="flex items-center gap-2 text-cyan-400">
                     <Building className="w-5 h-5" />
-                    <span className="font-extrabold text-sm text-slate-900">{acc.bankName}</span>
+                    <span className="font-extrabold text-sm text-white">{acc.bankName}</span>
                   </div>
 
-                  <div className="mt-3 space-y-1 text-xs text-slate-600">
-                    <div><span className="font-semibold">A/C No:</span> <span className="font-mono font-bold text-slate-900">{acc.accountNumber}</span></div>
-                    <div><span className="font-semibold">IFSC:</span> <span className="font-mono text-slate-700">{acc.ifscCode}</span></div>
-                    <div><span className="font-semibold">Branch:</span> {acc.branchName}</div>
-                    <div><span className="font-semibold">Type:</span> {acc.accountType} Account</div>
+                  <div className="mt-3 space-y-1 text-xs text-slate-300">
+                    <div><span className="font-semibold text-slate-400">A/C No:</span> <span className="font-mono font-bold text-white">{acc.accountNumber}</span></div>
+                    <div><span className="font-semibold text-slate-400">IFSC:</span> <span className="font-mono text-cyan-300">{acc.ifscCode}</span></div>
+                    <div><span className="font-semibold text-slate-400">Branch:</span> {acc.branchName}</div>
+                    <div><span className="font-semibold text-slate-400">Type:</span> {acc.accountType} Account</div>
                     {acc.upiId && (
-                      <div className="text-blue-600 font-mono text-[11px] pt-1">
+                      <div className="text-cyan-400 font-mono text-[11px] pt-1">
                         UPI: {acc.upiId}
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="mt-5 pt-3 border-t border-[#14234b] flex items-center justify-between">
                   <div>
                     <div className="text-[10px] text-slate-400 font-semibold uppercase">Current Balance</div>
-                    <div className="text-lg font-black text-slate-900">
+                    <div className="text-lg font-black text-white">
                       ₹{acc.balance.toLocaleString('en-IN')}
                     </div>
                   </div>
@@ -482,7 +482,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                           onAddBankTransaction(acc.id, parseFloat(amt), 'DEPOSIT');
                         }
                       }}
-                      className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors"
+                      className="px-2.5 py-1 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                     >
                       + Deposit
                     </button>
@@ -493,7 +493,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                           onAddBankTransaction(acc.id, parseFloat(amt), 'WITHDRAW');
                         }
                       }}
-                      className="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition-colors"
+                      className="px-2.5 py-1 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                     >
                       - Withdraw
                     </button>
@@ -512,7 +512,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-sm">Record Galla / Cash Movement</h3>
+              <h3 className="font-black text-slate-900 text-sm">Record Cash Movement</h3>
               <button onClick={() => setIsAddCashModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 

@@ -102,16 +102,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     <div className="space-y-6 pb-12">
       
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Inventory & Products Catalog</h1>
-          <p className="text-xs text-slate-500">Track stock levels, HSN codes, GST tax rates, and low stock reorder alerts</p>
+          <h1 className="text-xl font-bold text-white font-heading">Inventory &amp; Products Catalog</h1>
+          <p className="text-xs text-slate-400">Track stock levels, HSN codes, GST tax rates, and low stock reorder alerts</p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" /> + Add New Product / Service
           </button>
@@ -119,18 +119,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+      <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           
           {/* Search */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-cyan-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input 
               type="text"
               placeholder="Search by Product Name, SKU, HSN, Barcode..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
+              className="w-full pl-10 pr-4 py-2 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/40"
             />
           </div>
 
@@ -139,10 +139,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
+              className="w-full px-3 py-2 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 focus:border-cyan-500/70"
             >
               {categories.map(c => (
-                <option key={c} value={c}>{c === 'ALL' ? 'All Product Categories' : c}</option>
+                <option key={c} value={c} className="bg-[#070e24] text-slate-200">{c === 'ALL' ? 'All Product Categories' : c}</option>
               ))}
             </select>
           </div>
@@ -151,13 +151,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <div className="flex items-center">
             <button
               onClick={() => setShowLowStockOnly(!showLowStockOnly)}
-              className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
+              className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                 showLowStockOnly 
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300' 
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
+                  : 'bg-[#09122e] hover:bg-[#0e1a3e] border border-[#14234b] text-slate-300'
               }`}
             >
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
               <span>{showLowStockOnly ? 'Showing Low Stock Only' : 'Filter Low Stock Alert'}</span>
             </button>
           </div>
@@ -166,12 +166,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       {/* Items Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
-                <th className="py-3 px-4">Item Name & SKU</th>
+              <tr className="bg-[#091433] border-b border-[#172a5a] font-bold text-cyan-300 uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-4">Item Name &amp; SKU</th>
                 <th className="py-3 px-3">Category</th>
                 <th className="py-3 px-3 text-center font-mono">HSN</th>
                 <th className="py-3 px-3 text-right">Purchase (₹)</th>
@@ -181,56 +181,56 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#101b3d]">
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <Package className="w-10 h-10 mx-auto text-slate-300 mb-2 opacity-50" />
-                    <p className="font-semibold text-slate-600">No items found</p>
-                    <p className="text-xs text-slate-400">Add new products to start tracking inventory</p>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <Package className="w-10 h-10 mx-auto text-slate-600 mb-2 opacity-50" />
+                    <p className="font-semibold text-slate-300">No items found</p>
+                    <p className="text-xs text-slate-500">Add new products to start tracking inventory</p>
                   </td>
                 </tr>
               ) : (
                 filteredItems.map((item) => {
                   const isLowStock = item.currentStock <= item.minStockLevel;
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <tr key={item.id} className="hover:bg-[#0c183d]/60 transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-white">
                         <div>{item.name}</div>
-                        {item.sku && <div className="font-mono text-[10px] text-slate-400">SKU: {item.sku}</div>}
+                        {item.sku && <div className="font-mono text-[10px] text-cyan-400/70">SKU: {item.sku}</div>}
                       </td>
 
                       <td className="py-3.5 px-3">
-                        <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-semibold bg-[#09122e] border border-[#1b2b5d] text-slate-300 px-2 py-0.5 rounded-md">
                           {item.category}
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-3 text-center font-mono font-medium text-blue-900">
+                      <td className="py-3.5 px-3 text-center font-mono font-medium text-cyan-300">
                         {item.hsnCode}
                       </td>
 
-                      <td className="py-3.5 px-3 text-right font-mono text-slate-600">
+                      <td className="py-3.5 px-3 text-right font-mono text-slate-300">
                         {formatIndianCurrency(item.purchasePrice, false)}
                       </td>
 
-                      <td className="py-3.5 px-3 text-right font-mono font-bold text-slate-900">
+                      <td className="py-3.5 px-3 text-right font-mono font-bold text-white">
                         {formatIndianCurrency(item.sellingPrice, false)}
                       </td>
 
                       <td className="py-3.5 px-3 text-center">
-                        <span className="font-bold text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md">
+                        <span className="font-bold text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md">
                           {item.taxRate}%
                         </span>
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <span className={`font-mono font-black text-xs ${isLowStock ? 'text-rose-600' : 'text-slate-800'}`}>
+                          <span className={`font-mono font-black text-xs ${isLowStock ? 'text-rose-400' : 'text-slate-200'}`}>
                             {item.currentStock} {item.unit}
                           </span>
                           {isLowStock && (
-                            <span className="text-[9px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded-sm">
+                            <span className="text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded-sm">
                               Low
                             </span>
                           )}
@@ -245,13 +245,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                               setStockAdjustmentQty(item.currentStock);
                               setIsAdjustStockOpen(true);
                             }}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 font-semibold text-[11px] rounded-lg transition-colors"
+                            className="px-2.5 py-1 bg-[#09122e] hover:bg-cyan-500/20 text-cyan-300 border border-[#1b2b5d] font-semibold text-[11px] rounded-lg transition-colors cursor-pointer"
                           >
                             Adjust Stock
                           </button>
                           <button
                             onClick={() => onDeleteItem(item.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                            className="p-1 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

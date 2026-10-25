@@ -594,7 +594,7 @@ Thank you for doing business with us!`;
                 type="button"
                 onClick={() => setHeaderOffset(prev => Math.max(40, prev - 10))}
                 className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold"
-                title="Top gap kam karein"
+                title="Decrease top margin"
               >
                 -
               </button>
@@ -603,7 +603,7 @@ Thank you for doing business with us!`;
                 type="button"
                 onClick={() => setHeaderOffset(prev => Math.min(300, prev + 10))}
                 className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold"
-                title="Top gap badhayein"
+                title="Increase top margin"
               >
                 +
               </button>
@@ -616,7 +616,7 @@ Thank you for doing business with us!`;
                 type="button"
                 onClick={() => setFooterOffset(prev => Math.max(20, prev - 10))}
                 className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold"
-                title="Bottom gap kam karein"
+                title="Decrease bottom margin"
               >
                 -
               </button>
@@ -625,7 +625,7 @@ Thank you for doing business with us!`;
                 type="button"
                 onClick={() => setFooterOffset(prev => Math.min(250, prev + 10))}
                 className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold"
-                title="Bottom gap badhayein"
+                title="Increase bottom margin"
               >
                 +
               </button>
@@ -638,7 +638,7 @@ Thank you for doing business with us!`;
                 type="button"
                 onClick={() => setContentScale(prev => Math.max(65, prev - 4))}
                 className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold text-xs"
-                title="Scale chhota karein"
+                title="Decrease content scale"
               >
                 -
               </button>
@@ -647,7 +647,7 @@ Thank you for doing business with us!`;
                 type="button"
                 onClick={() => setContentScale(prev => Math.min(100, prev + 4))}
                 className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold text-xs"
-                title="Scale bada karein"
+                title="Increase content scale"
               >
                 +
               </button>
@@ -673,7 +673,7 @@ Thank you for doing business with us!`;
                 setVerticalAlignment('top');
               }}
               className="px-2.5 py-1 bg-blue-950/90 hover:bg-blue-900 border border-blue-500/60 text-blue-300 text-[11px] font-bold rounded-lg transition-colors shadow-xs"
-              title="Blue line ke thik niche se print start karein (148px Lock)"
+              title="Start print exactly below header guide line (148px Lock)"
             >
               🎯 Lock Below Blue Line
             </button>

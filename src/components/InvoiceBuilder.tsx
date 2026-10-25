@@ -2057,7 +2057,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                       </div>
 
                       <div className="p-2 bg-emerald-50 border border-emerald-200/90 rounded-lg text-[10px] text-emerald-900 leading-tight">
-                        ✓ <strong>Security Amount Hold:</strong> Yeh retention amount bill ke net payable se hold/deduct rahega aur party ledger me security deposit/retention ke roop me track hoga.
+                        ✓ <strong>Security Amount Hold:</strong> This retention amount is withheld from net payable and tracked in the customer ledger as a security deposit / retention balance.
                       </div>
                     </div>
                   )}

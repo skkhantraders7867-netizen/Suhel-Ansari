@@ -202,31 +202,31 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
     <div className="space-y-6">
       
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 font-heading">Expense & Kharcha Manager</h1>
-            <span className="text-[11px] font-extrabold bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full">
-              P&L Tracker
+            <h1 className="text-xl font-black text-white font-heading">Expense &amp; Cash Outflow Manager</h1>
+            <span className="text-[11px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2.5 py-0.5 rounded-full">
+              P&amp;L Tracker
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Track daily business expenses, tea/petty cash, rent, staff salary, and claim GST Input Tax Credit (ITC).
+          <p className="text-xs text-slate-400 mt-1">
+            Track daily business expenses, petty cash, rent, staff salary, and claim GST Input Tax Credit (ITC).
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#09122e] hover:bg-[#0e1a3e] border border-[#14234b] text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4 text-slate-600" />
+            <Download className="w-4 h-4 text-cyan-400" />
             <span>Export CSV</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md shadow-rose-600/20 transition-all transform active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/20 transition-all transform active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>+ Record Expense</span>
@@ -238,14 +238,14 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Sales Revenue */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Sales Revenue (Taxable)</span>
-            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-1.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-lg">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-slate-900">
+          <div className="mt-2 text-xl font-extrabold text-white">
             ₹{salesRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -254,14 +254,14 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
         </div>
 
         {/* Total Expenses */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Total Business Expenses</span>
-            <div className="p-1.5 bg-rose-50 text-rose-600 rounded-lg">
+            <div className="p-1.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-lg">
               <TrendingDown className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-rose-600">
+          <div className="mt-2 text-xl font-extrabold text-rose-400">
             ₹{totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -270,30 +270,30 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
         </div>
 
         {/* Net Profit */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Estimated Net Profit</span>
-            <div className={`p-1.5 rounded-lg ${netProfit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+            <div className={`p-1.5 rounded-lg border ${netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
               <IndianRupee className="w-4 h-4" />
             </div>
           </div>
-          <div className={`mt-2 text-xl font-extrabold ${netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+          <div className={`mt-2 text-xl font-extrabold ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
             ₹{netProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div className="mt-1 text-[11px] font-medium text-slate-500">
-            Margin: <span className="font-bold text-slate-900">{netMarginPercent}%</span> (After COGS & Kharcha)
+          <div className="mt-1 text-[11px] font-medium text-slate-400">
+            Margin: <span className="font-bold text-white">{netMarginPercent}%</span> (After COGS &amp; Operating Expenses)
           </div>
         </div>
 
         {/* GST ITC Claimable */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>GST ITC Claimable</span>
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+            <div className="p-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-indigo-600">
+          <div className="mt-2 text-xl font-extrabold text-indigo-400">
             ₹{totalGstItc.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -307,13 +307,13 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Category Breakdown list (1 Col) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <PieChart className="w-4 h-4 text-blue-600" />
-              Category-wise Kharcha
+            <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+              <PieChart className="w-4 h-4 text-cyan-400" />
+              Category-wise Outflows
             </h3>
-            <span className="text-[11px] text-slate-500">{categorySummary.length} Categories</span>
+            <span className="text-[11px] text-slate-400">{categorySummary.length} Categories</span>
           </div>
 
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
@@ -325,22 +325,22 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
                   onClick={() => setSelectedCategory(selectedCategory === cat ? 'ALL' : cat)}
                   className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
                     selectedCategory === cat 
-                      ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500/20' 
-                      : 'bg-slate-50/50 border-slate-100 hover:bg-slate-100'
+                      ? 'bg-cyan-500/15 border-cyan-500/50 ring-1 ring-cyan-500/30' 
+                      : 'bg-[#09122e] border-[#14234b] hover:bg-[#0e1a3e]'
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-800">{cat}</span>
-                    <span className="font-bold text-slate-900">₹{amt.toLocaleString('en-IN')}</span>
+                    <span className="font-semibold text-slate-200">{cat}</span>
+                    <span className="font-bold text-white">₹{amt.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <div className="flex-1 bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="flex-1 bg-[#070e24] h-1.5 rounded-full overflow-hidden">
                       <div 
-                        className="bg-blue-600 h-full rounded-full transition-all" 
+                        className="bg-cyan-500 h-full rounded-full transition-all" 
                         style={{ width: `${percent}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500 font-medium">{percent}%</span>
+                    <span className="text-[10px] text-slate-400 font-medium">{percent}%</span>
                   </div>
                 </div>
               );
@@ -349,20 +349,20 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
         </div>
 
         {/* Expenses Table (2 Cols) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
+        <div className="lg:col-span-2 bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden">
           
           {/* Table Controls */}
-          <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-4 bg-[#09122e] border-b border-[#14234b] flex flex-wrap items-center justify-between gap-3">
             
             {/* Search Input */}
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400" />
               <input
                 type="text"
                 placeholder="Search expense, vendor, invoice..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/40"
               />
             </div>
 
@@ -370,11 +370,11 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700"
+              className="px-2.5 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-medium text-slate-200 focus:border-cyan-500/70"
             >
-              <option value="ALL">All Categories</option>
+              <option value="ALL" className="bg-[#070e24] text-slate-200">All Categories</option>
               {EXPENSE_CATEGORIES.map(c => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c} className="bg-[#070e24] text-slate-200">{c}</option>
               ))}
             </select>
 
@@ -382,7 +382,7 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
             {(selectedCategory !== 'ALL' || searchTerm) && (
               <button
                 onClick={() => { setSelectedCategory('ALL'); setSearchTerm(''); }}
-                className="text-xs text-blue-600 hover:underline font-semibold"
+                className="text-xs text-cyan-400 hover:underline font-semibold cursor-pointer"
               >
                 Reset
               </button>
@@ -394,8 +394,8 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
           <div className="flex-1 overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Date & Details</th>
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4">Date &amp; Details</th>
                   <th className="py-3 px-3">Category</th>
                   <th className="py-3 px-3">Payment</th>
                   <th className="py-3 px-3">GST ITC</th>
@@ -403,34 +403,34 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
                   <th className="py-3 px-3 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#101b3d] text-slate-200">
                 {filteredExpenses.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={6} className="py-12 text-center text-slate-500">
                       No expenses found. Click "+ Record Expense" to log your first business expense.
                     </td>
                   </tr>
                 ) : (
                   filteredExpenses.map((exp) => (
-                    <tr key={exp.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={exp.id} className="hover:bg-[#0c183d]/60 transition-colors">
                       
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{exp.title}</div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                        <div className="font-bold text-white">{exp.title}</div>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                           <span>{exp.date}</span>
                           {exp.partyName && <span>• {exp.partyName}</span>}
-                          {exp.invoiceNumber && <span className="text-blue-600 font-mono">#{exp.invoiceNumber}</span>}
+                          {exp.invoiceNumber && <span className="text-cyan-400 font-mono">#{exp.invoiceNumber}</span>}
                         </div>
                       </td>
 
                       <td className="py-3 px-3">
-                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-[11px]">
+                        <span className="inline-block px-2 py-0.5 bg-[#09122e] border border-[#1b2b5d] text-slate-300 rounded-md font-medium text-[11px]">
                           {exp.category}
                         </span>
                       </td>
 
                       <td className="py-3 px-3">
-                        <span className="font-semibold text-slate-800 text-[11px]">
+                        <span className="font-semibold text-slate-300 text-[11px]">
                           {exp.paymentMode}
                         </span>
                       </td>
@@ -438,7 +438,7 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
                       <td className="py-3 px-3">
                         {exp.isGstExpense ? (
                           <div>
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">
                               <CheckCircle2 className="w-3 h-3" />
                               {exp.taxRate}% GST
                             </span>
@@ -447,12 +447,12 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-400">No GST</span>
+                          <span className="text-[11px] text-slate-500">No GST</span>
                         )}
                       </td>
 
                       <td className="py-3 px-4 text-right">
-                        <span className="font-black text-slate-900 text-sm">
+                        <span className="font-black text-rose-300 text-sm">
                           ₹{exp.amount.toLocaleString('en-IN')}
                         </span>
                       </td>
@@ -460,7 +460,7 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
                       <td className="py-3 px-3 text-center">
                         <button
                           onClick={() => onDeleteExpense(exp.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#09122e] rounded-lg transition-colors cursor-pointer"
                           title="Delete Expense Entry"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -475,10 +475,10 @@ export const ExpenseTrackerView: React.FC<ExpenseTrackerViewProps> = ({
           </div>
 
           {/* Table Footer */}
-          <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+          <div className="p-3 bg-[#09122e] border-t border-[#14234b] flex items-center justify-between text-xs text-slate-400">
             <span>Showing {filteredExpenses.length} of {expenses.length} records</span>
-            <span className="font-bold text-slate-900">
-              Total: ₹{filteredExpenses.reduce((a, b) => a + b.amount, 0).toLocaleString('en-IN')}
+            <span className="font-bold text-white">
+              Total Filtered: ₹{filteredExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString('en-IN')}
             </span>
           </div>
 

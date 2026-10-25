@@ -170,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           id: 'CASH_BANK' as ViewMode,
-          label: 'Cash Galla & Banks',
+          label: 'Cash & Bank Accounts',
           icon: Wallet,
         },
         {

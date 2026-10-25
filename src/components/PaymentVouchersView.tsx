@@ -292,19 +292,19 @@ Thank you!`;
     <div className="space-y-6 pb-16">
       
       {/* TOP DASHBOARD SWITCHER (Payment Received <-> Debit Voucher) */}
-      <div className="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 shadow-lg backdrop-blur-md">
+      <div className="bg-[#070e24]/95 p-1.5 rounded-2xl border border-[#14234b] flex items-center justify-between gap-2 shadow-[0_4px_25px_rgba(0,0,0,0.5)] backdrop-blur-md">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setDashboardMode('RECEIPTS')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
               dashboardMode === 'RECEIPTS'
-                ? 'bg-emerald-600 text-white shadow-md border border-emerald-500/50'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md border border-emerald-400/50'
+                : 'text-slate-400 hover:text-white hover:bg-[#0c183d]'
             }`}
           >
             <Receipt className="w-3.5 h-3.5 text-emerald-200" />
-            <span>Payment Received Dashboard (भुगतान प्राप्ति)</span>
+            <span>Payment Received Dashboard</span>
           </button>
 
           <button
@@ -312,23 +312,23 @@ Thank you!`;
             onClick={() => setDashboardMode('DEBITS')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               dashboardMode === 'DEBITS'
-                ? 'bg-rose-600 text-white shadow-md border border-rose-500/50 font-black'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md border border-rose-400/50 font-black'
+                : 'text-slate-400 hover:text-white hover:bg-[#0c183d]'
             }`}
           >
             <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
-            <span>Debit Voucher Dashboard (डेबिट वाउचर / अदायगी)</span>
+            <span>Debit Voucher Dashboard</span>
           </button>
         </div>
 
         <div className="hidden sm:flex items-center gap-2 pr-2 text-[11px] text-slate-400 font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>Inflow &amp; Receivables Center</span>
         </div>
       </div>
 
       {/* 1. TOP DASHBOARD COMMAND BANNER */}
-      <div className="bg-gradient-to-r from-slate-950 via-[#071f1d] to-slate-950 text-white p-6 md:p-8 rounded-3xl border border-emerald-500/30 shadow-2xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#07112c] via-[#091538] to-[#0a1840] text-white p-6 md:p-8 rounded-3xl border border-emerald-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.6)] relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-40 -top-10 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -341,11 +341,11 @@ Thank you!`;
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
               <span>Payment Received Dashboard</span>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                भुगतान प्राप्ति
+                Inflow Verified
               </span>
             </h1>
             <p className="text-xs md:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Track customer collections, cash galla receipts, online bank transfers (UPI/NEFT), pending invoice receivables, and issue instant verified payment vouchers.
+              Track customer collections, cash drawer receipts, online bank transfers (UPI/NEFT), pending invoice receivables, and issue instant verified payment vouchers.
             </p>
           </div>
 
@@ -359,7 +359,7 @@ Thank you!`;
 
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#09122e] hover:bg-[#12224d] text-slate-200 font-semibold text-xs rounded-xl border border-[#1b2b5d] transition-colors cursor-pointer"
               title="Download Full Received Register"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
@@ -367,7 +367,7 @@ Thank you!`;
 
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors cursor-pointer no-print"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#09122e] hover:bg-[#12224d] text-slate-200 font-semibold text-xs rounded-xl border border-[#1b2b5d] transition-colors cursor-pointer no-print"
               title="Print Dashboard Summary"
             >
               <Printer className="w-3.5 h-3.5 text-teal-400" /> Print
@@ -380,95 +380,95 @@ Thank you!`;
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         
         {/* Card 1: Total Collections */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-emerald-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
               Total Received
             </span>
-            <div className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg">
+            <div className="p-1.5 bg-emerald-500/20 text-emerald-300 rounded-lg border border-emerald-500/30">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-900 font-mono">
+          <div className="text-2xl font-black text-emerald-300 font-mono">
             {formatIndianCurrency(analytics.totalCollected)}
           </div>
-          <div className="text-[10.5px] text-slate-500 font-medium">
+          <div className="text-[10.5px] text-slate-400 font-medium">
             Across {analytics.totalCount} payment vouchers
           </div>
         </div>
 
         {/* Card 2: Today's Collection */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-teal-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
               Today's Receipts
             </span>
-            <div className="p-1.5 bg-teal-50 text-teal-700 rounded-lg">
+            <div className="p-1.5 bg-cyan-500/20 text-cyan-300 rounded-lg border border-cyan-500/30">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-teal-900 font-mono">
+          <div className="text-2xl font-black text-cyan-300 font-mono">
             {formatIndianCurrency(analytics.todayCollection)}
           </div>
-          <div className="text-[10.5px] text-slate-500 font-medium">
+          <div className="text-[10.5px] text-slate-400 font-medium">
             {analytics.todayCount} Receipts logged today
           </div>
         </div>
 
         {/* Card 3: This Month Collections */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-blue-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400">
               This Month Inflow
             </span>
-            <div className="p-1.5 bg-blue-50 text-blue-700 rounded-lg">
+            <div className="p-1.5 bg-blue-500/20 text-blue-300 rounded-lg border border-blue-500/30">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-blue-900 font-mono">
+          <div className="text-2xl font-black text-blue-300 font-mono">
             {formatIndianCurrency(analytics.thisMonthCollection)}
           </div>
-          <div className="text-[10.5px] text-slate-500 font-medium">
+          <div className="text-[10.5px] text-slate-400 font-medium">
             {analytics.thisMonthCount} Vouchers in {new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' })}
           </div>
         </div>
 
         {/* Card 4: Pending Customer Receivables */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-rose-500">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">
               Pending Dues
             </span>
-            <div className="p-1.5 bg-rose-50 text-rose-700 rounded-lg">
+            <div className="p-1.5 bg-rose-500/20 text-rose-300 rounded-lg border border-rose-500/30">
               <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-rose-900 font-mono">
+          <div className="text-2xl font-black text-rose-300 font-mono">
             {formatIndianCurrency(analytics.pendingReceivables)}
           </div>
-          <div className="text-[10.5px] text-rose-700 font-bold">
+          <div className="text-[10.5px] text-rose-400 font-bold">
             {analytics.unpaidInvoicesCount} Invoices awaiting payment
           </div>
         </div>
 
         {/* Card 5: Inflow Split (Cash vs Bank) */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-purple-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">
               Cash vs Digital
             </span>
-            <div className="p-1.5 bg-purple-50 text-purple-700 rounded-lg">
+            <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-lg border border-purple-500/30">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 font-medium">Cash Galla:</span>
-              <span className="font-mono font-bold text-amber-700">₹{analytics.cashCollection.toLocaleString('en-IN')} ({analytics.cashShare}%)</span>
+              <span className="text-slate-400 font-medium">Cash Drawer:</span>
+              <span className="font-mono font-bold text-amber-300">₹{analytics.cashCollection.toLocaleString('en-IN')} ({analytics.cashShare}%)</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 font-medium">Bank / UPI:</span>
-              <span className="font-mono font-bold text-blue-700">₹{analytics.bankCollection.toLocaleString('en-IN')} ({analytics.bankShare}%)</span>
+              <span className="text-slate-400 font-medium">Bank / UPI:</span>
+              <span className="font-mono font-bold text-cyan-300">₹{analytics.bankCollection.toLocaleString('en-IN')} ({analytics.bankShare}%)</span>
             </div>
           </div>
         </div>
@@ -479,10 +479,10 @@ Thank you!`;
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Payment Modes Progress */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <h3 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4 text-emerald-600" />
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3.5">
+          <div className="flex items-center justify-between border-b border-[#14234b] pb-2.5">
+            <h3 className="font-black text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+              <CreditCard className="w-4 h-4 text-emerald-400" />
               Payment Modes Distribution
             </h3>
             <span className="text-[10px] text-slate-400 font-mono">Total 100%</span>
@@ -492,10 +492,10 @@ Thank you!`;
             {/* UPI */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">UPI (Google Pay / PhonePe)</span>
-                <span className="font-mono text-emerald-700">₹{analytics.upiCollection.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">UPI (Google Pay / PhonePe)</span>
+                <span className="font-mono text-emerald-300">₹{analytics.upiCollection.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalCollected > 0 ? (analytics.upiCollection / analytics.totalCollected) * 100 : 0}%` }}
@@ -506,12 +506,12 @@ Thank you!`;
             {/* NEFT / RTGS */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">NEFT / RTGS Transfer</span>
-                <span className="font-mono text-blue-700">₹{analytics.neftCollection.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">NEFT / RTGS Transfer</span>
+                <span className="font-mono text-cyan-300">₹{analytics.neftCollection.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                  className="bg-cyan-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalCollected > 0 ? (analytics.neftCollection / analytics.totalCollected) * 100 : 0}%` }}
                 />
               </div>
@@ -520,10 +520,10 @@ Thank you!`;
             {/* Cash */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">Cash Counter</span>
-                <span className="font-mono text-amber-700">₹{analytics.cashCollection.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">Cash Drawer</span>
+                <span className="font-mono text-amber-300">₹{analytics.cashCollection.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-amber-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalCollected > 0 ? (analytics.cashCollection / analytics.totalCollected) * 100 : 0}%` }}
@@ -534,12 +534,12 @@ Thank you!`;
             {/* Cheque */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">Cheques Received</span>
-                <span className="font-mono text-purple-700">₹{analytics.chequeCollection.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">Cheques Received</span>
+                <span className="font-mono text-purple-300">₹{analytics.chequeCollection.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-purple-600 h-2 rounded-full transition-all duration-500" 
+                  className="bg-purple-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalCollected > 0 ? (analytics.chequeCollection / analytics.totalCollected) * 100 : 0}%` }}
                 />
               </div>
@@ -548,33 +548,33 @@ Thank you!`;
         </div>
 
         {/* Top 5 Paying Customers Leaderboard */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <h3 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-blue-600" />
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3">
+          <div className="flex items-center justify-between border-b border-[#14234b] pb-2.5">
+            <h3 className="font-black text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-cyan-400" />
               Top Paying Customers
             </h3>
             <span className="text-[10px] text-slate-400 font-medium">Ranked by Receipts</span>
           </div>
 
           {topPayingCustomers.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-xs">
+            <div className="text-center py-8 text-slate-500 text-xs">
               No payments logged yet.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 text-xs">
+            <div className="divide-y divide-[#101b3d] text-xs">
               {topPayingCustomers.map((cust, idx) => (
                 <div key={cust.partyId} className="py-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px]">
+                    <span className="w-5 h-5 rounded-full bg-[#09122e] border border-[#1b2b5d] text-cyan-300 font-bold flex items-center justify-center text-[10px]">
                       {idx + 1}
                     </span>
                     <div>
-                      <div className="font-bold text-slate-900 truncate max-w-[140px]">{cust.partyName}</div>
+                      <div className="font-bold text-white truncate max-w-[140px]">{cust.partyName}</div>
                       <div className="text-[10px] text-slate-400">{cust.count} receipts • Last: {cust.lastDate}</div>
                     </div>
                   </div>
-                  <div className="font-mono font-black text-emerald-800 text-right">
+                  <div className="font-mono font-black text-emerald-300 text-right">
                     ₹{cust.totalPaid.toLocaleString('en-IN')}
                   </div>
                 </div>
@@ -584,10 +584,10 @@ Thank you!`;
         </div>
 
         {/* Quick Collection Actions & Reminders */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-5 rounded-2xl border border-slate-800 shadow-xs space-y-4 flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-[#07112c] via-[#091538] to-[#0a1840] text-white p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-4 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg">
+              <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/30">
                 <Receipt className="w-4 h-4" />
               </div>
               <h3 className="font-extrabold text-sm text-white">Quick Cash &amp; Bank Voucher</h3>
@@ -597,7 +597,7 @@ Thank you!`;
             </p>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-800 text-xs">
+          <div className="space-y-2 pt-2 border-t border-[#14234b] text-xs">
             <div className="flex justify-between text-slate-400">
               <span>Collection Efficiency:</span>
               <span className="font-mono text-emerald-400 font-bold">{analytics.collectionRate}%</span>
@@ -610,7 +610,7 @@ Thank you!`;
 
           <button
             onClick={() => onOpenCreateVoucher()}
-            className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> + Create Payment Voucher
           </button>
@@ -619,13 +619,13 @@ Thank you!`;
       </div>
 
       {/* 4. DASHBOARD TABS NAVIGATION */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-[#14234b] pb-2">
         <button
           onClick={() => setActiveTab('VOUCHERS_LIST')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
             activeTab === 'VOUCHERS_LIST'
-              ? 'bg-emerald-700 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.35)] border border-emerald-400/40'
+              : 'bg-[#09122e] text-slate-400 hover:text-white border border-[#1b2b5d]'
           }`}
         >
           <Receipt className="w-4 h-4" />
@@ -636,11 +636,11 @@ Thank you!`;
           onClick={() => setActiveTab('PENDING_DUES')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
             activeTab === 'PENDING_DUES'
-              ? 'bg-emerald-700 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.35)] border border-emerald-400/40'
+              : 'bg-[#09122e] text-slate-400 hover:text-white border border-[#1b2b5d]'
           }`}
         >
-          <AlertCircle className="w-4 h-4 text-rose-500" />
+          <AlertCircle className="w-4 h-4 text-rose-400" />
           <span>Pending Invoices &amp; Dues ({unpaidInvoices.length})</span>
         </button>
 
@@ -648,8 +648,8 @@ Thank you!`;
           onClick={() => setActiveTab('PARTY_SUMMARY')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
             activeTab === 'PARTY_SUMMARY'
-              ? 'bg-emerald-700 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.35)] border border-emerald-400/40'
+              : 'bg-[#09122e] text-slate-400 hover:text-white border border-[#1b2b5d]'
           }`}
         >
           <Users className="w-4 h-4" />
@@ -659,10 +659,10 @@ Thank you!`;
 
       {/* 5. TAB 1: ALL RECEIVED PAYMENT VOUCHERS TABLE */}
       {activeTab === 'VOUCHERS_LIST' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden space-y-3">
           
           {/* Search & Multi-Filters Toolbar */}
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="p-4 bg-[#09122e]/80 border-b border-[#14234b] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             
             {/* Search Box */}
             <div className="relative flex-1 max-w-md">
@@ -672,12 +672,12 @@ Thank you!`;
                 placeholder="Search by Voucher #, Party Name, UTR, Invoice #..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 font-medium"
+                className="w-full pl-9 pr-4 py-2 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/40 font-medium"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white cursor-pointer"
                 >
                   ✕
                 </button>
@@ -691,7 +691,7 @@ Thank you!`;
               <select
                 value={filterPeriod}
                 onChange={(e) => setFilterPeriod(e.target.value as PeriodFilter)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 focus:border-cyan-500/70 outline-none cursor-pointer"
               >
                 <option value="ALL">All Dates</option>
                 <option value="TODAY">Today Only</option>
@@ -704,7 +704,7 @@ Thank you!`;
               <select
                 value={filterMode}
                 onChange={(e) => setFilterMode(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 focus:border-cyan-500/70 outline-none cursor-pointer"
               >
                 <option value="ALL">All Modes</option>
                 <option value="CASH">Cash</option>
@@ -718,7 +718,7 @@ Thank you!`;
               <select
                 value={selectedPartyId}
                 onChange={(e) => setSelectedPartyId(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 max-w-[170px] truncate cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 max-w-[170px] truncate focus:border-cyan-500/70 outline-none cursor-pointer"
               >
                 <option value="ALL">All Customers</option>
                 {parties.map(p => (
@@ -730,7 +730,7 @@ Thank you!`;
               <select
                 value={selectedBankId}
                 onChange={(e) => setSelectedBankId(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 max-w-[170px] truncate cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 max-w-[170px] truncate focus:border-cyan-500/70 outline-none cursor-pointer"
               >
                 <option value="ALL">All Bank Accounts</option>
                 {bankAccounts.map(b => (
@@ -746,7 +746,7 @@ Thank you!`;
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[10.5px]">
                   <th className="py-3 px-3 text-center w-12">#</th>
                   <th className="py-3 px-4 min-w-[140px]">Voucher No &amp; Date</th>
                   <th className="py-3 px-4 min-w-[160px]">Received From (Customer)</th>
@@ -757,16 +757,16 @@ Thank you!`;
                   <th className="py-3 px-4 text-right min-w-[150px]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#101b3d]">
                 {filteredVouchers.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-16 text-center text-slate-400">
-                      <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                      <p className="font-semibold">No payment vouchers found</p>
+                      <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-500" />
+                      <p className="font-semibold text-slate-300">No payment vouchers found</p>
                       <p className="text-[11px] text-slate-400 mt-1">Adjust your search or filter above, or record a new receipt.</p>
                       <button
                         onClick={() => onOpenCreateVoucher()}
-                        className="mt-3 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs inline-flex items-center gap-1 cursor-pointer"
+                        className="mt-3 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs inline-flex items-center gap-1 cursor-pointer shadow-md"
                       >
                         <Plus className="w-3.5 h-3.5" /> Record Payment
                       </button>
@@ -775,7 +775,7 @@ Thank you!`;
                 ) : (
                   filteredVouchers.map((voucher, idx) => {
                     return (
-                      <tr key={voucher.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <tr key={voucher.id} className="hover:bg-[#0c183d]/60 transition-colors group">
                         
                         {/* Index */}
                         <td className="py-3 px-3 text-center font-mono font-bold text-slate-400">
@@ -784,20 +784,20 @@ Thank you!`;
 
                         {/* Voucher No & Date */}
                         <td className="py-3 px-4">
-                          <div className="font-mono font-black text-slate-900 flex items-center gap-1.5">
+                          <div className="font-mono font-black text-white flex items-center gap-1.5">
                             <span>{voucher.voucherNumber}</span>
                           </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <Calendar className="w-3 h-3 text-slate-400" />
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3 text-slate-500" />
                             <span>{voucher.date}</span>
                           </div>
                         </td>
 
                         {/* Party Name */}
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{voucher.partyName}</div>
+                          <div className="font-bold text-white">{voucher.partyName}</div>
                           {voucher.remarks && (
-                            <div className="text-[10px] text-slate-500 italic truncate max-w-xs">
+                            <div className="text-[10px] text-slate-400 italic truncate max-w-xs">
                               {voucher.remarks}
                             </div>
                           )}
@@ -807,31 +807,31 @@ Thank you!`;
                         <td className="py-3 px-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold ${
                             voucher.paymentMode === 'CASH'
-                              ? 'bg-amber-100 text-amber-800'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                               : voucher.paymentMode === 'UPI'
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                               : voucher.paymentMode === 'NEFT_RTGS'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-purple-100 text-purple-800'
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                              : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                           }`}>
                             {voucher.paymentMode}
                           </span>
                           {voucher.bankAccountName && (
-                            <div className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[130px]">
+                            <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[130px]">
                               {voucher.bankAccountName}
                             </div>
                           )}
                         </td>
 
                         {/* Ref / UTR */}
-                        <td className="py-3 px-3 font-mono text-[11px] text-slate-600">
+                        <td className="py-3 px-3 font-mono text-[11px] text-slate-300">
                           {voucher.referenceNumber || '—'}
                         </td>
 
                         {/* Linked Invoice */}
                         <td className="py-3 px-3">
                           {voucher.invoiceNumber ? (
-                            <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px] font-bold border border-blue-200">
+                            <span className="font-mono text-cyan-300 bg-cyan-950/70 px-2 py-0.5 rounded text-[11px] font-bold border border-cyan-500/40">
                               {voucher.invoiceNumber}
                             </span>
                           ) : (
@@ -843,7 +843,7 @@ Thank you!`;
 
                         {/* Amount */}
                         <td className="py-3 px-4 text-right">
-                          <div className="font-mono font-black text-emerald-800 text-sm">
+                          <div className="font-mono font-black text-emerald-300 text-sm">
                             {formatIndianCurrency(voucher.amount)}
                           </div>
                         </td>
@@ -856,7 +856,7 @@ Thank you!`;
                             <button
                               type="button"
                               onClick={() => setPrintingVoucher(voucher)}
-                              className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-[#0c183d] rounded-lg transition-colors cursor-pointer"
                               title="Print Official Payment Receipt"
                             >
                               <Printer className="w-4 h-4" />
@@ -866,7 +866,7 @@ Thank you!`;
                             <button
                               type="button"
                               onClick={() => handleShareWhatsApp(voucher)}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-[#0c183d] rounded-lg transition-colors cursor-pointer"
                               title="Share Receipt on WhatsApp"
                             >
                               <Share2 className="w-4 h-4" />
@@ -876,7 +876,7 @@ Thank you!`;
                             <button
                               type="button"
                               onClick={() => onOpenEditVoucher(voucher)}
-                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-[#0c183d] rounded-lg transition-colors cursor-pointer"
                               title="Edit Voucher"
                             >
                               <Edit2 className="w-4 h-4" />
@@ -890,7 +890,7 @@ Thank you!`;
                                   onDeleteVoucher(voucher.id);
                                 }
                               }}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
                               title="Delete Voucher"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -908,11 +908,11 @@ Thank you!`;
           </div>
 
           {/* Table Footer Total */}
-          <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
+          <div className="p-3 bg-[#09122e] border-t border-[#14234b] flex items-center justify-between text-xs font-bold text-slate-300">
             <span>Showing {filteredVouchers.length} vouchers</span>
             <div className="flex items-center gap-2">
-              <span className="text-slate-500">Filtered Total:</span>
-              <span className="font-mono text-emerald-800 text-sm font-black">
+              <span className="text-slate-400">Filtered Total:</span>
+              <span className="font-mono text-emerald-300 text-sm font-black">
                 {formatIndianCurrency(filteredVouchers.reduce((sum, v) => sum + (v.amount || 0), 0))}
               </span>
             </div>
@@ -923,16 +923,16 @@ Thank you!`;
 
       {/* 6. TAB 2: PENDING RECEIVABLES & UNPAID BILLS */}
       {activeTab === 'PENDING_DUES' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden space-y-3">
           
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="p-4 bg-[#09122e]/80 border-b border-[#14234b] flex items-center justify-between">
             <div>
-              <h3 className="font-black text-sm text-slate-900">Unpaid &amp; Pending Invoices</h3>
-              <p className="text-xs text-slate-500">Directly receive payment against any invoice or send WhatsApp payment reminders.</p>
+              <h3 className="font-black text-sm text-white">Unpaid &amp; Pending Invoices</h3>
+              <p className="text-xs text-slate-400">Directly receive payment against any invoice or send WhatsApp payment reminders.</p>
             </div>
             <div className="text-right">
-              <div className="text-xs text-slate-500">Total Pending Receivables</div>
-              <div className="font-mono text-lg font-black text-rose-800">
+              <div className="text-xs text-slate-400">Total Pending Receivables</div>
+              <div className="font-mono text-lg font-black text-rose-300">
                 {formatIndianCurrency(analytics.pendingReceivables)}
               </div>
             </div>
@@ -941,7 +941,7 @@ Thank you!`;
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[10.5px]">
                   <th className="py-3 px-4">Invoice No &amp; Date</th>
                   <th className="py-3 px-4">Customer Name</th>
                   <th className="py-3 px-3 text-right">Grand Total</th>
@@ -951,13 +951,13 @@ Thank you!`;
                   <th className="py-3 px-4 text-right">Quick Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#101b3d]">
                 {unpaidInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-16 text-center text-slate-400">
-                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-                      <p className="font-semibold text-slate-700">All invoices are fully paid!</p>
-                      <p className="text-xs text-slate-500 mt-1">No outstanding balances on any customer invoice.</p>
+                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
+                      <p className="font-semibold text-slate-200">All invoices are fully paid!</p>
+                      <p className="text-xs text-slate-400 mt-1">No outstanding balances on any customer invoice.</p>
                     </td>
                   </tr>
                 ) : (
@@ -965,37 +965,37 @@ Thank you!`;
                     const party = parties.find(p => p.id === inv.partyId);
 
                     return (
-                      <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={inv.id} className="hover:bg-[#0c183d]/60 transition-colors">
                         
                         <td className="py-3 px-4">
-                          <div className="font-mono font-bold text-slate-900">{inv.invoiceNumber}</div>
-                          <div className="text-[10.5px] text-slate-500">{inv.date} {inv.dueDate ? `• Due: ${inv.dueDate}` : ''}</div>
+                          <div className="font-mono font-bold text-white">{inv.invoiceNumber}</div>
+                          <div className="text-[10.5px] text-slate-400">{inv.date} {inv.dueDate ? `• Due: ${inv.dueDate}` : ''}</div>
                         </td>
 
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{inv.partyName}</div>
+                          <div className="font-bold text-white">{inv.partyName}</div>
                           {inv.partyPhone && (
-                            <div className="text-[10.5px] text-slate-500">{inv.partyPhone}</div>
+                            <div className="text-[10.5px] text-slate-400">{inv.partyPhone}</div>
                           )}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-mono text-slate-700">
+                        <td className="py-3 px-3 text-right font-mono text-slate-300">
                           {formatIndianCurrency(inv.grandTotal)}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-mono text-emerald-700">
+                        <td className="py-3 px-3 text-right font-mono text-emerald-300">
                           {formatIndianCurrency(inv.paidAmount || 0)}
                         </td>
 
-                        <td className="py-3 px-4 text-right font-mono font-black text-rose-800 text-sm">
+                        <td className="py-3 px-4 text-right font-mono font-black text-rose-300 text-sm">
                           {formatIndianCurrency(inv.balanceDue || 0)}
                         </td>
 
                         <td className="py-3 px-4 text-center">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             inv.paymentStatus === 'PARTIAL'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-rose-100 text-rose-800'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                           }`}>
                             {inv.paymentStatus || 'UNPAID'}
                           </span>
@@ -1008,7 +1008,7 @@ Thank you!`;
                             <button
                               type="button"
                               onClick={() => onOpenCreateVoucher(party, inv)}
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+                              className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs cursor-pointer"
                               title="Receive Payment for this Invoice"
                             >
                               <Plus className="w-3.5 h-3.5" /> Receive
@@ -1018,7 +1018,7 @@ Thank you!`;
                             <button
                               type="button"
                               onClick={() => handleSendDueReminder(inv)}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-[#0c183d] rounded-lg transition-colors cursor-pointer"
                               title="Send Due Reminder on WhatsApp"
                             >
                               <Send className="w-3.5 h-3.5" />
@@ -1040,17 +1040,17 @@ Thank you!`;
 
       {/* 7. TAB 3: CUSTOMER LEDGER PAYMENT SUMMARY */}
       {activeTab === 'PARTY_SUMMARY' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden space-y-3">
           
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <h3 className="font-black text-sm text-slate-900">Customer Wise Receivables &amp; Collections</h3>
-            <p className="text-xs text-slate-500">Summary of all total billed, collected receipts and pending ledger balances per customer.</p>
+          <div className="p-4 bg-[#09122e]/80 border-b border-[#14234b]">
+            <h3 className="font-black text-sm text-white">Customer Wise Receivables &amp; Collections</h3>
+            <p className="text-xs text-slate-400">Summary of all total billed, collected receipts and pending ledger balances per customer.</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[10.5px]">
                   <th className="py-3 px-4">Customer Name</th>
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-3 text-right">Total Billed</th>
@@ -1060,34 +1060,34 @@ Thank you!`;
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#101b3d]">
                 {partyPaymentSummaries.map(({ party, totalPaid, totalBilled, balanceDue, lastPayment }) => (
-                  <tr key={party.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={party.id} className="hover:bg-[#0c183d]/60 transition-colors">
                     
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{party.name}</div>
-                      {party.tradeName && <div className="text-[10.5px] text-slate-500">{party.tradeName}</div>}
+                      <div className="font-bold text-white">{party.name}</div>
+                      {party.tradeName && <div className="text-[10.5px] text-slate-400">{party.tradeName}</div>}
                     </td>
 
-                    <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                    <td className="py-3 px-4 text-slate-300 font-mono text-[11px]">
                       {party.phone || '—'}
                     </td>
 
-                    <td className="py-3 px-3 text-right font-mono text-slate-800">
+                    <td className="py-3 px-3 text-right font-mono text-slate-200">
                       {formatIndianCurrency(totalBilled)}
                     </td>
 
-                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-800">
+                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-300">
                       {formatIndianCurrency(totalPaid)}
                     </td>
 
                     <td className="py-3 px-4 text-right font-mono font-black text-sm">
-                      <span className={balanceDue > 0 ? 'text-rose-800' : 'text-slate-500'}>
+                      <span className={balanceDue > 0 ? 'text-rose-400' : 'text-slate-400'}>
                         {formatIndianCurrency(balanceDue)}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-center font-mono text-slate-600 text-[11px]">
+                    <td className="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">
                       {lastPayment || 'No receipts'}
                     </td>
 
@@ -1095,7 +1095,7 @@ Thank you!`;
                       <button
                         type="button"
                         onClick={() => onOpenCreateVoucher(party)}
-                        className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg text-xs border border-emerald-200 transition-colors cursor-pointer"
+                        className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold rounded-lg text-xs border border-emerald-500/40 transition-colors cursor-pointer"
                       >
                         + Receive Payment
                       </button>

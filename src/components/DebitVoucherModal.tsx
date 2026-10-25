@@ -143,15 +143,15 @@ export const DebitVoucherModal: React.FC<DebitVoucherModalProps> = ({
   // Handle Save
   const handleSave = (shouldPrint = false) => {
     if (!selectedPartyId) {
-      alert('Kripya Party / Supplier chunein.');
+      alert('Please select a Party / Supplier.');
       return;
     }
     if (!amount || amount <= 0) {
-      alert('Kripya valid payment amount dalein.');
+      alert('Please enter a valid payment amount.');
       return;
     }
     if (!voucherNumber.trim()) {
-      alert('Kripya Debit Voucher Number dalein.');
+      alert('Please enter a Debit Voucher Number.');
       return;
     }
 
@@ -227,7 +227,7 @@ export const DebitVoucherModal: React.FC<DebitVoucherModalProps> = ({
                   {editingVoucher ? 'Edit Debit Voucher' : 'Record Debit Voucher'}
                 </h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30">
-                  भुगतान अदायगी
+                  Payment Outflow
                 </span>
               </div>
               <p className="text-xs text-rose-200/80">
@@ -378,7 +378,7 @@ export const DebitVoucherModal: React.FC<DebitVoucherModalProps> = ({
               >
                 <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
                 <option value="NEFT_RTGS">NEFT / RTGS Bank Transfer</option>
-                <option value="CASH">Cash (Petty Cash / Galla)</option>
+                <option value="CASH">Cash (Petty Cash / Register)</option>
                 <option value="CHEQUE">Cheque / Demand Draft</option>
                 <option value="NET_BANKING">Net Banking (IMPS)</option>
                 <option value="CARD">Debit / Credit Card</option>
@@ -409,7 +409,7 @@ export const DebitVoucherModal: React.FC<DebitVoucherModalProps> = ({
                   <Wallet className="w-3.5 h-3.5 text-emerald-600" /> Cash Account
                 </label>
                 <div className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2">
-                  <span>Cash Galla / Counter Balance</span>
+                  <span>Cash Register / Counter Balance</span>
                   <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     Auto Outflow
                   </span>

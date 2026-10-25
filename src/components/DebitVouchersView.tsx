@@ -255,20 +255,20 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-200">
 
       {/* TOP DASHBOARD SWITCHER (Payment Received <-> Debit Voucher) */}
-      <div className="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 shadow-lg backdrop-blur-md">
+      <div className="bg-[#070e24]/95 p-1.5 rounded-2xl border border-[#14234b] flex items-center justify-between gap-2 shadow-[0_4px_25px_rgba(0,0,0,0.5)] backdrop-blur-md">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onSwitchToPaymentReceived}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-[#0c183d] transition-all cursor-pointer"
           >
             <Receipt className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Payment Received Dashboard (भुगतान प्राप्ति)</span>
+            <span>Payment Received Dashboard</span>
           </button>
 
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black bg-rose-600 text-white shadow-md border border-rose-500/50">
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md border border-rose-400/50">
             <ArrowUpRight className="w-3.5 h-3.5 text-rose-200" />
-            <span>Debit Voucher Dashboard (डेबिट वाउचर / अदायगी)</span>
+            <span>Debit Voucher Dashboard</span>
           </div>
         </div>
 
@@ -279,7 +279,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
       </div>
 
       {/* 1. HERO HEADER BANNER */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-950 via-slate-900 to-slate-950 border border-rose-900/50 shadow-2xl p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#1f0a14] via-[#0f1128] to-[#0a0f24] border border-rose-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.6)] p-6 md:p-8">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-80 h-80 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-10 w-60 h-60 bg-amber-600/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -292,7 +292,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
               <span>Debit Voucher Dashboard</span>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-400/30">
-                भुगतान अदायगी
+                Outflow Verified
               </span>
             </h1>
             <p className="text-xs md:text-sm text-slate-300 max-w-2xl leading-relaxed">
@@ -310,7 +310,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
 
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#09122e] hover:bg-[#12224d] text-slate-200 font-semibold text-xs rounded-xl border border-[#1b2b5d] transition-colors cursor-pointer"
               title="Download Full Debit Register"
             >
               <Download className="w-3.5 h-3.5 text-rose-400" /> Export CSV
@@ -318,7 +318,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
 
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors cursor-pointer no-print"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#09122e] hover:bg-[#12224d] text-slate-200 font-semibold text-xs rounded-xl border border-[#1b2b5d] transition-colors cursor-pointer no-print"
               title="Print Dashboard Summary"
             >
               <Printer className="w-3.5 h-3.5 text-rose-300" /> Print
@@ -331,95 +331,95 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         
         {/* Card 1: Total Debited */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-rose-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">
               Total Debited
             </span>
-            <div className="p-1.5 bg-rose-50 text-rose-700 rounded-lg">
+            <div className="p-1.5 bg-rose-500/20 text-rose-300 rounded-lg border border-rose-500/30">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-rose-900 font-mono">
+          <div className="text-2xl font-black text-rose-300 font-mono">
             {formatIndianCurrency(analytics.totalDebited)}
           </div>
-          <div className="text-[10.5px] text-slate-500 font-medium">
+          <div className="text-[10.5px] text-slate-400 font-medium">
             Across {analytics.totalCount} debit vouchers
           </div>
         </div>
 
         {/* Card 2: Today's Debits */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-amber-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
               Today's Debits
             </span>
-            <div className="p-1.5 bg-amber-50 text-amber-700 rounded-lg">
+            <div className="p-1.5 bg-amber-500/20 text-amber-300 rounded-lg border border-amber-500/30">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-900 font-mono">
+          <div className="text-2xl font-black text-amber-300 font-mono">
             {formatIndianCurrency(analytics.todayDebits)}
           </div>
-          <div className="text-[10.5px] text-slate-500 font-medium">
+          <div className="text-[10.5px] text-slate-400 font-medium">
             {analytics.todayCount} Debits logged today
           </div>
         </div>
 
         {/* Card 3: This Month Outflow */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-indigo-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
               This Month Outflow
             </span>
-            <div className="p-1.5 bg-indigo-50 text-indigo-700 rounded-lg">
+            <div className="p-1.5 bg-cyan-500/20 text-cyan-300 rounded-lg border border-cyan-500/30">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-indigo-900 font-mono">
+          <div className="text-2xl font-black text-cyan-300 font-mono">
             {formatIndianCurrency(analytics.thisMonthDebits)}
           </div>
-          <div className="text-[10.5px] text-slate-500 font-medium">
+          <div className="text-[10.5px] text-slate-400 font-medium">
             {analytics.thisMonthCount} Vouchers in {new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' })}
           </div>
         </div>
 
         {/* Card 4: Pending Payables */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-red-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-red-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-red-400">
               Pending Payables
             </span>
-            <div className="p-1.5 bg-red-50 text-red-700 rounded-lg">
+            <div className="p-1.5 bg-red-500/20 text-red-300 rounded-lg border border-red-500/30">
               <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-red-900 font-mono">
+          <div className="text-2xl font-black text-red-300 font-mono">
             {formatIndianCurrency(analytics.pendingPayables)}
           </div>
-          <div className="text-[10.5px] text-red-700 font-bold">
+          <div className="text-[10.5px] text-red-400 font-bold">
             {analytics.unpaidBillsCount} Bills awaiting payment
           </div>
         </div>
 
         {/* Card 5: Outflow Split */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-2 border-l-4 border-l-purple-600">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-4.5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-800">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">
               Cash vs Bank Outflow
             </span>
-            <div className="p-1.5 bg-purple-50 text-purple-700 rounded-lg">
+            <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-lg border border-purple-500/30">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 font-medium">Cash:</span>
-              <span className="font-mono font-bold text-amber-700">₹{analytics.cashDebits.toLocaleString('en-IN')} ({analytics.cashShare}%)</span>
+              <span className="text-slate-400 font-medium">Cash:</span>
+              <span className="font-mono font-bold text-amber-300">₹{analytics.cashDebits.toLocaleString('en-IN')} ({analytics.cashShare}%)</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 font-medium">Bank / UPI:</span>
-              <span className="font-mono font-bold text-blue-700">₹{analytics.bankDebits.toLocaleString('en-IN')} ({analytics.bankShare}%)</span>
+              <span className="text-slate-400 font-medium">Bank / UPI:</span>
+              <span className="font-mono font-bold text-cyan-300">₹{analytics.bankDebits.toLocaleString('en-IN')} ({analytics.bankShare}%)</span>
             </div>
           </div>
         </div>
@@ -430,10 +430,10 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Payment Modes Distribution */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <h3 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4 text-rose-600" />
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3.5">
+          <div className="flex items-center justify-between border-b border-[#14234b] pb-2.5">
+            <h3 className="font-black text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+              <CreditCard className="w-4 h-4 text-rose-400" />
               Debit Modes Distribution
             </h3>
             <span className="text-[10px] text-slate-400 font-mono">Total 100%</span>
@@ -443,10 +443,10 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
             {/* UPI */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">UPI (Google Pay / PhonePe)</span>
-                <span className="font-mono text-rose-700">₹{analytics.upiDebits.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">UPI (Google Pay / PhonePe)</span>
+                <span className="font-mono text-rose-300">₹{analytics.upiDebits.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-rose-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalDebited > 0 ? (analytics.upiDebits / analytics.totalDebited) * 100 : 0}%` }}
@@ -457,12 +457,12 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
             {/* NEFT / RTGS */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">NEFT / RTGS Transfer</span>
-                <span className="font-mono text-blue-700">₹{analytics.neftDebits.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">NEFT / RTGS Transfer</span>
+                <span className="font-mono text-cyan-300">₹{analytics.neftDebits.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                  className="bg-cyan-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalDebited > 0 ? (analytics.neftDebits / analytics.totalDebited) * 100 : 0}%` }}
                 />
               </div>
@@ -471,10 +471,10 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
             {/* Cash */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">Cash Payments</span>
-                <span className="font-mono text-amber-700">₹{analytics.cashDebits.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">Cash Payments</span>
+                <span className="font-mono text-amber-300">₹{analytics.cashDebits.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-amber-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalDebited > 0 ? (analytics.cashDebits / analytics.totalDebited) * 100 : 0}%` }}
@@ -485,12 +485,12 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
             {/* Cheque */}
             <div>
               <div className="flex justify-between font-bold mb-1">
-                <span className="text-slate-700">Cheque / Demand Draft</span>
-                <span className="font-mono text-purple-700">₹{analytics.chequeDebits.toLocaleString('en-IN')}</span>
+                <span className="text-slate-300">Cheque / Demand Draft</span>
+                <span className="font-mono text-purple-300">₹{analytics.chequeDebits.toLocaleString('en-IN')}</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[#09122e] border border-[#1b2b5d] rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-purple-600 h-2 rounded-full transition-all duration-500" 
+                  className="bg-purple-500 h-2 rounded-full transition-all duration-500" 
                   style={{ width: `${analytics.totalDebited > 0 ? (analytics.chequeDebits / analytics.totalDebited) * 100 : 0}%` }}
                 />
               </div>
@@ -499,33 +499,33 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
         </div>
 
         {/* Top 5 Parties Paid Leaderboard */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <h3 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-rose-600" />
+        <div className="bg-[#070e24]/95 backdrop-blur-xl p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-3">
+          <div className="flex items-center justify-between border-b border-[#14234b] pb-2.5">
+            <h3 className="font-black text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-rose-400" />
               Top Paid Parties / Suppliers
             </h3>
             <span className="text-[10px] text-slate-400 font-medium">Ranked by Debits</span>
           </div>
 
           {topPaidParties.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-xs">
+            <div className="text-center py-8 text-slate-500 text-xs">
               No debit vouchers logged yet.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 text-xs">
+            <div className="divide-y divide-[#101b3d] text-xs">
               {topPaidParties.map((party, idx) => (
                 <div key={party.partyId} className="py-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-[10px] border border-rose-200">
+                    <span className="w-5 h-5 rounded-full bg-[#09122e] border border-[#1b2b5d] text-rose-300 font-bold flex items-center justify-center text-[10px]">
                       {idx + 1}
                     </span>
                     <div>
-                      <div className="font-bold text-slate-900 truncate max-w-[140px]">{party.partyName}</div>
+                      <div className="font-bold text-white truncate max-w-[140px]">{party.partyName}</div>
                       <div className="text-[10px] text-slate-400">{party.count} vouchers • Last: {party.lastDate}</div>
                     </div>
                   </div>
-                  <div className="font-mono font-black text-rose-800 text-right">
+                  <div className="font-mono font-black text-rose-300 text-right">
                     ₹{party.totalPaid.toLocaleString('en-IN')}
                   </div>
                 </div>
@@ -535,10 +535,10 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
         </div>
 
         {/* Quick Debit Voucher Actions */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-5 rounded-2xl border border-slate-800 shadow-xs space-y-4 flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-[#1f0a14] via-[#0f1128] to-[#0a0f24] text-white p-5 rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] space-y-4 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-rose-500/20 text-rose-400 rounded-lg">
+              <div className="p-1.5 bg-rose-500/20 text-rose-400 rounded-lg border border-rose-500/30">
                 <Receipt className="w-4 h-4" />
               </div>
               <h3 className="font-extrabold text-sm text-white">Quick Debit Voucher</h3>
@@ -548,7 +548,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
             </p>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-800 text-xs">
+          <div className="space-y-2 pt-2 border-t border-[#14234b] text-xs">
             <div className="flex justify-between text-slate-400">
               <span>Total Debits Issued:</span>
               <span className="font-mono text-rose-400 font-bold">{analytics.totalCount} Vouchers</span>
@@ -561,7 +561,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
 
           <button
             onClick={() => onOpenCreateVoucher()}
-            className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> + Create Debit Voucher
           </button>
@@ -570,16 +570,16 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
       </div>
 
       {/* 4. DASHBOARD TABS NAVIGATION */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-[#14234b] pb-2">
         <button
           onClick={() => setActiveTab('VOUCHERS_LIST')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
             activeTab === 'VOUCHERS_LIST'
-              ? 'bg-rose-700 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-rose-600/90 text-white shadow-lg shadow-rose-600/20 border border-rose-500/40'
+              : 'bg-[#09122e] text-slate-300 hover:bg-[#0e1a3e] border border-[#14234b]'
           }`}
         >
-          <Receipt className="w-4 h-4" />
+          <Receipt className="w-4 h-4 text-rose-400" />
           <span>Debit Vouchers Register ({filteredVouchers.length})</span>
         </button>
 
@@ -587,11 +587,11 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
           onClick={() => setActiveTab('PENDING_DUES')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
             activeTab === 'PENDING_DUES'
-              ? 'bg-rose-700 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-rose-600/90 text-white shadow-lg shadow-rose-600/20 border border-rose-500/40'
+              : 'bg-[#09122e] text-slate-300 hover:bg-[#0e1a3e] border border-[#14234b]'
           }`}
         >
-          <AlertCircle className="w-4 h-4 text-red-500" />
+          <AlertCircle className="w-4 h-4 text-red-400" />
           <span>Pending Bills to Pay ({pendingBills.length})</span>
         </button>
 
@@ -599,36 +599,36 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
           onClick={() => setActiveTab('PARTY_SUMMARY')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
             activeTab === 'PARTY_SUMMARY'
-              ? 'bg-rose-700 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-rose-600/90 text-white shadow-lg shadow-rose-600/20 border border-rose-500/40'
+              : 'bg-[#09122e] text-slate-300 hover:bg-[#0e1a3e] border border-[#14234b]'
           }`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4 text-rose-400" />
           <span>Supplier / Party Ledger Summary</span>
         </button>
       </div>
 
       {/* 5. TAB 1: ALL DEBIT VOUCHERS TABLE */}
       {activeTab === 'VOUCHERS_LIST' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden space-y-3">
           
           {/* Search & Multi-Filters Toolbar */}
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="p-4 bg-[#09122e] border-b border-[#14234b] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             
             {/* Search Box */}
             <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-cyan-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text"
                 placeholder="Search by Voucher #, Party Name, UTR, Bill #..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 font-medium"
+                className="w-full pl-9 pr-4 py-2 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/70 focus:ring-1 focus:ring-cyan-500/40 font-medium"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
                 >
                   ✕
                 </button>
@@ -642,39 +642,39 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
               <select
                 value={filterPeriod}
                 onChange={(e) => setFilterPeriod(e.target.value as PeriodFilter)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 cursor-pointer focus:border-cyan-500/70"
               >
-                <option value="ALL">All Dates</option>
-                <option value="TODAY">Today</option>
-                <option value="THIS_WEEK">This Week</option>
-                <option value="THIS_MONTH">This Month</option>
-                <option value="LAST_MONTH">Last Month</option>
+                <option value="ALL" className="bg-[#070e24] text-slate-200">All Dates</option>
+                <option value="TODAY" className="bg-[#070e24] text-slate-200">Today</option>
+                <option value="THIS_WEEK" className="bg-[#070e24] text-slate-200">This Week</option>
+                <option value="THIS_MONTH" className="bg-[#070e24] text-slate-200">This Month</option>
+                <option value="LAST_MONTH" className="bg-[#070e24] text-slate-200">Last Month</option>
               </select>
 
               {/* Mode Filter */}
               <select
                 value={filterMode}
                 onChange={(e) => setFilterMode(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 cursor-pointer focus:border-cyan-500/70"
               >
-                <option value="ALL">All Payment Modes</option>
-                <option value="UPI">UPI</option>
-                <option value="NEFT_RTGS">NEFT / RTGS</option>
-                <option value="CASH">Cash</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="NET_BANKING">Net Banking</option>
-                <option value="CARD">Card</option>
+                <option value="ALL" className="bg-[#070e24] text-slate-200">All Payment Modes</option>
+                <option value="UPI" className="bg-[#070e24] text-slate-200">UPI</option>
+                <option value="NEFT_RTGS" className="bg-[#070e24] text-slate-200">NEFT / RTGS</option>
+                <option value="CASH" className="bg-[#070e24] text-slate-200">Cash</option>
+                <option value="CHEQUE" className="bg-[#070e24] text-slate-200">Cheque</option>
+                <option value="NET_BANKING" className="bg-[#070e24] text-slate-200">Net Banking</option>
+                <option value="CARD" className="bg-[#070e24] text-slate-200">Card</option>
               </select>
 
               {/* Party Filter */}
               <select
                 value={selectedPartyId}
                 onChange={(e) => setSelectedPartyId(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 max-w-[160px] truncate cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 max-w-[160px] truncate cursor-pointer focus:border-cyan-500/70"
               >
-                <option value="ALL">All Parties</option>
+                <option value="ALL" className="bg-[#070e24] text-slate-200">All Parties</option>
                 {parties.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id} className="bg-[#070e24] text-slate-200">{p.name}</option>
                 ))}
               </select>
 
@@ -682,11 +682,11 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
               <select
                 value={selectedBankId}
                 onChange={(e) => setSelectedBankId(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 max-w-[160px] truncate cursor-pointer"
+                className="px-3 py-1.5 bg-[#070e24] border border-[#1b2b5d] rounded-xl text-xs font-semibold text-slate-200 max-w-[160px] truncate cursor-pointer focus:border-cyan-500/70"
               >
-                <option value="ALL">All Bank Accounts</option>
+                <option value="ALL" className="bg-[#070e24] text-slate-200">All Bank Accounts</option>
                 {bankAccounts.map(b => (
-                  <option key={b.id} value={b.id}>{b.bankName} (*{b.accountNumber.slice(-4)})</option>
+                  <option key={b.id} value={b.id} className="bg-[#070e24] text-slate-200">{b.bankName} (*{b.accountNumber.slice(-4)})</option>
                 ))}
               </select>
 
@@ -698,7 +698,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[10.5px]">
                   <th className="py-3 px-4">Voucher No</th>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Debited / Paid To</th>
@@ -709,58 +709,58 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#101b3d]">
                 {filteredVouchers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
-                      <Receipt className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                      <p className="font-bold">Koi debit voucher nahi mila.</p>
-                      <p className="text-[11px] text-slate-400">Naya debit voucher record karne ke liye "+ Record Debit Voucher" dabayein.</p>
+                    <td colSpan={8} className="py-12 text-center text-slate-500">
+                      <Receipt className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+                      <p className="font-bold text-slate-300">No debit vouchers found.</p>
+                      <p className="text-[11px] text-slate-500">Click "+ Create Debit Voucher" to log a new payment outflow.</p>
                     </td>
                   </tr>
                 ) : (
                   filteredVouchers.map((dv) => (
-                    <tr key={dv.id} className="hover:bg-rose-50/30 transition-colors">
+                    <tr key={dv.id} className="hover:bg-[#0c183d]/60 transition-colors">
                       
                       {/* Voucher No */}
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-800 border border-rose-200 text-xs">
+                      <td className="py-3 px-4 font-mono font-bold whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs font-semibold">
                           {dv.voucherNumber}
                         </span>
                       </td>
 
                       {/* Date */}
-                      <td className="py-3 px-4 text-slate-600 font-mono whitespace-nowrap">
+                      <td className="py-3 px-4 text-slate-300 font-mono whitespace-nowrap">
                         {dv.date}
                       </td>
 
                       {/* Paid To Party */}
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{dv.partyName}</div>
+                        <div className="font-bold text-white">{dv.partyName}</div>
                       </td>
 
                       {/* Mode & Ref */}
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#09122e] text-slate-200 border border-[#1b2b5d] uppercase">
                             {dv.paymentMode}
                           </span>
                         </div>
                         {dv.referenceNumber && (
-                          <div className="text-[10px] font-mono text-slate-500 pt-0.5">
+                          <div className="text-[10px] font-mono text-cyan-400/80 pt-0.5">
                             Ref: {dv.referenceNumber}
                           </div>
                         )}
                       </td>
 
                       {/* Bank / Cash */}
-                      <td className="py-3 px-3 text-slate-600">
+                      <td className="py-3 px-3 text-slate-300">
                         {dv.paymentMode === 'CASH' ? (
-                          <span className="text-[11px] font-medium text-amber-700 flex items-center gap-1">
-                            <Wallet className="w-3 h-3" /> Cash Counter
+                          <span className="text-[11px] font-medium text-amber-300 flex items-center gap-1">
+                            <Wallet className="w-3 h-3 text-amber-400" /> Cash Register
                           </span>
                         ) : (
-                          <span className="text-[11px] text-slate-700 font-medium truncate block max-w-[130px]">
+                          <span className="text-[11px] text-slate-300 font-medium truncate block max-w-[130px]">
                             {dv.bankAccountName || 'Bank Account'}
                           </span>
                         )}
@@ -769,18 +769,18 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                       {/* Linked Bill / Remarks */}
                       <td className="py-3 px-3">
                         {dv.billNumber ? (
-                          <span className="text-[11px] font-bold text-rose-800 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                          <span className="text-[11px] font-bold text-rose-300 bg-rose-500/15 px-1.5 py-0.5 rounded border border-rose-500/30">
                             Bill #{dv.billNumber}
                           </span>
                         ) : (
-                          <span className="text-slate-500 text-[11px] italic truncate block max-w-[130px]">
+                          <span className="text-slate-400 text-[11px] italic truncate block max-w-[130px]">
                             {dv.remarks || 'Ledger Debit'}
                           </span>
                         )}
                       </td>
 
                       {/* Amount */}
-                      <td className="py-3 px-4 text-right font-mono font-black text-rose-800 text-sm whitespace-nowrap">
+                      <td className="py-3 px-4 text-right font-mono font-black text-rose-300 text-sm whitespace-nowrap">
                         {formatIndianCurrency(dv.amount)}
                       </td>
 
@@ -792,7 +792,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                           <button
                             type="button"
                             onClick={() => setPrintingVoucher(dv)}
-                            className="p-1.5 text-slate-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#09122e] rounded-lg transition-colors cursor-pointer"
                             title="View / Print Debit Voucher Receipt"
                           >
                             <Printer className="w-4 h-4" />
@@ -802,7 +802,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleShareWhatsApp(dv)}
-                            className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-[#09122e] rounded-lg transition-colors cursor-pointer"
                             title="Share Debit Voucher on WhatsApp"
                           >
                             <Share2 className="w-4 h-4" />
@@ -812,7 +812,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onOpenEditVoucher(dv)}
-                            className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-[#09122e] rounded-lg transition-colors cursor-pointer"
                             title="Edit Debit Voucher"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -822,7 +822,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onDeleteVoucher(dv.id)}
-                            className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-[#09122e] rounded-lg transition-colors cursor-pointer"
                             title="Delete Debit Voucher"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -843,17 +843,17 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
 
       {/* 6. TAB 2: PENDING BILLS TO PAY */}
       {activeTab === 'PENDING_DUES' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden space-y-3">
           
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <h3 className="font-black text-sm text-slate-900">Pending Supplier Bills &amp; Payables</h3>
-            <p className="text-xs text-slate-500">Unsettled purchase estimates and supplier invoices awaiting disbursement.</p>
+          <div className="p-4 bg-[#09122e] border-b border-[#14234b]">
+            <h3 className="font-black text-sm text-white">Pending Supplier Bills &amp; Payables</h3>
+            <p className="text-xs text-slate-400">Unsettled purchase estimates and supplier invoices awaiting disbursement.</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[10.5px]">
                   <th className="py-3 px-4">Bill No</th>
                   <th className="py-3 px-4">Bill Date</th>
                   <th className="py-3 px-4">Supplier / Party</th>
@@ -863,43 +863,43 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#101b3d]">
                 {pendingBills.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
-                      <p className="font-bold text-slate-700">Koi pending supplier bill nahi hai!</p>
-                      <p className="text-[11px] text-slate-400">Sabhi purchase bills settled hain.</p>
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
+                      <p className="font-bold text-slate-200">No pending supplier bills found!</p>
+                      <p className="text-[11px] text-slate-400">All purchase bills and payables are fully settled.</p>
                     </td>
                   </tr>
                 ) : (
                   pendingBills.map((inv) => {
                     const party = parties.find(p => p.id === inv.partyId);
                     return (
-                      <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={inv.id} className="hover:bg-[#0c183d]/60 transition-colors">
                         
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                        <td className="py-3 px-4 font-mono font-bold text-white whitespace-nowrap">
                           {inv.invoiceNumber}
                         </td>
 
-                        <td className="py-3 px-4 text-slate-600 font-mono whitespace-nowrap">
+                        <td className="py-3 px-4 text-slate-300 font-mono whitespace-nowrap">
                           {inv.date}
                         </td>
 
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{inv.partyName}</div>
-                          {party?.phone && <div className="text-[10.5px] text-slate-500 font-mono">{party.phone}</div>}
+                          <div className="font-bold text-white">{inv.partyName}</div>
+                          {party?.phone && <div className="text-[10.5px] text-cyan-400/80 font-mono">{party.phone}</div>}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-mono text-slate-800">
+                        <td className="py-3 px-3 text-right font-mono text-slate-300">
                           {formatIndianCurrency(inv.grandTotal)}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-mono text-emerald-700 font-bold">
+                        <td className="py-3 px-3 text-right font-mono text-emerald-400 font-bold">
                           {formatIndianCurrency(inv.paidAmount || 0)}
                         </td>
 
-                        <td className="py-3 px-4 text-right font-mono font-black text-rose-800 text-sm">
+                        <td className="py-3 px-4 text-right font-mono font-black text-rose-300 text-sm">
                           {formatIndianCurrency(inv.balanceDue || inv.grandTotal)}
                         </td>
 
@@ -907,7 +907,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onOpenCreateVoucher(party, inv)}
-                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors cursor-pointer"
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white font-bold rounded-xl text-xs shadow-md shadow-rose-600/20 transition-all cursor-pointer"
                           >
                             + Pay / Debit Voucher
                           </button>
@@ -926,17 +926,17 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
 
       {/* 7. TAB 3: SUPPLIER / PARTY LEDGER SUMMARY */}
       {activeTab === 'PARTY_SUMMARY' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-3">
+        <div className="bg-[#070e24]/95 backdrop-blur-xl rounded-2xl border border-[#14234b] shadow-[0_4px_25px_rgba(0,0,0,0.5)] overflow-hidden space-y-3">
           
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <h3 className="font-black text-sm text-slate-900">Supplier &amp; Party Debits Ledger Summary</h3>
-            <p className="text-xs text-slate-500">Summary of total debits paid, vouchers issued, and current ledger balances per party.</p>
+          <div className="p-4 bg-[#09122e] border-b border-[#14234b]">
+            <h3 className="font-black text-sm text-white">Supplier &amp; Party Debits Ledger Summary</h3>
+            <p className="text-xs text-slate-400">Summary of total debits paid, vouchers issued, and current ledger balances per party.</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr className="bg-[#091433] border-b border-[#172a5a] text-cyan-300 font-bold uppercase tracking-wider text-[10.5px]">
                   <th className="py-3 px-4">Party / Supplier Name</th>
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-3 text-right">Total Debits Paid</th>
@@ -946,34 +946,34 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#101b3d]">
                 {partyDebitSummaries.map(({ party, totalPaid, balance, vouchersCount, lastPayment }) => (
-                  <tr key={party.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={party.id} className="hover:bg-[#0c183d]/60 transition-colors">
                     
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{party.name}</div>
-                      {party.tradeName && <div className="text-[10.5px] text-slate-500">{party.tradeName}</div>}
+                      <div className="font-bold text-white">{party.name}</div>
+                      {party.tradeName && <div className="text-[10.5px] text-slate-400">{party.tradeName}</div>}
                     </td>
 
-                    <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                    <td className="py-3 px-4 text-slate-300 font-mono text-[11px]">
                       {party.phone || '—'}
                     </td>
 
-                    <td className="py-3 px-3 text-right font-mono font-bold text-rose-800">
+                    <td className="py-3 px-3 text-right font-mono font-bold text-rose-300">
                       {formatIndianCurrency(totalPaid)}
                     </td>
 
-                    <td className="py-3 px-3 text-center font-mono text-slate-700">
+                    <td className="py-3 px-3 text-center font-mono text-slate-300">
                       {vouchersCount}
                     </td>
 
                     <td className="py-3 px-4 text-right font-mono font-black text-sm">
-                      <span className={balance < 0 ? 'text-rose-700' : balance > 0 ? 'text-emerald-700' : 'text-slate-500'}>
+                      <span className={balance < 0 ? 'text-rose-400' : balance > 0 ? 'text-emerald-400' : 'text-slate-400'}>
                         {formatIndianCurrency(Math.abs(balance))} {balance < 0 ? '(Payable)' : balance > 0 ? '(Receivable)' : '(Nil)'}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-center font-mono text-slate-600 text-[11px]">
+                    <td className="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">
                       {lastPayment || 'No debits'}
                     </td>
 
@@ -981,7 +981,7 @@ export const DebitVouchersView: React.FC<DebitVouchersViewProps> = ({
                       <button
                         type="button"
                         onClick={() => onOpenCreateVoucher(party)}
-                        className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold rounded-lg text-xs border border-rose-200 transition-colors cursor-pointer"
+                        className="px-3 py-1 bg-[#09122e] hover:bg-rose-500/20 text-rose-300 font-bold rounded-lg text-xs border border-[#1b2b5d] hover:border-rose-500/40 transition-colors cursor-pointer"
                       >
                         + Debit Voucher
                       </button>

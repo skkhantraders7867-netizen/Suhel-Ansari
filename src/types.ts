@@ -492,6 +492,7 @@ export interface BusinessLetter {
   signatoryName: string;
   signatoryTitle: string;
   companyName: string;
+  signatureUrl?: string;
   letterheadUrl?: string;
   headerOffset?: number;
   footerOffset?: number;

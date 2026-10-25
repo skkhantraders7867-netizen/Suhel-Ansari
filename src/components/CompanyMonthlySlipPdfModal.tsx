@@ -251,24 +251,24 @@ export const CompanyMonthlySlipPdfModal: React.FC<CompanyMonthlySlipPdfModalProp
               {/* Title Ribbon */}
               <div className="pt-2">
                 <div className="bg-slate-900 text-white py-1.5 px-4 rounded-md font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-2xs">
-                  <span>MONTHLY COMPANY SALARY SLIP &amp; BANK ADVICE (मासिक वेतन पर्ची)</span>
+                  <span>MONTHLY COMPANY SALARY SLIP &amp; BANK ADVICE</span>
                   <span className="text-cyan-300 font-mono">{formattedMonthTitle.toUpperCase()}</span>
                 </div>
               </div>
             </div>
 
-            {/* Total Workers Summary Banner (As requested: kinane worker ne kam ki) */}
+            {/* Total Workers Summary Banner */}
             <div className="my-3 p-3 bg-slate-100 rounded-xl border border-slate-300 grid grid-cols-3 gap-3 text-center">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Workers Worked (कुल कर्मचारी)</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Active Workers</span>
                 <span className="text-lg font-black text-slate-950 font-mono">{totalWorkersCount} Workers</span>
               </div>
               <div className="border-x border-slate-300">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Net Salary (कुल नेट वेतन)</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Net Salary Disbursed</span>
                 <span className="text-lg font-black text-emerald-800 font-mono">₹{totalNetSalary.toLocaleString('en-IN')}</span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">Payment Month (माह)</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">Payment Month</span>
                 <span className="text-sm font-black text-blue-900 uppercase font-heading">{formattedMonthTitle}</span>
               </div>
             </div>
@@ -349,7 +349,7 @@ export const CompanyMonthlySlipPdfModal: React.FC<CompanyMonthlySlipPdfModalProp
                 <tfoot>
                   <tr className="bg-slate-100 font-black border-t-2 border-slate-900 text-[10.5px]">
                     <td colSpan={6} className="py-2 px-3 uppercase border-r border-slate-300 text-slate-900">
-                      Total Workforce: {totalWorkersCount} Workers (कुल {totalWorkersCount} कर्मचारियों का वेतन)
+                      Total Workforce: {totalWorkersCount} Workers (Consolidated Salary Outflow)
                     </td>
                     <td className="py-2 px-2.5 text-right font-mono text-xs text-slate-950 bg-emerald-100/80">
                       ₹{totalNetSalary.toLocaleString('en-IN')}
