@@ -81,6 +81,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   const [formEmail, setFormEmail] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formCity, setFormCity] = useState('');
+  const [formPincode, setFormPincode] = useState('');
   const [formStateCode, setFormStateCode] = useState(businessProfile.stateCode || '07');
   const [formOpeningBalance, setFormOpeningBalance] = useState<number>(0);
   const [formOpeningType, setFormOpeningType] = useState<'DR' | 'CR'>('DR');
@@ -174,6 +175,7 @@ Thank you for your prompt response!`;
     setFormEmail(party.email || '');
     setFormAddress(party.billingAddress || '');
     setFormCity(party.city || '');
+    setFormPincode(party.pincode || '');
     setFormStateCode(party.stateCode || businessProfile.stateCode || '07');
     setFormOpeningBalance(Math.abs(party.openingBalance || 0));
     setFormOpeningType(party.openingBalanceType || ((party.openingBalance || 0) < 0 ? 'CR' : 'DR'));
@@ -191,6 +193,7 @@ Thank you for your prompt response!`;
     setFormEmail('');
     setFormAddress('');
     setFormCity('');
+    setFormPincode('');
     setFormStateCode(businessProfile.stateCode || '07');
     setFormOpeningBalance(0);
     setFormOpeningType('DR');
@@ -219,6 +222,7 @@ Thank you for your prompt response!`;
         city: formCity.trim() || '',
         state: stateObj ? stateObj.name : '',
         stateCode: stateObj ? stateObj.code : '',
+        pincode: formPincode.trim(),
         openingBalance: signedOpening,
         openingBalanceType: formOpeningType,
         openingBalanceDate: formOpeningDate,
@@ -242,6 +246,7 @@ Thank you for your prompt response!`;
       city: formCity.trim() || '',
       state: stateObj ? stateObj.name : '',
       stateCode: stateObj ? stateObj.code : '',
+      pincode: formPincode.trim(),
       openingBalance: signedOpening,
       openingBalanceType: formOpeningType,
       openingBalanceDate: formOpeningDate,
@@ -257,6 +262,7 @@ Thank you for your prompt response!`;
     setFormEmail('');
     setFormAddress('');
     setFormCity('');
+    setFormPincode('');
     setFormOpeningBalance(0);
   };
 
@@ -417,8 +423,8 @@ Thank you for your prompt response!`;
                     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
                       <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-cyan-400" /> {selectedParty.phone}</span>
                       {selectedParty.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-cyan-400" /> {selectedParty.email}</span>}
-                      {(selectedParty.city || selectedParty.state) && (
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-rose-400" /> {[selectedParty.city, selectedParty.state].filter(Boolean).join(', ')}</span>
+                      {(selectedParty.city || selectedParty.state || selectedParty.pincode) && (
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-rose-400" /> {[selectedParty.city, selectedParty.state, selectedParty.pincode ? `PIN: ${selectedParty.pincode}` : ''].filter(Boolean).join(', ')}</span>
                       )}
                     </div>
                     {selectedParty.gstin && (
@@ -955,7 +961,7 @@ Thank you for your prompt response!`;
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">City</label>
                   <input 
@@ -966,6 +972,20 @@ Thank you for your prompt response!`;
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"
                   />
                 </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">PIN Code</label>
+                  <input 
+                    type="text"
+                    maxLength={6}
+                    placeholder="e.g. 370201"
+                    value={formPincode}
+                    onChange={(e) => setFormPincode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Opening Balance (₹)</label>
                   <input 

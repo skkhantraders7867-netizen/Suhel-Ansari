@@ -704,7 +704,9 @@ export default function App() {
 
     // 3. Update party balance
     setParties(prev => prev.map(p => {
-      if (p.id === data.partyId) {
+      const isMatch = (data.partyId && p.id === data.partyId) ||
+        (data.partyName && p.name.trim().toLowerCase() === data.partyName.trim().toLowerCase());
+      if (isMatch) {
         return {
           ...p,
           currentBalance: Math.max(0, p.currentBalance - data.amount),
@@ -1891,6 +1893,7 @@ export default function App() {
                   onEditPurchaseEstimate={handleEditInvoice}
                   onDeletePurchaseEstimate={handleDeleteInvoice}
                   onDuplicatePurchaseEstimate={handleDuplicateInvoice}
+                  onRecordPayment={handleOpenPaymentForInvoice}
                   onConvertToPurchaseBill={(est) => {
                     const newPurchaseBill: Invoice = {
                       ...est,

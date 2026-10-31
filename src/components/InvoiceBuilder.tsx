@@ -226,6 +226,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
   const [newPartyGstin, setNewPartyGstin] = useState('');
   const [newPartyAddress, setNewPartyAddress] = useState('');
   const [newPartyCity, setNewPartyCity] = useState('');
+  const [newPartyPincode, setNewPartyPincode] = useState('');
   const [newPartyStateCode, setNewPartyStateCode] = useState('27');
 
   const handleOpenAddPartyInBuilder = () => {
@@ -235,6 +236,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
     setNewPartyGstin('');
     setNewPartyAddress('');
     setNewPartyCity('');
+    setNewPartyPincode('');
     setNewPartyStateCode(businessProfile.stateCode || '27');
     setIsQuickPartyModalOpen(true);
   };
@@ -246,6 +248,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
     setNewPartyGstin(party.gstin || '');
     setNewPartyAddress(party.billingAddress || '');
     setNewPartyCity(party.city || '');
+    setNewPartyPincode(party.pincode || '');
     setNewPartyStateCode(party.stateCode || businessProfile.stateCode || '27');
     setIsQuickPartyModalOpen(true);
   };
@@ -648,6 +651,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
         city: newPartyCity.trim() || '',
         state: stateObj ? stateObj.name : '',
         stateCode: stateObj ? stateObj.code : '',
+        pincode: newPartyPincode.trim(),
       };
       if (onUpdateParty) {
         onUpdateParty(updatedParty);
@@ -658,6 +662,9 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
       setNewPartyName('');
       setNewPartyPhone('');
       setNewPartyGstin('');
+      setNewPartyAddress('');
+      setNewPartyCity('');
+      setNewPartyPincode('');
       return;
     }
 
@@ -670,7 +677,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
       city: newPartyCity.trim() || '',
       state: stateObj ? stateObj.name : '',
       stateCode: stateObj ? stateObj.code : '',
-      pincode: '',
+      pincode: newPartyPincode.trim(),
       openingBalance: 0,
       paymentTermsDays: 15,
     });
@@ -680,6 +687,10 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
     setIsQuickPartyModalOpen(false);
     setNewPartyName('');
     setNewPartyPhone('');
+    setNewPartyGstin('');
+    setNewPartyAddress('');
+    setNewPartyCity('');
+    setNewPartyPincode('');
     setNewPartyGstin('');
   };
 
@@ -2313,19 +2324,14 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">GSTIN (Optional)</label>
+                  <label className="block font-semibold text-slate-700 mb-1">PIN Code</label>
                   <input 
                     type="text"
-                    maxLength={15}
-                    placeholder="27AA..."
-                    value={newPartyGstin}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      setNewPartyGstin(val);
-                      const detected = detectStateFromGSTIN(val);
-                      if (detected) setNewPartyStateCode(detected.code);
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono uppercase"
+                    maxLength={6}
+                    placeholder="e.g. 370201"
+                    value={newPartyPincode}
+                    onChange={(e) => setNewPartyPincode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono"
                   />
                 </div>
                 <div>
@@ -2340,6 +2346,23 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">GSTIN (Optional)</label>
+                <input 
+                  type="text"
+                  maxLength={15}
+                  placeholder="27AA..."
+                  value={newPartyGstin}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    setNewPartyGstin(val);
+                    const detected = detectStateFromGSTIN(val);
+                    if (detected) setNewPartyStateCode(detected.code);
+                  }}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono uppercase"
+                />
               </div>
 
               <div>
